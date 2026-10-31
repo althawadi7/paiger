@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>لوحة الكاشير - نظام البيجر الذكي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📟</text></svg>">
+<style>
+:root{
+  --bg:#08090d;--s1:#101319;--s2:#171b24;--line:rgba(255,255,255,.07);--ink:#f3f5f9;--mute:#8a93a6;
+  --wait:#ffb547;--ring:#ff4d6d;--go:#8b7bff;--done:#36d9a0;--shadow:0 20px 50px rgba(0,0,0,.35);color-scheme:dark}
+:root[data-theme="light"]{
+  --bg:#f2f3f7;--s1:#fff;--s2:#f3f4f8;--line:rgba(10,15,30,.08);--ink:#0d1120;--mute:#6a7388;
+  --wait:#e59200;--ring:#e8284c;--go:#6551f0;--done:#10a877;--shadow:0 20px 50px rgba(30,40,80,.12);color-scheme:light}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+:root{padding-top:env(safe-area-inset-top,0px)}
+html,body{background:var(--bg)}
+body{color:var(--ink);font-family:"Readex Pro",system-ui,sans-serif;font-size:14px;min-height:100vh;padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))}
+button,input{font:inherit;color:inherit;border:0;background:none}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--go);outline-offset:2px}
+.glow{position:fixed;inset:0;pointer-events:none;background:radial-gradient(700px 350px at 85% -5%,color-mix(in srgb,var(--go) 18%,transparent),transparent),radial-gradient(600px 350px at 5% 0,color-mix(in srgb,var(--ring) 12%,transparent),transparent)}
+.wrap{position:relative;max-width:1380px;margin:0 auto;padding:20px}
+
+/* top bar */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:14px;min-width:0}
+.mark{width:46px;height:46px;border-radius:14px;flex:none;background:linear-gradient(135deg,var(--ring),var(--go));display:grid;place-items:center;box-shadow:0 8px 24px color-mix(in srgb,var(--ring) 40%,transparent)}
+.mark svg{width:24px;height:24px}
+.brand h1{font-size:20px;font-weight:700;letter-spacing:-.2px}
+.brand p{color:var(--mute);font-size:12.5px;margin-top:2px}
+.right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.net{display:flex;align-items:center;gap:8px;padding:9px 16px;border-radius:999px;background:var(--s1);border:1px solid var(--line);font-size:12.5px;color:var(--mute)}
+.net b{color:var(--ink);font-weight:600;direction:ltr}
+.live{width:8px;height:8px;border-radius:50%;background:var(--done);box-shadow:0 0 0 0 var(--done);animation:live 2s infinite}
+@keyframes live{70%{box-shadow:0 0 0 8px transparent}}
+.ib{width:44px;height:44px;border-radius:14px;background:var(--s1);border:1px solid var(--line);display:grid;place-items:center;font-size:17px}
+.add{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--ring),var(--go));color:#fff;font-weight:600;padding:0 20px;height:44px;border-radius:14px;box-shadow:0 6px 20px color-mix(in srgb,var(--ring) 35%,transparent);transition:transform .15s}
+.add:active{transform:scale(.97)}
+
+/* full width stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat{background:var(--s1);border:1px solid var(--line);border-radius:20px;padding:18px 20px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.stat:after{content:"";position:absolute;inset-inline-end:-20px;top:-20px;width:90px;height:90px;border-radius:50%;background:var(--c);opacity:.14;filter:blur(10px)}
+.stat span{display:flex;align-items:center;gap:8px;color:var(--mute);font-size:12.5px}
+.stat span i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.stat strong{display:block;font-size:36px;font-weight:700;margin-top:8px;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink)}
+
+/* filter tabs */
+.tabs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-bottom:18px;padding-bottom:2px}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none;padding:10px 18px;border-radius:999px;background:var(--s1);border:1px solid var(--line);color:var(--mute);font-weight:500;transition:all .15s}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:transparent;font-weight:600}
+
+/* orders list - full width grid */
+.orders{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
+.card{background:var(--s1);border:1px solid var(--line);border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:14px;position:relative;transition:transform .15s,border-color .15s;box-shadow:var(--shadow)}
+.card:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--c) 50%,var(--line))}
+.card.waiting{--c:var(--wait)}.card.ringing{--c:var(--ring)}.card.onway{--c:var(--go)}.card.done{--c:var(--done)}
+.card.ringing{background:linear-gradient(180deg,color-mix(in srgb,var(--ring) 16%,var(--s1)),var(--s1) 75%);animation:ringcard 1.3s infinite}
+@keyframes ringcard{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--ring) 20%,transparent)}}
+.card.done{opacity:.6}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);padding:5px 12px;border-radius:999px}
+.pill:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c)}
+.ago{font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
+.num{font-size:52px;font-weight:700;line-height:1;letter-spacing:-1.5px;direction:ltr;text-align:right;font-variant-numeric:tabular-nums}
+.who{display:flex;align-items:center;gap:12px;min-height:38px}
+.av{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:700;font-size:14px;background:color-mix(in srgb,var(--c) 18%,var(--s2));color:var(--c)}
+.who div{min-width:0}.who b{display:block;font-weight:600;font-size:14px}.who small{color:var(--mute);font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acts{display:flex;gap:8px;margin-top:auto}
+.btn{flex:1;height:44px;border-radius:14px;font-weight:600;font-size:13px;background:var(--s2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
+.btn:hover{background:color-mix(in srgb,var(--ink) 8%,var(--s2))}
+.btn.main{background:var(--c);color:#fff;border-color:transparent}
+.btn.sq{flex:0 0 44px;color:var(--mute)}
+.btn.sq:hover{color:var(--ink);border-color:color-mix(in srgb,var(--ink) 25%,transparent)}
+.btn.sq.qr-btn{color:var(--go);background:color-mix(in srgb,var(--go) 12%,var(--s2))}
+.btn.sq.qr-btn:hover{background:color-mix(in srgb,var(--go) 22%,var(--s2));color:#fff}
+.empty{grid-column:1/-1;padding:64px 16px;text-align:center;color:var(--mute);border:1px dashed var(--line);border-radius:24px}
+
+/* dialog / sheets */
+dialog{border:0;background:none;color:var(--ink);margin:auto;padding:0;max-width:100vw}
+dialog::backdrop{background:rgba(3,5,10,.7);backdrop-filter:blur(8px)}
+.sheet{width:min(440px,94vw);background:var(--s1);border:1px solid var(--line);border-radius:28px;padding:26px;box-shadow:var(--shadow)}
+.sheet h2{font-size:20px;margin-bottom:4px}.sheet .sub{color:var(--mute);font-size:12.5px;margin-bottom:8px}
+.f{display:block;margin-top:14px;font-size:12.5px;color:var(--mute)}
+.f input{display:block;width:100%;margin-top:7px;height:48px;padding:0 14px;border-radius:14px;background:var(--s2);border:1px solid var(--line);color:var(--ink);font-size:15px}
+.f input:focus{outline:2px solid var(--go);outline-offset:0}
+.go{width:100%;height:52px;margin-top:20px;border-radius:16px;font-weight:700;font-size:15px;color:#fff;background:linear-gradient(135deg,var(--ring),var(--go))}
+.go:active{transform:scale(.98)}
+
+/* dedicated QR modal box */
+.qr-box-modal{
+  width:220px;
+  height:220px;
+  margin:20px auto 0;
+  padding:12px;
+  background:#fff;
+  border-radius:22px;
+  box-shadow:0 12px 35px rgba(0,0,0,.45);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.qr-box-modal img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+
+/* custom confirmation modal */
+.confirm-icon{
+  width:64px;
+  height:64px;
+  border-radius:50%;
+  background:color-mix(in srgb,var(--ring) 15%,transparent);
+  display:grid;
+  place-items:center;
+  margin:0 auto;
+  border:1px solid color-mix(in srgb,var(--ring) 30%,transparent);
+}
+
+.toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top,0px));transform:translate(-50%,-160%);background:var(--ink);color:var(--bg);padding:12px 22px;border-radius:16px;font-weight:600;font-size:13.5px;z-index:100;max-width:92vw;transition:transform .35s cubic-bezier(.2,1,.3,1);box-shadow:var(--shadow)}
+.toast.show{transform:translate(-50%,0)}
+
+@media (max-width:800px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .orders{grid-template-columns:1fr}
+}
+@media (max-width:520px){
+  .wrap{padding:12px}.brand p{display:none}
+  .net{display:none}
+}
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="wrap">
+  <!-- Top Bar -->
+  <header class="bar">
+    <div class="brand">
+      <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></div>
+      <div>
+        <h1>لوحة تحكم الكاشير</h1>
+        <p>إدارة واستدعاء طلبات الزبائن (Web Pager)</p>
+      </div>
+    </div>
+    <div class="right">
+      <div class="net"><span class="live"></span>الشبكة <b>{{ local_ip }}:{{ port }}</b></div>
+      <button class="ib" id="theme" aria-label="تبديل المظهر">◐</button>
+      <button class="add" id="open"><b style="font-size:18px;line-height:1">+</b><span>طلب جديد</span></button>
+    </div>
+  </header>
+
+  <!-- Full-Width Stats -->
+  <section class="stats">
+    <div class="stat" style="--c:var(--wait)"><span><i></i>قيد التحضير</span><strong id="c-waiting">0</strong></div>
+    <div class="stat" style="--c:var(--ring)"><span><i></i>جاهز ويرن الآن</span><strong id="c-ringing">0</strong></div>
+    <div class="stat" style="--c:var(--go)"><span><i></i>في الطريق للاستلام</span><strong id="c-onway">0</strong></div>
+    <div class="stat" style="--c:var(--done)"><span><i></i>تم الاستلام</span><strong id="c-done">0</strong></div>
+  </section>
+
+  <!-- Filter Tabs -->
+  <nav class="tabs" id="tabs">
+    <button data-f="all" aria-pressed="true">الكل</button>
+    <button data-f="waiting" aria-pressed="false">قيد التحضير</button>
+    <button data-f="ringing" aria-pressed="false">جاهز ويرن</button>
+    <button data-f="onway" aria-pressed="false">في الطريق</button>
+    <button data-f="done" aria-pressed="false">تم الاستلام</button>
+  </nav>
+
+  <!-- Orders Grid -->
+  <main class="orders" id="orders">
+    <!-- Injected via JavaScript -->
+  </main>
+</div>
+
+<!-- Modal 1: Create New Order -->
+<dialog id="dlg">
+  <form class="sheet" method="dialog" id="form">
+    <h2>طلب جديد</h2>
+    <div class="sub">أدخل تفاصيل الطلب لإصدار البيجر فوراً</div>
+    <label class="f">رقم الطلب (Order #)<input id="fnum" inputmode="numeric" required></label>
+    <label class="f">اسم العميل (اختياري)<input id="fname" placeholder="مثال: أحمد"></label>
+    <label class="f">ملاحظات / الوجبة<input id="fnote" placeholder="مثال: 2 برجر لحم + بطاطس"></label>
+    <button class="go" id="issue" type="button">إصدار البيجر والـ QR</button>
+  </form>
+</dialog>
+
+<!-- Modal 2: QR Code Viewer (Clean, Dedicated & Scannable Anytime) -->
+<dialog id="qrDlg">
+  <div class="sheet" style="max-width:420px; text-align:center;">
+    <h2 id="modalQrTitle" style="font-size:22px; font-weight:700;">بيجر الطلب #42</h2>
+    <p style="color:var(--mute); font-size:13px; margin-top:4px;">امسح الكود بكاميرا الجوال (iPhone أو Android) لفتح البيجر:</p>
+
+    <div class="qr-box-modal">
+      <img id="modalQrImg" src="" alt="QR Code">
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
+      <a id="modalQrOpenLink" class="go" target="_blank" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
+        <span>🚀</span> فتح البيجر للتجربة المباشرة
+      </a>
+      <div style="display:flex; gap:10px;">
+        <button class="btn" id="modalQrCopyBtn" style="flex:1; height:46px; border-radius:14px; font-weight:600;">
+          📋 نسخ الرابط
+        </button>
+        <button class="btn" id="modalQrCloseBtn" style="flex:1; height:46px; border-radius:14px; font-weight:600;">
+          إغلاق
+        </button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<!-- Modal 3: Custom Dark Confirm Modal (Replaces ugly native browser confirm) -->
+<dialog id="confirmDlg">
+  <div class="sheet" style="max-width:390px; text-align:center;">
+    <div class="confirm-icon">
+      <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--ring)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"></polyline>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        <line x1="10" y1="11" x2="10" y2="17"></line>
+        <line x1="14" y1="11" x2="14" y2="17"></line>
+      </svg>
+    </div>
+    <h2 id="confirmTitle" style="font-size:20px; font-weight:700; margin-top:14px;">حذف هذا الطلب؟</h2>
+    <p id="confirmDesc" style="color:var(--mute); font-size:13px; margin:8px 0 22px; line-height:1.6;">
+      هل أنت متأكد من حذف هذا الطلب نهائياً من شاشة الكاشير؟
+    </p>
+    <div style="display:flex; gap:10px;">
+      <button class="btn main" id="confirmOkBtn" style="background:var(--ring); color:#fff; border-radius:14px; height:48px; font-weight:700;">
+        تأكيد الحذف
+      </button>
+      <button class="btn" id="confirmCancelBtn" style="border-radius:14px; height:48px; font-weight:600;">
+        إلغاء
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Modern Custom Toast -->
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+var BASE_URL = "{{ base_url }}";
+var $ = function(s){return document.querySelector(s)};
+var orders = [], filter = 'all', nextNum = 42, ws = null;
+var pendingDeleteId = null;
+var L = {waiting:'قيد التحضير', ringing:'جاهز - يرن', onway:'في الطريق', done:'تم الاستلام'};
+
+function esc(t){return String(t||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function ago(created){
+  if(!created) return 'الآن';
+  var ts = typeof created === 'number' ? created : new Date(created).getTime();
+  var m = Math.max(0, Math.round((Date.now() - ts)/60000));
+  return m < 1 ? 'الآن' : 'منذ ' + m + ' د';
+}
+
+function toast(m){
+  var t = $('#toast');
+  t.textContent = m;
+  t.classList.add('show');
+  clearTimeout(toast.t);
+  toast.t = setTimeout(function(){t.classList.remove('show')}, 2800);
+}
+
+function playDing(){
+  try {
+    var a = new Audio("/static/audio/chime.wav");
+    a.play().catch(function(){});
+  } catch(e){}
+}
+
+async function loadOrders(){
+  try {
+    var res = await fetch("/api/orders");
+    if(res.ok){
+      var list = await res.json();
+      orders = list.map(function(item){
+        return {
+          id: item.id,
+          num: item.order_number,
+          name: item.customer_name,
+          note: item.notes,
+          status: item.status,
+          token: item.token,
+          rings: item.call_count || 0,
+          created: item.created_at
+        };
+      });
+      render();
+    }
+  } catch(e){
+    console.error("Load orders error", e);
+  }
+}
+
+function render(){
+  var c = {waiting:0, ringing:0, onway:0, done:0};
+  orders.forEach(function(o){ if(c[o.status] !== undefined) c[o.status]++ });
+  for(var k in c) $('#c-'+k).textContent = c[k];
+
+  var rank = {ringing:0, onway:1, waiting:2, done:3};
+  var list = orders.filter(function(o){return filter==='all'||o.status===filter})
+                   .sort(function(a,b){return (rank[a.status] - rank[b.status]) || (b.id - a.id)});
+
+  $('#orders').innerHTML = list.length ? list.map(function(o){
+    var main = o.status === 'waiting' ? '<button class="btn main" data-a="ring" data-id="'+o.id+'">🔔 رنين البيجر</button>'
+      : o.status === 'ringing' ? '<button class="btn main" data-a="ring" data-id="'+o.id+'">↻ تكرار</button><button class="btn" data-a="done" data-id="'+o.id+'">✓ استلم</button>'
+      : o.status === 'onway' ? '<button class="btn main" data-a="done" data-id="'+o.id+'">✓ تم الاستلام</button>'
+      : '<button class="btn" data-a="wait" data-id="'+o.id+'">↩️ إعادة</button>';
+
+    return '<article class="card '+o.status+'" data-id="'+o.id+'">'
+      +'<div class="row"><span class="pill">'+(L[o.status]||o.status)+'</span><span class="ago">'+ago(o.created)+(o.rings?' · '+o.rings+'×':'')+'</span></div>'
+      +'<div class="num">#'+esc(o.num)+'</div>'
+      +'<div class="who"><span class="av">'+(o.name?esc(o.name.charAt(0)):'؟')+'</span><div><b>'+(o.name?esc(o.name):'بدون اسم')+'</b><small>'+(o.note?esc(o.note):'—')+'</small></div></div>'
+      +'<div class="acts">'
+        +main
+        // Explicit QR Code Button with clear SVG icon
+        +'<button class="btn sq qr-btn" data-a="qr" data-token="'+o.token+'" data-num="'+esc(o.num)+'" title="عرض رمز QR للعميل">'
+          +'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+            +'<rect x="3" y="3" width="7" height="7"></rect>'
+            +'<rect x="14" y="3" width="7" height="7"></rect>'
+            +'<rect x="14" y="14" width="7" height="7"></rect>'
+            +'<rect x="3" y="14" width="7" height="7"></rect>'
+            +'<line x1="7" y1="7" x2="7.01" y2="7"></line>'
+            +'<line x1="17" y1="7" x2="17.01" y2="7"></line>'
+            +'<line x1="7" y1="17" x2="7.01" y2="7"></line>'
+            +'<line x1="17" y1="17" x2="17.01" y2="17"></line>'
+          +'</svg>'
+        +'</button>'
+        // Delete button
+        +'<button class="btn sq" data-a="del" data-id="'+o.id+'" data-num="'+esc(o.num)+'" title="حذف الطلب">'
+          +'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+            +'<polyline points="3 6 5 6 21 6"></polyline>'
+            +'<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>'
+          +'</svg>'
+        +'</button>'
+      +'</div></article>';
+  }).join('') : '<div class="empty">لا توجد طلبات هنا بعد.<br>اضغط «طلب جديد» لإصدار بيجر.</div>';
+}
+
+function showQrModal(token, num){
+  var qrUrl = "/api/qr/" + token + "?host=" + encodeURIComponent(BASE_URL) + "&t=" + Date.now();
+  var pagerUrl = BASE_URL + "/pager/" + token;
+
+  $('#modalQrTitle').textContent = "بيجر الطلب #" + num;
+  $('#modalQrImg').src = qrUrl;
+  $('#modalQrOpenLink').href = pagerUrl;
+
+  $('#modalQrCopyBtn').onclick = function(){
+    navigator.clipboard.writeText(pagerUrl);
+    toast("📋 تم نسخ الرابط بنجاح!");
+  };
+
+  $('#qrDlg').showModal();
+}
+
+$('#modalQrCloseBtn').onclick = function(){
+  $('#qrDlg').close();
+};
+
+async function issue(){
+  var n = $('#fnum').value.trim();
+  if(!n){ $('#fnum').focus(); return }
+
+  try {
+    var res = await fetch("/api/orders", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        order_number: n,
+        customer_name: $('#fname').value.trim(),
+        notes: $('#fnote').value.trim()
+      })
+    });
+
+    if(res.ok){
+      var created = await res.json();
+      nextNum = (parseInt(n) || 0) + 1;
+      $('#dlg').close();
+
+      await loadOrders();
+      // Immediately display the clean QR Code modal for this new order!
+      showQrModal(created.token, created.order_number);
+    }
+  } catch(e){
+    toast("⚠️ خطأ أثناء إنشاء الطلب: " + e.message);
+  }
+}
+
+function openCreateDlg(){
+  $('#fnum').value = nextNum;
+  $('#fname').value = '';
+  $('#fnote').value = '';
+  $('#dlg').showModal();
+  setTimeout(function(){ $('#fname').focus() }, 50);
+}
+
+$('#open').onclick = openCreateDlg;
+$('#issue').onclick = issue;
+
+$('#form').onkeydown = function(e){
+  if(e.key === 'Enter'){ e.preventDefault(); issue(); }
+};
+
+// Close modals on clicking overlay backdrop
+[$('#dlg'), $('#qrDlg'), $('#confirmDlg')].forEach(function(d){
+  d.onclick = function(e){ if(e.target === this) this.close(); };
+});
+
+// Custom Confirm Delete Implementation
+function promptDelete(id, num){
+  pendingDeleteId = id;
+  $('#confirmTitle').textContent = "حذف الطلب #" + num + "؟";
+  $('#confirmDlg').showModal();
+}
+
+$('#confirmCancelBtn').onclick = function(){
+  pendingDeleteId = null;
+  $('#confirmDlg').close();
+};
+
+$('#confirmOkBtn').onclick = async function(){
+  if(!pendingDeleteId) return;
+  var id = pendingDeleteId;
+  $('#confirmDlg').close();
+
+  try {
+    await fetch("/api/orders/" + id, {method: "DELETE"});
+    toast("🗑️ تم حذف الطلب بنجاح");
+    await loadOrders();
+  } catch(err){
+    toast("⚠️ حدث خطأ أثناء الحذف");
+  } finally {
+    pendingDeleteId = null;
+  }
+};
+
+$('#orders').onclick = async function(e){
+  var b = e.target.closest('button');
+  if(!b) return;
+
+  var id = +b.dataset.id, a = b.dataset.a;
+  var o = orders.find(function(x){return x.id === id});
+
+  if(a === 'ring'){
+    try {
+      await fetch("/api/orders/" + id + "/ring", {method: "POST"});
+      toast('🔔 تم تشغيل الرنين للطلب #' + (o ? o.num : id));
+      await loadOrders();
+    } catch(err){}
+  }
+  if(a === 'done'){
+    try {
+      await fetch("/api/orders/" + id + "/done", {method: "POST"});
+      toast('✅ تم تسليم الطلب #' + (o ? o.num : id));
+      await loadOrders();
+    } catch(err){}
+  }
+  if(a === 'wait'){
+    try {
+      await fetch("/api/orders/" + id + "/waiting", {method: "POST"});
+      toast('⏳ تمت إعادة الطلب للانتظار');
+      await loadOrders();
+    } catch(err){}
+  }
+  if(a === 'del'){
+    promptDelete(id, b.dataset.num || id);
+  }
+  if(a === 'qr'){
+    showQrModal(b.dataset.token, b.dataset.num);
+  }
+};
+
+$('#tabs').onclick = function(e){
+  var b = e.target.closest('button');
+  if(!b) return;
+  filter = b.dataset.f;
+  [].forEach.call($('#tabs').children, function(x){
+    x.setAttribute('aria-pressed', x === b);
+  });
+  render();
+};
+
+$('#theme').onclick = function(){
+  var r = document.documentElement;
+  var isDark = r.dataset.theme ? r.dataset.theme === 'dark' : !matchMedia('(prefers-color-scheme:light)').matches;
+  r.dataset.theme = isDark ? 'light' : 'dark';
+};
+
+function connectWS(){
+  var protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  var wsUrl = protocol + "//" + window.location.host + "/ws/cashier";
+  try {
+    ws = new WebSocket(wsUrl);
+    ws.onmessage = function(event){
+      try {
+        var data = JSON.parse(event.data);
+        if(data.event === "customer_onway"){
+          playDing();
+          toast('🏃 صاحب الطلب #' + (data.order ? data.order.order_number : '') + ' في طريقه للاستلام الآن!');
+        }
+        loadOrders();
+      } catch(e){}
+    };
+    ws.onclose = function(){ setTimeout(connectWS, 3000) };
+  } catch(e){
+    setTimeout(connectWS, 4000);
+  }
+}
+
+loadOrders();
+connectWS();
+})();
+</script>
+</body>
+</html>

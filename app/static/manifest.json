@@ -1,0 +1,18 @@
+{
+  "name": "Web Pager - جرس الطلبات الذكي",
+  "short_name": "WebPager",
+  "description": "بيجر ذكي لمتابعة وتنبيه جهوزية طلبات المطاعم",
+  "start_url": "/cashier",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#090d16",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/static/img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

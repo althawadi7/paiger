@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>بيجر - لوحة الكاشير</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08090d;--s1:#101319;--s2:#171b24;--line:rgba(255,255,255,.07);--ink:#f3f5f9;--mute:#8a93a6;
+  --wait:#ffb547;--ring:#ff4d6d;--go:#8b7bff;--done:#36d9a0;--shadow:0 20px 50px rgba(0,0,0,.35);color-scheme:dark}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --bg:#f2f3f7;--s1:#fff;--s2:#f3f4f8;--line:rgba(10,15,30,.08);--ink:#0d1120;--mute:#6a7388;
+  --wait:#e59200;--ring:#e8284c;--go:#6551f0;--done:#10a877;--shadow:0 20px 50px rgba(30,40,80,.12);color-scheme:light}}
+:root[data-theme="light"]{
+  --bg:#f2f3f7;--s1:#fff;--s2:#f3f4f8;--line:rgba(10,15,30,.08);--ink:#0d1120;--mute:#6a7388;
+  --wait:#e59200;--ring:#e8284c;--go:#6551f0;--done:#10a877;--shadow:0 20px 50px rgba(30,40,80,.12);color-scheme:light}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+:root{padding-top:env(safe-area-inset-top,0px)}
+html,body{background:var(--bg)}
+body{color:var(--ink);font-family:"Readex Pro",system-ui,sans-serif;font-size:14px;min-height:100vh;padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+button,input{font:inherit;color:inherit;border:0;background:none}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--go);outline-offset:2px}
+.glow{position:fixed;inset:0;pointer-events:none;background:radial-gradient(600px 300px at 85% -5%,color-mix(in srgb,var(--go) 22%,transparent),transparent),radial-gradient(500px 300px at 5% 0,color-mix(in srgb,var(--ring) 14%,transparent),transparent)}
+.wrap{position:relative;max-width:1280px;margin:0 auto;padding:16px}
+/* top bar */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.mark{width:44px;height:44px;border-radius:14px;flex:none;background:linear-gradient(135deg,var(--ring),var(--go));display:grid;place-items:center;box-shadow:0 8px 24px color-mix(in srgb,var(--ring) 40%,transparent)}
+.mark svg{width:24px;height:24px}
+.brand h1{font-size:19px;font-weight:700;letter-spacing:-.2px}
+.brand p{color:var(--mute);font-size:12px;margin-top:1px}
+.right{display:flex;gap:8px;align-items:center}
+.net{display:flex;align-items:center;gap:8px;padding:9px 14px;border-radius:999px;background:var(--s1);border:1px solid var(--line);font-size:12px;color:var(--mute)}
+.net b{color:var(--ink);font-weight:500;direction:ltr}
+.live{width:7px;height:7px;border-radius:50%;background:var(--done);box-shadow:0 0 0 0 var(--done);animation:live 2s infinite}
+@keyframes live{70%{box-shadow:0 0 0 7px transparent}}
+.ib{width:42px;height:42px;border-radius:14px;background:var(--s1);border:1px solid var(--line);display:grid;place-items:center;font-size:16px}
+.add{display:flex;align-items:center;gap:8px;background:var(--ink);color:var(--bg);font-weight:600;padding:0 18px;height:42px;border-radius:14px}
+/* layout */
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.stat{background:var(--s1);border:1px solid var(--line);border-radius:20px;padding:16px;position:relative;overflow:hidden}
+.stat:after{content:"";position:absolute;inset-inline-end:-20px;top:-20px;width:80px;height:80px;border-radius:50%;background:var(--c);opacity:.14;filter:blur(8px)}
+.stat span{display:flex;align-items:center;gap:7px;color:var(--mute);font-size:12px}
+.stat span i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.stat strong{display:block;font-size:34px;font-weight:600;margin-top:8px;line-height:1;font-variant-numeric:tabular-nums}
+.tabs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px;padding-bottom:2px}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:none;padding:9px 16px;border-radius:999px;background:var(--s1);border:1px solid var(--line);color:var(--mute);font-weight:500}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:transparent}
+.orders{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.card{background:var(--s1);border:1px solid var(--line);border-radius:24px;padding:18px;display:flex;flex-direction:column;gap:14px;position:relative;cursor:pointer;transition:transform .15s,border-color .15s}
+.card:hover{transform:translateY(-2px)}
+.card.sel{border-color:var(--c);box-shadow:0 0 0 1px var(--c),var(--shadow)}
+.card.waiting{--c:var(--wait)}.card.ringing{--c:var(--ring)}.card.onway{--c:var(--go)}.card.done{--c:var(--done)}
+.card.ringing{background:linear-gradient(180deg,color-mix(in srgb,var(--ring) 16%,var(--s1)),var(--s1) 75%);animation:ringcard 1.3s infinite}
+@keyframes ringcard{50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--ring) 18%,transparent)}}
+.card.done{opacity:.6}
+.row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:500;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);padding:5px 11px;border-radius:999px}
+.pill:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c)}
+.ago{font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
+.num{font-size:46px;font-weight:700;line-height:1;letter-spacing:-1.5px;direction:ltr;text-align:right;font-variant-numeric:tabular-nums}
+.who{display:flex;align-items:center;gap:10px;min-height:36px}
+.av{width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:600;background:color-mix(in srgb,var(--c) 18%,var(--s2));color:var(--c)}
+.who div{min-width:0}.who b{display:block;font-weight:500;font-size:13.5px}.who small{color:var(--mute);font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acts{display:flex;gap:8px}
+.btn{flex:1;height:44px;border-radius:14px;font-weight:600;background:var(--s2);border:1px solid var(--line)}
+.btn.main{background:var(--c);color:#fff;border-color:transparent}
+.btn.sq{flex:0 0 44px;color:var(--mute)}
+.btn.prev{display:none}
+.empty{grid-column:1/-1;padding:56px 16px;text-align:center;color:var(--mute);border:1px dashed var(--line);border-radius:24px}
+/* phone */
+aside{position:sticky;top:16px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.phone{width:320px;height:660px;border-radius:52px;padding:11px;background:linear-gradient(145deg,#2b303b,#0b0d12);box-shadow:var(--shadow),inset 0 0 0 1.5px rgba(255,255,255,.14)}
+.phone.shake{animation:shake .45s infinite}
+@keyframes shake{0%,100%{transform:none}25%{transform:translateX(-4px) rotate(-.7deg)}75%{transform:translateX(4px) rotate(.7deg)}}
+.scr{height:100%;border-radius:42px;overflow:hidden;position:relative;display:flex;flex-direction:column;padding:14px 16px 20px;color:#fff;background:radial-gradient(120% 70% at 80% 0,#4a3ba8,transparent 60%),radial-gradient(100% 60% at 0 100%,#7a2358,transparent 60%),#0f1220}
+.scr.ring{animation:flash .6s infinite alternate}
+@keyframes flash{from{background:radial-gradient(120% 80% at 50% 40%,#7a0f26,transparent 70%),#1a0610}to{background:radial-gradient(120% 80% at 50% 40%,#ff4d6d,transparent 70%),#4a0a1a}}
+.isl{width:96px;height:28px;border-radius:16px;background:#000;margin:0 auto}
+.clock{text-align:center;font-size:62px;font-weight:200;letter-spacing:-2px;margin-top:20px;direction:ltr;line-height:1}
+.date{text-align:center;opacity:.7;font-size:13px;margin:6px 0 20px}
+.wd{flex:1;display:flex;flex-direction:column;gap:12px;padding:18px;border-radius:30px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px)}
+.wh{display:flex;justify-content:space-between;font-size:12px;opacity:.85}
+.wn{font-size:92px;font-weight:700;letter-spacing:-4px;text-align:center;line-height:1;direction:ltr;margin-top:4px;font-variant-numeric:tabular-nums}
+.ws{text-align:center;font-size:18px;font-weight:600}
+.wu{text-align:center;font-size:12.5px;opacity:.75;line-height:1.7}
+.stp{display:flex;gap:6px;margin-top:auto}
+.stp i{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.22)}
+.stp i.on{background:#fff}
+.wb{height:52px;border-radius:18px;background:#fff;color:#0d1120;font-weight:700;font-size:15px}
+.wb.g{background:#36d9a0;color:#03261a}
+[hidden]{display:none!important}
+.hint{font-size:12px;color:var(--mute);text-align:center;max-width:300px;line-height:1.8}
+/* sheet */
+dialog{border:0;background:none;color:var(--ink);margin:auto;padding:0;max-width:100vw}
+dialog::backdrop{background:rgba(3,5,10,.6);backdrop-filter:blur(6px)}
+.sheet{width:min(420px,94vw);background:var(--s1);border:1px solid var(--line);border-radius:28px;padding:22px;box-shadow:var(--shadow)}
+.sheet h2{font-size:18px;margin-bottom:4px}.sheet .sub{color:var(--mute);font-size:12.5px;margin-bottom:6px}
+.f{display:block;margin-top:14px;font-size:12px;color:var(--mute)}
+.f input{display:block;width:100%;margin-top:7px;height:48px;padding:0 14px;border-radius:14px;background:var(--s2);border:1px solid var(--line);color:var(--ink);font-size:15px}
+.f input:focus{outline:2px solid var(--go);outline-offset:0}
+.go{width:100%;height:52px;margin-top:20px;border-radius:16px;font-weight:700;font-size:15px;color:#fff;background:linear-gradient(135deg,var(--ring),var(--go))}
+.qrline{display:flex;gap:14px;align-items:center;margin-top:18px;padding:14px;border-radius:18px;background:var(--s2)}
+.qrline svg{width:76px;height:76px;border-radius:10px;background:#fff;padding:5px;flex:none}
+.qrline p{font-size:12.5px;color:var(--mute);line-height:1.7}
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translate(-50%,-160%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:16px;font-weight:500;z-index:50;max-width:92vw;transition:transform .35s cubic-bezier(.2,1,.3,1);box-shadow:var(--shadow)}
+.toast.show{transform:translate(-50%,0)}
+/* mobile nav */
+.nav{display:none}
+@media (max-width:980px){
+  .grid{grid-template-columns:1fr}
+  .net{display:none}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  aside{position:static}
+  body[data-view="orders"] aside,body[data-view="phone"] .main{display:none}
+  .btn.prev{display:block;flex:0 0 44px}
+  .nav{display:flex;position:fixed;inset-inline:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:20;gap:6px;padding:6px;border-radius:22px;background:color-mix(in srgb,var(--s1) 88%,transparent);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--line);box-shadow:var(--shadow)}
+  .nav button{flex:1;height:50px;border-radius:16px;color:var(--mute);font-weight:500;display:flex;align-items:center;justify-content:center;gap:8px}
+  .nav button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+  .nav .badge{min-width:20px;height:20px;border-radius:10px;background:var(--ring);color:#fff;font-size:11px;display:grid;place-items:center;padding:0 5px}
+  dialog{margin:auto auto 0;width:100%}
+  .sheet{width:100%;border-radius:28px 28px 0 0;padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))}
+}
+@media (max-width:520px){
+  .wrap{padding:12px}.brand p{display:none}.add span{display:none}.add{padding:0;width:42px;justify-content:center}
+  .orders{grid-template-columns:1fr}.num{font-size:40px}.phone{transform:scale(.94);transform-origin:top center;margin-bottom:-30px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body data-view="orders">
+<div class="glow"></div>
+<div class="wrap">
+  <div class="bar">
+    <div class="brand"><div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></div>
+      <div><h1>نظام البيجر الذكي</h1><p>لوحة الكاشير واستدعاء الزبائن</p></div></div>
+    <div class="right">
+      <div class="net"><span class="live"></span>الشبكة <b>10.157.104.134:8000</b></div>
+      <button class="ib" id="theme" aria-label="تبديل المظهر">◐</button>
+      <button class="add" id="open"><b style="font-size:18px;line-height:1">+</b><span>طلب جديد</span></button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <section class="main">
+      <div class="stats">
+        <div class="stat" style="--c:var(--wait)"><span><i></i>قيد التحضير</span><strong id="c-waiting">0</strong></div>
+        <div class="stat" style="--c:var(--ring)"><span><i></i>جاهز ويرن</span><strong id="c-ringing">0</strong></div>
+        <div class="stat" style="--c:var(--go)"><span><i></i>في الطريق</span><strong id="c-onway">0</strong></div>
+        <div class="stat" style="--c:var(--done)"><span><i></i>تم الاستلام</span><strong id="c-done">0</strong></div>
+      </div>
+      <div class="tabs" id="tabs">
+        <button data-f="all" aria-pressed="true">الكل</button><button data-f="waiting" aria-pressed="false">قيد التحضير</button><button data-f="ringing" aria-pressed="false">يرن</button><button data-f="onway" aria-pressed="false">في الطريق</button><button data-f="done" aria-pressed="false">تم الاستلام</button>
+      </div>
+      <div class="orders" id="orders"></div>
+    </section>
+
+    <aside>
+      <div class="phone" id="phone"><div class="scr" id="scr">
+        <div class="isl"></div>
+        <div class="clock" id="clock">00:00</div><div class="date" id="date"></div>
+        <div class="wd">
+          <div class="wh"><span>🔔 بيجر المطعم</span><span id="wt"></span></div>
+          <div class="wn" id="wn">—</div>
+          <div class="ws" id="ws">لا يوجد طلب محدد</div>
+          <div class="wu" id="wu">اختر طلباً لمعاينة شاشة العميل</div>
+          <div class="stp" id="stp"><i></i><i></i><i></i></div>
+          <button class="wb" id="arm" hidden>⚡ تفعيل البيجر والاهتزاز</button>
+          <button class="wb g" id="onway" hidden>أنا في طريقي للاستلام</button>
+        </div>
+      </div></div>
+      <p class="hint">معاينة مباشرة لهاتف العميل. فعّل البيجر ثم اضغط «رنين» ليرن ويهتز ويومض.</p>
+    </aside>
+  </div>
+</div>
+
+<nav class="nav"><button id="n1" aria-pressed="true">📋 الطلبات</button><button id="n2" aria-pressed="false">📱 البيجر <span class="badge" id="nb" hidden>0</span></button></nav>
+
+<dialog id="dlg"><form class="sheet" method="dialog" id="form">
+  <h2>طلب جديد</h2><div class="sub">أصدر بيجراً وأعطِ العميل الرمز ليمسحه</div>
+  <label class="f">رقم الطلب<input id="fnum" inputmode="numeric" required></label>
+  <label class="f">اسم العميل (اختياري)<input id="fname" placeholder="مثال: أحمد"></label>
+  <label class="f">ملاحظات / الوجبة<input id="fnote" placeholder="مثال: 2 برجر + بطاطس"></label>
+  <div class="qrline" id="qrl" hidden><svg id="qr" viewBox="0 0 21 21" shape-rendering="crispEdges"></svg><p>تم إصدار البيجر.<br>اطلب من العميل مسح الرمز بكاميرا هاتفه.</p></div>
+  <button class="go" id="issue" type="button">إصدار البيجر</button>
+</form></dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+var $=function(s){return document.querySelector(s)};
+var orders=[],sel=null,filter='all',seq=1,nextNum=43,ctx=null,beepT=null;
+var L={waiting:'قيد التحضير',ringing:'جاهز - يرن',onway:'في الطريق',done:'تم الاستلام'};
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function ago(ts){var m=Math.max(0,Math.round((Date.now()-ts)/60000));return m<1?'الآن':'منذ '+m+' د'}
+function toast(m){var t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(function(){t.classList.remove('show')},2800)}
+function beep(){
+  if(!ctx)return;
+  [2400,850].forEach(function(f,i){var o=ctx.createOscillator(),g=ctx.createGain(),t=ctx.currentTime+i*.18;
+    o.type='square';o.frequency.value=f;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.22,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.16);
+    o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+.18)});
+  try{navigator.vibrate&&navigator.vibrate([400,200,400,200,800])}catch(e){}
+}
+function cur(){return orders.find(function(x){return x.id===sel})}
+function syncSound(){
+  var o=cur(),on=o&&o.status==='ringing'&&o.armed;
+  if(on&&!beepT){beep();beepT=setInterval(beep,1300)}
+  if(!on&&beepT){clearInterval(beepT);beepT=null;try{navigator.vibrate&&navigator.vibrate(0)}catch(e){}}
+}
+function qr(seed){
+  var s='',n=21,h=(seed*2654435761)>>>0;
+  for(var y=0;y<n;y++)for(var x=0;x<n;x++){
+    var fx=x<7&&y<7||x>13&&y<7||x<7&&y>13,on;
+    if(fx){var a=x%14,b=y%14;on=a===0||a===6||b===0||b===6||(a>1&&a<5&&b>1&&b<5)}
+    else{h=(h*1664525+1013904223)>>>0;on=(h>>>16)&1}
+    if(on)s+='<rect x="'+x+'" y="'+y+'" width="1" height="1" fill="#000"/>';
+  }
+  $('#qr').innerHTML=s;
+}
+function render(){
+  var c={waiting:0,ringing:0,onway:0,done:0};orders.forEach(function(o){c[o.status]++});
+  for(var k in c)$('#c-'+k).textContent=c[k];
+  var nb=$('#nb');nb.hidden=!c.ringing;nb.textContent=c.ringing;
+  var rank={ringing:0,onway:1,waiting:2,done:3};
+  var list=orders.filter(function(o){return filter==='all'||o.status===filter}).sort(function(a,b){return rank[a.status]-rank[b.status]||b.created-a.created});
+  $('#orders').innerHTML=list.length?list.map(function(o){
+    var main=o.status==='waiting'?'<button class="btn main" data-a="ring" data-id="'+o.id+'">🔔 رنين البيجر</button>'
+      :o.status==='ringing'?'<button class="btn main" data-a="ring" data-id="'+o.id+'">↻ تكرار</button><button class="btn" data-a="done" data-id="'+o.id+'">✓ استلم</button>'
+      :o.status==='onway'?'<button class="btn main" data-a="done" data-id="'+o.id+'">✓ تم الاستلام</button>':'';
+    return '<article class="card '+o.status+(o.id===sel?' sel':'')+'" data-id="'+o.id+'"><div class="row"><span class="pill">'+L[o.status]+'</span><span class="ago">'+ago(o.created)+(o.rings?' · '+o.rings+'×':'')+'</span></div>'
+      +'<div class="num">#'+esc(o.num)+'</div>'
+      +'<div class="who"><span class="av">'+(o.name?esc(o.name.charAt(0)):'؟')+'</span><div><b>'+(o.name?esc(o.name):'بدون اسم')+'</b><small>'+(o.note?esc(o.note):'—')+'</small></div></div>'
+      +'<div class="acts">'+main+'<button class="btn prev" data-a="prev" data-id="'+o.id+'" aria-label="معاينة">📱</button><button class="btn sq" data-a="del" data-id="'+o.id+'" aria-label="حذف">🗑</button></div></article>';
+  }).join(''):'<div class="empty">لا توجد طلبات هنا بعد.<br>اضغط «طلب جديد» لإصدار بيجر.</div>';
+  phone();syncSound();
+}
+function phone(){
+  var o=cur(),on=!!o&&o.status==='ringing'&&o.armed;
+  $('#scr').classList.toggle('ring',on);$('#phone').classList.toggle('shake',on);
+  $('#arm').hidden=!(o&&!o.armed&&o.status!=='done');
+  $('#onway').hidden=!(o&&o.armed&&o.status==='ringing');
+  var lvl=0,s=$('#stp').children;
+  if(!o){$('#wn').textContent='—';$('#ws').textContent='لا يوجد طلب محدد';$('#wu').textContent='اختر طلباً لمعاينة شاشة العميل'}
+  else{
+    $('#wn').textContent='#'+o.num;
+    var m={waiting:['طلبك قيد التحضير','سنهتز ونرن فور أن يجهز'],ringing:['طلبك جاهز! 🎉','تفضل إلى الكاونتر للاستلام'],onway:['أبلغنا الكاشير','الكاشير يعلم أنك قادم'],done:['تم الاستلام','بالعافية! شكراً لزيارتك']}[o.status];
+    var ok=o.armed||o.status==='done';
+    $('#ws').textContent=ok?m[0]:'فعّل البيجر';$('#wu').textContent=ok?m[1]:'نقرة واحدة لتشغيل الصوت والاهتزاز';
+    lvl={waiting:1,ringing:2,onway:3,done:3}[o.status];
+  }
+  for(var i=0;i<3;i++)s[i].className=i<lvl?'on':'';
+}
+function issue(){
+  var n=$('#fnum').value.trim();if(!n){$('#fnum').focus();return}
+  var o={id:seq++,num:n,name:$('#fname').value.trim(),note:$('#fnote').value.trim(),status:'waiting',rings:0,armed:false,created:Date.now()};
+  orders.push(o);sel=o.id;qr(+n||o.id);nextNum=(+n||0)+1;
+  $('#qrl').hidden=false;$('#issue').textContent='طلب جديد آخر';$('#issue').dataset.next='1';render();
+}
+function openDlg(){$('#qrl').hidden=true;$('#issue').textContent='إصدار البيجر';delete $('#issue').dataset.next;$('#fnum').value=nextNum;$('#fname').value='';$('#fnote').value='';$('#dlg').showModal();setTimeout(function(){$('#fname').focus()},50)}
+$('#open').onclick=openDlg;
+$('#issue').onclick=function(){if(this.dataset.next){openDlg()}else issue()};
+$('#form').onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();$('#issue').click()}};
+$('#dlg').onclick=function(e){if(e.target===this)this.close()};
+function view(v){document.body.dataset.view=v;$('#n1').setAttribute('aria-pressed',v==='orders');$('#n2').setAttribute('aria-pressed',v==='phone');window.scrollTo(0,0)}
+$('#n1').onclick=function(){view('orders')};$('#n2').onclick=function(){view('phone')};
+$('#orders').onclick=function(e){
+  var b=e.target.closest('button'),c=e.target.closest('.card');
+  if(b){var id=+b.dataset.id,o=orders.find(function(x){return x.id===id}),a=b.dataset.a;
+    if(a==='ring'){o.status='ringing';o.rings++;sel=id;toast(o.armed?'🔔 يرن الآن: #'+o.num:'العميل لم يفعّل البيجر بعد')}
+    if(a==='done'){o.status='done';sel=id}
+    if(a==='del'){orders=orders.filter(function(x){return x.id!==id});if(sel===id)sel=null}
+    if(a==='prev'){sel=id;view('phone')}
+    render();return}
+  if(c){sel=+c.dataset.id;render()}
+};
+$('#tabs').onclick=function(e){var b=e.target.closest('button');if(!b)return;filter=b.dataset.f;[].forEach.call($('#tabs').children,function(x){x.setAttribute('aria-pressed',x===b)});render()};
+$('#arm').onclick=function(){
+  try{ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();ctx.resume&&ctx.resume()}catch(e){}
+  var o=cur();if(o)o.armed=true;try{navigator.vibrate&&navigator.vibrate(80)}catch(e){}render();
+};
+$('#onway').onclick=function(){var o=cur();if(!o)return;o.status='onway';toast('🏃 صاحب #'+o.num+' في طريقه للاستلام');render()};
+$('#theme').onclick=function(){var r=document.documentElement,d=r.dataset.theme?r.dataset.theme==='dark':!matchMedia('(prefers-color-scheme:light)').matches;r.dataset.theme=d?'light':'dark'};
+function clock(){var d=new Date();$('#clock').textContent=d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});$('#wt').textContent=d.toLocaleTimeString('ar',{hour:'2-digit',minute:'2-digit'});$('#date').textContent=d.toLocaleDateString('ar',{weekday:'long',day:'numeric',month:'long'});render()}
+orders.push({id:seq++,num:'41',name:'سارة',note:'برجر دجاج + بطاطس',status:'waiting',rings:0,armed:false,created:Date.now()-420000});
+orders.push({id:seq++,num:'42',name:'أحمد',note:'كومبو دجاج',status:'ringing',rings:1,armed:false,created:Date.now()-300000});
+orders.push({id:seq++,num:'40',name:'خالد',note:'2 برجر',status:'onway',rings:2,armed:true,created:Date.now()-900000});
+sel=2;clock();setInterval(clock,30000);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1220">
+<title>بيجر #{{ order.order_number }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="/static/img/brand-logo.png">
+<style>
+:root{
+  --wait:#ffb547;--ring:#ff4d6d;--go:#8b7bff;--done:#36d9a0;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%}
+body{
+  width:100%;
+  min-height:100dvh;
+  background:radial-gradient(120% 70% at 80% 0,#4a3ba8,transparent 60%),radial-gradient(100% 60% at 0 100%,#7a2358,transparent 60%),#0f1220;
+  color:#fff;
+  font-family:"Readex Pro",system-ui,sans-serif;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  align-items:center;
+  padding:calc(16px + env(safe-area-inset-top, 0px)) 20px calc(24px + env(safe-area-inset-bottom, 0px));
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  transition:background 0.3s;
+  position:relative;
+}
+
+body.ring{
+  animation:flash .6s infinite alternate, shake .45s infinite;
+}
+@keyframes flash{
+  from{background:radial-gradient(120% 80% at 50% 40%,#7a0f26,transparent 70%),#1a0610}
+  to{background:radial-gradient(120% 80% at 50% 40%,#ff4d6d,transparent 70%),#4a0a1a}
+}
+@keyframes shake{
+  0%,100%{transform:none}
+  25%{transform:translateX(-3px) rotate(-.5deg)}
+  75%{transform:translateX(3px) rotate(.5deg)}
+}
+
+/* Full-Screen Camera Strobe Light Flash Effect */
+.strobe-flash-layer{
+  position:fixed;
+  inset:0;
+  background:#fff;
+  pointer-events:none;
+  opacity:0;
+  z-index:99;
+  transition:opacity 0.05s;
+}
+body.ring .strobe-flash-layer{
+  animation:camera-strobe 0.28s infinite alternate;
+}
+@keyframes camera-strobe{
+  0%{opacity:0}
+  50%{opacity:0.88}
+  100%{opacity:0}
+}
+
+/* Top Clock & Date */
+.top-lock-section{
+  text-align:center;
+  margin-top:10px;
+  width:100%;
+  position:relative;
+  z-index:2;
+}
+.lock-clock{
+  font-size:72px;
+  font-weight:200;
+  letter-spacing:-2.5px;
+  line-height:1;
+  direction:ltr;
+}
+.lock-date{
+  font-size:14px;
+  opacity:.8;
+  margin-top:6px;
+  font-weight:400;
+}
+
+/* Center Widget */
+.widget-box{
+  width:100%;
+  max-width:390px;
+  margin:20px 0;
+  padding:22px;
+  border-radius:32px;
+  background:rgba(255,255,255,.13);
+  border:1px solid rgba(255,255,255,.22);
+  -webkit-backdrop-filter:blur(28px);
+  backdrop-filter:blur(28px);
+  box-shadow:0 20px 45px rgba(0,0,0,.35);
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  position:relative;
+  z-index:2;
+}
+
+/* Widget Header with Restaurant Logo & Name */
+.widget-header-brand{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+}
+.brand-left-info{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.brand-logo-img{
+  width:42px;
+  height:42px;
+  border-radius:12px;
+  background:#fff;
+  padding:2px;
+  box-shadow:0 4px 15px rgba(0,0,0,.4);
+  border:1.5px solid rgba(255,255,255,.3);
+  object-fit:contain;
+}
+.brand-text-col h3{
+  font-size:16px;
+  font-weight:700;
+  color:#fff;
+  line-height:1.2;
+}
+.brand-text-col span{
+  font-size:11.5px;
+  opacity:.75;
+}
+.live-time-chip{
+  font-size:12px;
+  direction:ltr;
+  background:rgba(255,255,255,.1);
+  padding:4px 10px;
+  border-radius:12px;
+  font-weight:600;
+}
+
+/* Customer & Meal details line */
+.customer-badge-line{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:2px;
+}
+.info-chip{
+  font-size:12px;
+  background:rgba(255,255,255,.09);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:12px;
+  padding:4px 10px;
+  color:#f1f5f9;
+}
+.info-chip strong{
+  color:#fff;
+}
+
+.widget-order-num{
+  font-size:104px;
+  font-weight:700;
+  letter-spacing:-5px;
+  text-align:center;
+  line-height:1;
+  direction:ltr;
+  margin:4px 0 2px;
+  font-variant-numeric:tabular-nums;
+  text-shadow:0 0 35px rgba(255,255,255,.2);
+}
+
+.widget-status-title{
+  text-align:center;
+  font-size:21px;
+  font-weight:700;
+}
+
+.widget-status-sub{
+  text-align:center;
+  font-size:13.5px;
+  opacity:.8;
+  line-height:1.7;
+}
+
+/* 3-Step Indicator */
+.widget-steps{
+  display:flex;
+  gap:8px;
+  padding-top:8px;
+}
+.widget-steps i{
+  flex:1;
+  height:5px;
+  border-radius:3px;
+  background:rgba(255,255,255,.22);
+  transition:background .3s;
+}
+.widget-steps i.on{
+  background:#fff;
+  box-shadow:0 0 8px rgba(255,255,255,.6);
+}
+
+/* Buttons */
+.widget-btn{
+  height:54px;
+  border-radius:18px;
+  background:#fff;
+  color:#0d1120;
+  font-weight:700;
+  font-size:16px;
+  border:0;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  margin-top:6px;
+  box-shadow:0 8px 24px rgba(0,0,0,.3);
+  transition:transform .15s;
+}
+.widget-btn:active{transform:scale(.97)}
+.widget-btn.green{
+  background:#36d9a0;
+  color:#03261a;
+  box-shadow:0 8px 24px rgba(54,217,160,.4);
+  animation:btn-glow 1.4s infinite;
+}
+@keyframes btn-glow{
+  0%,100%{box-shadow:0 0 15px rgba(54,217,160,.5)}
+  50%{box-shadow:0 0 30px rgba(54,217,160,.8)}
+}
+
+/* Bottom hint */
+.bottom-bar-hint{
+  text-align:center;
+  font-size:12px;
+  opacity:.65;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  margin-bottom:6px;
+  position:relative;
+  z-index:2;
+}
+.bottom-bar-hint span{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#36d9a0;
+  box-shadow:0 0 8px #36d9a0;
+}
+[hidden]{display:none!important}
+</style>
+</head>
+<body id="pageBody">
+
+  <!-- Full-Screen High Intensity Strobe Flash Overlay -->
+  <div class="strobe-flash-layer" id="strobeLayer"></div>
+
+  <!-- Top Real Clock & Arabic Date -->
+  <div class="top-lock-section">
+    <div class="lock-clock" id="clock">00:00</div>
+    <div class="lock-date" id="date">السبت، 31 أكتوبر</div>
+  </div>
+
+  <!-- The Actual Pager Widget Box -->
+  <div class="widget-box">
+    
+    <!-- Restaurant Branding Header with Real Logo & Restaurant Name -->
+    <div class="widget-header-brand">
+      <div class="brand-left-info">
+        <img id="pageLogoImg" src="/static/img/brand-logo.png" alt="شعار المطعم" class="brand-logo-img">
+        <div class="brand-text-col">
+          <h3>مطعم البرجر الذهبي</h3>
+          <span>بيجر الطلبات الذكي</span>
+        </div>
+      </div>
+      <div class="live-time-chip" id="wt">05:11 م</div>
+    </div>
+
+    <!-- Customer Name & Order details (if entered by cashier) -->
+    <div class="customer-badge-line">
+      {% if order.customer_name %}
+        <div class="info-chip">👤 العميل: <strong>{{ order.customer_name }}</strong></div>
+      {% endif %}
+      {% if order.notes %}
+        <div class="info-chip">📝 <strong>{{ order.notes }}</strong></div>
+      {% endif %}
+    </div>
+
+    <!-- Big Order Number -->
+    <div class="widget-order-num" id="wn">#{{ order.order_number }}</div>
+    <div class="widget-status-title" id="ws">طلبك قيد التحضير</div>
+    <div class="widget-status-sub" id="wu">سنهتز ونرن فور أن يجهز</div>
+
+    <div class="widget-steps" id="stp">
+      <i class="on"></i>
+      <i class="{% if order.status in ['waiting', 'ringing', 'onway', 'done'] %}on{% endif %}"></i>
+      <i class="{% if order.status in ['ringing', 'onway', 'done'] %}on{% endif %}"></i>
+    </div>
+
+    <button class="widget-btn" id="armBtn">⚡ تفعيل البيجر والاهتزاز والفلاش</button>
+    <button class="widget-btn green" id="onwayBtn" hidden>🏃‍♂️ أنا في طريقي للاستلام</button>
+  </div>
+
+  <!-- Bottom Connection Status -->
+  <div class="bottom-bar-hint">
+    <span></span> متصل لحظياً بالكاشير
+  </div>
+
+  <!-- Preloaded Audio Elements -->
+  <audio id="buzzerSound" src="/static/audio/buzzer.wav" preload="auto" playsinline></audio>
+  <audio id="silentLoop" src="/static/audio/silent.wav" preload="auto" loop playsinline></audio>
+
+  <!-- High-res Base64 Logos for Lock Screen -->
+  <script src="/static/img/logos_b64.js"></script>
+
+<script>
+(function(){
+var order = {
+  id: {{ order.id }},
+  num: "{{ order.order_number }}",
+  name: "{{ order.customer_name or '' }}",
+  note: "{{ order.notes or '' }}",
+  status: "{{ order.status }}",
+  token: "{{ token }}"
+};
+
+var isArmed = false;
+var ctx = null;
+var beepTimer = null;
+var vibrateInterval = null;
+var torchInterval = null;
+var torchTrack = null;
+var torchState = false;
+var ws = null;
+
+var pageBody = document.getElementById("pageBody");
+var armBtn = document.getElementById("armBtn");
+var onwayBtn = document.getElementById("onwayBtn");
+var wsEl = document.getElementById("ws");
+var wuEl = document.getElementById("wu");
+var stpChildren = document.getElementById("stp").children;
+var buzzerSound = document.getElementById("buzzerSound");
+var silentLoop = document.getElementById("silentLoop");
+var pageLogoImg = document.getElementById("pageLogoImg");
+
+// Camera Flashlight (Torch API) initializer
+async function initCameraTorch(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+  try {
+    var stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" } }
+    });
+    var track = stream.getVideoTracks()[0];
+    var cap = track.getCapabilities ? track.getCapabilities() : {};
+    if(cap.torch){
+      torchTrack = track;
+    } else {
+      track.stop();
+    }
+  } catch(e){
+    console.log("Camera torch not available or denied:", e);
+  }
+}
+
+function startTorchStrobe(){
+  if(!torchTrack) return;
+  clearInterval(torchInterval);
+  torchInterval = setInterval(async function(){
+    try {
+      torchState = !torchState;
+      await torchTrack.applyConstraints({
+        advanced: [{ torch: torchState }]
+      });
+    } catch(e){}
+  }, 250);
+}
+
+function stopTorchStrobe(){
+  clearInterval(torchInterval);
+  if(torchTrack){
+    try {
+      torchTrack.applyConstraints({ advanced: [{ torch: false }] });
+    } catch(e){}
+  }
+}
+
+function beepSynth(){
+  if(!ctx) return;
+  try {
+    if(ctx.state === "suspended") ctx.resume();
+    // High-frequency buzzer chirps
+    [2400, 850].forEach(function(f, i){
+      var o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + i * .18;
+      o.type = 'square';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(.0001, t);
+      g.gain.exponentialRampToValueAtTime(.4, t + .02);
+      g.gain.exponentialRampToValueAtTime(.0001, t + .16);
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start(t);
+      o.stop(t + .18);
+    });
+
+    // Sub-bass haptic rumble (55Hz) to physically vibrate the iPhone/Android speaker chassis!
+    var hapticOsc = ctx.createOscillator();
+    var hapticGain = ctx.createGain();
+    hapticOsc.type = 'sine';
+    hapticOsc.frequency.value = 55;
+    hapticGain.gain.setValueAtTime(0.001, ctx.currentTime);
+    hapticGain.gain.exponentialRampToValueAtTime(1.0, ctx.currentTime + 0.05);
+    hapticGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+    hapticOsc.connect(hapticGain);
+    hapticGain.connect(ctx.destination);
+    hapticOsc.start(ctx.currentTime);
+    hapticOsc.stop(ctx.currentTime + 0.45);
+  } catch(e){}
+}
+
+function startRingingAlarm(){
+  pageBody.classList.add("ring");
+
+  // 1. Update on-screen logo to red flashing badge
+  if(pageLogoImg) pageLogoImg.src = "/static/img/brand-ready.png";
+
+  // 2. Update MediaSession with absolute Base64 Logo for Lock Screen
+  updateMediaSession(true);
+
+  // 3. Play loud buzzer audio loop
+  try {
+    buzzerSound.currentTime = 0;
+    buzzerSound.loop = true;
+    buzzerSound.volume = 1.0;
+    var p = buzzerSound.play();
+    if(p && p.catch) p.catch(function(e){ console.warn("Audio play blocked", e); });
+  } catch(e){}
+
+  // 4. Synthesizer & Haptic Sub-Bass loop
+  if(!beepTimer){
+    beepSynth();
+    beepTimer = setInterval(beepSynth, 1300);
+  }
+
+  // 5. Continuous Vibration Loop (Android & Supported Browsers)
+  try {
+    clearInterval(vibrateInterval);
+    if(navigator.vibrate){
+      navigator.vibrate([400, 150, 400, 150, 600]);
+      vibrateInterval = setInterval(function(){
+        if(order.status === 'ringing'){
+          navigator.vibrate([400, 150, 400, 150, 600]);
+        }
+      }, 1700);
+    }
+  } catch(e){}
+
+  // 6. Camera Flashlight Strobe (Hardware Torch LED)
+  startTorchStrobe();
+}
+
+function stopRingingAlarm(){
+  pageBody.classList.remove("ring");
+  if(pageLogoImg) pageLogoImg.src = "/static/img/brand-logo.png";
+  clearInterval(beepTimer);
+  beepTimer = null;
+
+  // Stop vibration
+  clearInterval(vibrateInterval);
+  try {
+    if(navigator.vibrate) navigator.vibrate(0);
+  } catch(e){}
+
+  // Stop camera flash
+  stopTorchStrobe();
+
+  try {
+    buzzerSound.pause();
+    buzzerSound.currentTime = 0;
+  } catch(e){}
+}
+
+function updateMediaSession(isRinging){
+  if(!("mediaSession" in navigator)) return;
+
+  var logoB64 = (isRinging && window.BRAND_READY_B64) ? window.BRAND_READY_B64 : (window.BRAND_LOGO_B64 || (window.location.origin + "/static/img/brand-logo.png"));
+
+  try {
+    var custPart = order.name ? (" (" + order.name + ")") : "";
+    if(isRinging){
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: "🚨 طلبك #" + order.num + custPart + " جاهز للاستلام!",
+        artist: "مطعم البرجر الذهبي 🍔",
+        album: "تفضل إلى الكاونتر للاستلام الآن",
+        artwork: [
+          { src: logoB64, sizes: "512x512", type: "image/png" }
+        ]
+      });
+    } else {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: "⏳ طلبك #" + order.num + custPart + " - قيد التحضير",
+        artist: "مطعم البرجر الذهبي 🍔",
+        album: order.name ? ("العميل: " + order.name) : "سنهتز ونرن فور أن يجهز طلبك",
+        artwork: [
+          { src: logoB64, sizes: "512x512", type: "image/png" }
+        ]
+      });
+    }
+
+    navigator.mediaSession.playbackState = "playing";
+
+    ['previoustrack', 'nexttrack', 'seekbackward', 'seekforward'].forEach(function(act){
+      try { navigator.mediaSession.setActionHandler(act, null); } catch(e){}
+    });
+
+    navigator.mediaSession.setActionHandler("pause", function(){
+      if(onwayBtn && !onwayBtn.hidden) onwayBtn.click();
+    });
+    navigator.mediaSession.setActionHandler("stop", function(){
+      if(onwayBtn && !onwayBtn.hidden) onwayBtn.click();
+    });
+  } catch(e){}
+}
+
+function updateUI(){
+  var isRinging = order.status === 'ringing';
+  var isDone = order.status === 'done';
+  var isOnway = order.status === 'onway';
+
+  if(isRinging && isArmed){
+    startRingingAlarm();
+  } else {
+    stopRingingAlarm();
+  }
+
+  armBtn.hidden = isArmed || isDone;
+  onwayBtn.hidden = !(isArmed && isRinging);
+
+  var m = {
+    waiting: ['طلبك قيد التحضير', 'سنهتز ونرن فور أن يجهز'],
+    ringing: ['طلبك جاهز! 🎉', 'تفضل إلى الكاونتر للاستلام'],
+    onway: ['أبلغنا الكاشير', 'الكاشير يعلم أنك قادم'],
+    done: ['تم الاستلام', 'بالعافية! شكراً لزيارتك']
+  }[order.status] || ['قيد الانتظار', ''];
+
+  var ok = isArmed || isDone;
+  wsEl.textContent = ok ? m[0] : 'اضغط لتفعيل الصوت';
+  wuEl.textContent = ok ? m[1] : 'انقر على الزر أدناه لتفعيل الصوت والاهتزاز والفلاش';
+
+  var lvl = {waiting: 1, ringing: 2, onway: 3, done: 3}[order.status] || 1;
+  for(var i = 0; i < 3; i++){
+    stpChildren[i].className = i < lvl ? 'on' : '';
+  }
+}
+
+// User tap to Arm (Unlocks AudioContext, media session, wakeLock, vibration, and Camera Torch)
+armBtn.onclick = async function(){
+  isArmed = true;
+
+  // 1. Initialize & unlock Web Audio Context
+  try {
+    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+    if(ctx.state === "suspended") await ctx.resume();
+  } catch(e){}
+
+  // 2. Unlock buzzer audio element directly inside user gesture!
+  try {
+    buzzerSound.volume = 0.01;
+    var p1 = buzzerSound.play();
+    if(p1){
+      await p1;
+      buzzerSound.pause();
+      buzzerSound.currentTime = 0;
+    }
+  } catch(e){}
+
+  // 3. Play chime to confirm sound is working to user
+  try {
+    var chime = new Audio("/static/audio/chime.wav");
+    chime.play().catch(function(){});
+  } catch(e){}
+
+  // 4. Initialize Hardware Camera Torch LED if available
+  initCameraTorch();
+
+  // 5. Start background silent audio to hold MediaSession alive with Base64 Logo
+  try {
+    updateMediaSession(false);
+    silentLoop.volume = 0.05;
+    await silentLoop.play();
+  } catch(e){}
+
+  // 6. Test vibration
+  try {
+    if(navigator.vibrate) navigator.vibrate([150, 70, 150]);
+  } catch(e){}
+
+  // 7. Request Screen WakeLock
+  if(window.isSecureContext && "wakeLock" in navigator){
+    try { navigator.wakeLock.request("screen"); } catch(e){}
+  }
+
+  updateUI();
+};
+
+onwayBtn.onclick = async function(){
+  order.status = "onway";
+  stopRingingAlarm();
+  updateUI();
+
+  if(ws && ws.readyState === WebSocket.OPEN){
+    ws.send(JSON.stringify({action: "onway"}));
+  }
+  try {
+    await fetch("/api/orders/" + order.id + "/onway", {method: "POST"});
+  } catch(e){}
+};
+
+// Wakeup on Screen Touch / Visibility Change
+document.addEventListener("visibilitychange", function(){
+  if(document.visibilityState === "visible"){
+    if(order.status === "ringing" && isArmed){
+      startRingingAlarm();
+    }
+  }
+});
+window.addEventListener("focus", function(){
+  if(order.status === "ringing" && isArmed){
+    startRingingAlarm();
+  }
+});
+
+function clock(){
+  var d = new Date();
+  document.getElementById("clock").textContent = d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+  document.getElementById("wt").textContent = d.toLocaleTimeString('ar', {hour:'2-digit', minute:'2-digit'});
+  document.getElementById("date").textContent = d.toLocaleDateString('ar', {weekday:'long', day:'numeric', month:'long'});
+}
+clock();
+setInterval(clock, 1000);
+
+function connectWS(){
+  var protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  var wsUrl = protocol + "//" + window.location.host + "/ws/pager/" + order.token;
+
+  try {
+    ws = new WebSocket(wsUrl);
+    ws.onmessage = function(event){
+      try {
+        var data = JSON.parse(event.data);
+        if(data.order){
+          order.status = data.order.status;
+          updateUI();
+        }
+      } catch(e){}
+    };
+    ws.onclose = function(){ setTimeout(connectWS, 3000); };
+  } catch(e){
+    setTimeout(connectWS, 4000);
+  }
+}
+
+function startPolling(){
+  setInterval(async function(){
+    if(!ws || ws.readyState !== WebSocket.OPEN){
+      try {
+        var res = await fetch("/api/orders");
+        if(res.ok){
+          var list = await res.json();
+          var curr = list.find(function(o){ return o.token === order.token });
+          if(curr && curr.status !== order.status){
+            order.status = curr.status;
+            updateUI();
+          }
+        }
+      } catch(e){}
+    }
+  }, 2000);
+}
+
+connectWS();
+startPolling();
+updateUI();
+})();
+</script>
+</body>
+</html>
