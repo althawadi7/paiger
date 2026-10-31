@@ -150,3 +150,83 @@ def delete_push_subscription(endpoint: str):
         cursor = conn.cursor()
         cursor.execute("DELETE FROM push_subscriptions WHERE endpoint = ?", (endpoint,))
         conn.commit()
+
+def format_arabic_time(total_minutes: int) -> str:
+    if total_minutes <= 0:
+        return 'أقل من دقيقة'
+    if total_minutes == 1:
+        return 'دقيقة واحدة'
+    if total_minutes == 2:
+        return 'دقيقتان'
+    if 3 <= total_minutes <= 10:
+        return f'{total_minutes} دقائق'
+    if 11 <= total_minutes < 60:
+        return f'{total_minutes} دقيقة'
+    
+    hours = total_minutes // 60
+    mins = total_minutes % 60
+    
+    h_str = '1 ساعة' if hours == 1 else ('ساعتان' if hours == 2 else f'{hours} ساعات')
+    if mins == 0:
+        return h_str
+    if mins == 1:
+        return f'{h_str} ودقيقة'
+    if mins == 2:
+        return f'{h_str} ودقيقتان'
+    if 3 <= mins <= 10:
+        return f'{h_str} و {mins} دقائق'
+    return f'{h_str} و {mins} دقيقة'
+
+def get_order_queue_info(order_id: int):
+    order = get_order_by_id(order_id)
+    if not order:
+        return {"orders_ahead": 0, "estimated_wait": "0 دقيقة", "avg_prep_mins": 6.0}
+
+    status = order["status"]
+    if status in ("ringing", "onway", "done"):
+        return {
+            "orders_ahead": 0,
+            "estimated_wait": "جاهز للاستلام الآن! 🎉" if status != "done" else "تم الاستلام",
+            "avg_prep_mins": 0
+        }
+
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        
+        # 1. Count active orders ahead of this order in waiting queue
+        cursor.execute(
+            """
+            SELECT COUNT(*) FROM orders 
+            WHERE status = 'waiting' AND id < ?
+            """,
+            (order_id,)
+        )
+        orders_ahead = cursor.fetchone()[0]
+
+        # 2. Calculate average prep time based on completed orders
+        cursor.execute(
+            """
+            SELECT 
+                AVG((strftime('%s', completed_at) - strftime('%s', created_at)) / 60.0) as avg_mins
+            FROM orders 
+            WHERE status = 'done' AND completed_at IS NOT NULL AND created_at IS NOT NULL
+            """
+        )
+        row = cursor.fetchone()
+        avg_mins = row["avg_mins"] if row and row["avg_mins"] else None
+
+        # Fallback to realistic standard prep time (e.g. 6 mins) if no orders completed yet
+        if not avg_mins or avg_mins <= 0 or avg_mins > 90:
+            avg_mins = 6.0
+        else:
+            avg_mins = round(float(avg_mins), 1)
+
+        # 3. Estimated minutes = (orders_ahead + 1) * average prep time
+        est_total_mins = max(2, round((orders_ahead + 1) * avg_mins))
+        est_wait_str = format_arabic_time(est_total_mins)
+
+        return {
+            "orders_ahead": orders_ahead,
+            "estimated_wait": est_wait_str,
+            "avg_prep_mins": avg_mins
+        }

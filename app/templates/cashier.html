@@ -199,7 +199,12 @@ dialog::backdrop{background:rgba(3,5,10,.7);backdrop-filter:blur(8px)}
       <img id="modalQrImg" src="" alt="QR Code">
     </div>
 
-    <div style="display:flex; flex-direction:column; gap:10px; margin-top:20px;">
+    <label style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:12.5px; color:var(--text); margin-top:12px; cursor:pointer; background:rgba(255,255,255,0.06); padding:8px 12px; border-radius:12px; border:1px solid rgba(255,181,71,0.25);">
+      <input type="checkbox" id="httpsQrToggle" checked style="accent-color:#ffb547; width:17px; height:17px;">
+      <span>🔒 رابط آمن مشفر (HTTPS) لتشغيل فلاش الكاميرا الحقيقي</span>
+    </label>
+
+    <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px;">
       <a id="modalQrOpenLink" class="go" target="_blank" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
         <span>🚀</span> فتح البيجر للتجربة المباشرة
       </a>

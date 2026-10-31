@@ -120,8 +120,9 @@ async def index():
 @app.get("/cashier", response_class=HTMLResponse)
 async def cashier_page(request: Request):
     local_ip = get_local_ip()
-    port = request.url.port or 8000
-    base_url = f"http://{local_ip}:{port}"
+    scheme = request.url.scheme
+    port = request.url.port or (443 if scheme == "https" else 80)
+    base_url = f"{scheme}://{local_ip}:{port}"
     return templates.TemplateResponse(
         "cashier.html", 
         {"request": request, "local_ip": local_ip, "port": port, "base_url": base_url}
@@ -142,11 +143,19 @@ async def pager_page(request: Request, token: str):
             status_code=404
         )
     local_ip = get_local_ip()
-    port = request.url.port or 8000
-    base_url = f"http://{local_ip}:{port}"
+    scheme = request.url.scheme
+    port = request.url.port or (443 if scheme == "https" else 80)
+    base_url = f"{scheme}://{local_ip}:{port}"
+    queue_info = db.get_order_queue_info(order["id"])
     return templates.TemplateResponse(
         "pager.html",
-        {"request": request, "order": order, "token": token, "base_url": base_url}
+        {
+            "request": request, 
+            "order": order, 
+            "token": token, 
+            "base_url": base_url,
+            "queue_info": queue_info
+        }
     )
 
 @app.get("/api/pager/{token}/status")
@@ -154,12 +163,15 @@ async def get_pager_status(token: str):
     order = db.get_order_by_token(token)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    q_info = db.get_order_queue_info(order["id"])
     return {
         "id": order["id"],
         "order_number": order["order_number"],
         "customer_name": order["customer_name"],
         "notes": order["notes"],
-        "status": order["status"]
+        "status": order["status"],
+        "orders_ahead": q_info["orders_ahead"],
+        "estimated_wait": q_info["estimated_wait"]
     }
 
 # Orders REST APIs
@@ -284,9 +296,11 @@ async def websocket_pager(websocket: WebSocket, token: str):
     await manager.connect_pager(token, websocket)
     order = db.get_order_by_token(token)
     if order:
+        q_info = db.get_order_queue_info(order["id"])
         await websocket.send_text(json.dumps({
             "event": "connected",
-            "order": order
+            "order": order,
+            "queue_info": q_info
         }))
     try:
         while True:

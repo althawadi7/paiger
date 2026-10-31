@@ -94,3 +94,4 @@ async def notify_order_push(order: dict):
     loop = asyncio.get_event_loop()
     for sub in subs:
         loop.run_in_executor(None, send_push_to_subscription, sub, payload)
+
