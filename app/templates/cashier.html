@@ -5,101 +5,502 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>لوحة الكاشير - نظام البيجر الذكي</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📟</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="/static/img/brand-logo.png">
 <style>
 :root{
-  --bg:#08090d;--s1:#101319;--s2:#171b24;--line:rgba(255,255,255,.07);--ink:#f3f5f9;--mute:#8a93a6;
-  --wait:#ffb547;--ring:#ff4d6d;--go:#8b7bff;--done:#36d9a0;--shadow:0 20px 50px rgba(0,0,0,.35);color-scheme:dark}
+  --bg:#090b11;--s1:#121622;--s2:#192030;--line:rgba(255,255,255,.09);--ink:#f8fafc;--mute:#94a3b8;
+  --wait:#ffb547;--ring:#ff4d6d;--go:#8b7bff;--done:#36d9a0;
+  --shadow:0 20px 48px rgba(0,0,0,.45);
+  color-scheme:dark;
+}
 :root[data-theme="light"]{
-  --bg:#f2f3f7;--s1:#fff;--s2:#f3f4f8;--line:rgba(10,15,30,.08);--ink:#0d1120;--mute:#6a7388;
-  --wait:#e59200;--ring:#e8284c;--go:#6551f0;--done:#10a877;--shadow:0 20px 50px rgba(30,40,80,.12);color-scheme:light}
-*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
-:root{padding-top:env(safe-area-inset-top,0px)}
-html,body{background:var(--bg)}
-body{color:var(--ink);font-family:"Readex Pro",system-ui,sans-serif;font-size:14px;min-height:100vh;padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))}
+  --bg:#f1f5f9;--s1:#ffffff;--s2:#f8fafc;--line:rgba(15,23,42,.08);--ink:#0f172a;--mute:#64748b;
+  --wait:#d97706;--ring:#e11d48;--go:#6366f1;--done:#059669;
+  --shadow:0 16px 36px rgba(15,23,42,.08);
+  color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"Readex Pro",system-ui,-apple-system,sans-serif;
+  font-size:14px;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  overflow-x:hidden;
+  position:relative;
+}
 button,input{font:inherit;color:inherit;border:0;background:none}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--go);outline-offset:2px}
-.glow{position:fixed;inset:0;pointer-events:none;background:radial-gradient(700px 350px at 85% -5%,color-mix(in srgb,var(--go) 18%,transparent),transparent),radial-gradient(600px 350px at 5% 0,color-mix(in srgb,var(--ring) 12%,transparent),transparent)}
-.wrap{position:relative;max-width:1380px;margin:0 auto;padding:20px}
 
-/* top bar */
-.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;flex-wrap:wrap}
-.brand{display:flex;align-items:center;gap:14px;min-width:0}
-.mark{width:46px;height:46px;border-radius:14px;flex:none;background:linear-gradient(135deg,var(--ring),var(--go));display:grid;place-items:center;box-shadow:0 8px 24px color-mix(in srgb,var(--ring) 40%,transparent)}
-.mark svg{width:24px;height:24px}
-.brand h1{font-size:20px;font-weight:700;letter-spacing:-.2px}
-.brand p{color:var(--mute);font-size:12.5px;margin-top:2px}
-.right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.net{display:flex;align-items:center;gap:8px;padding:9px 16px;border-radius:999px;background:var(--s1);border:1px solid var(--line);font-size:12.5px;color:var(--mute)}
+/* Ambient Radial Glow */
+.glow{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(900px 500px at 50% -10%, color-mix(in srgb, var(--go) 16%, transparent), transparent 70%),
+    radial-gradient(800px 500px at 10% 20%, color-mix(in srgb, var(--ring) 12%, transparent), transparent 70%),
+    radial-gradient(700px 400px at 90% 40%, color-mix(in srgb, var(--wait) 10%, transparent), transparent 70%);
+  z-index:0;
+}
+
+/* Centered Responsive Container with Balanced Vertical Spacing */
+.wrap{
+  position:relative;
+  z-index:1;
+  width:100%;
+  max-width:1320px;
+  margin:0 auto;
+  padding:32px 24px 64px;
+  display:flex;
+  flex-direction:column;
+  gap:26px;
+}
+
+/* 1. Header Bar */
+.bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  background:color-mix(in srgb, var(--s1) 85%, transparent);
+  -webkit-backdrop-filter:blur(24px);
+  backdrop-filter:blur(24px);
+  border:1px solid var(--line);
+  border-radius:26px;
+  padding:14px 22px;
+  box-shadow:var(--shadow);
+  flex-wrap:wrap;
+}
+.brand{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.mark{
+  width:48px;
+  height:48px;
+  border-radius:16px;
+  background:linear-gradient(135deg, var(--ring), var(--go));
+  display:grid;
+  place-items:center;
+  box-shadow:0 8px 24px color-mix(in srgb, var(--ring) 40%, transparent);
+}
+.mark img{
+  width:32px;
+  height:32px;
+  object-fit:contain;
+}
+.brand-text h1{
+  font-size:20px;
+  font-weight:700;
+  letter-spacing:-.3px;
+  line-height:1.2;
+}
+.brand-text p{
+  color:var(--mute);
+  font-size:12.5px;
+  margin-top:2px;
+}
+.right{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.net{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:9px 18px;
+  border-radius:999px;
+  background:var(--s2);
+  border:1px solid var(--line);
+  font-size:12.5px;
+  color:var(--mute);
+}
 .net b{color:var(--ink);font-weight:600;direction:ltr}
-.live{width:8px;height:8px;border-radius:50%;background:var(--done);box-shadow:0 0 0 0 var(--done);animation:live 2s infinite}
+.live{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--done);
+  box-shadow:0 0 0 0 var(--done);
+  animation:live 2s infinite;
+}
 @keyframes live{70%{box-shadow:0 0 0 8px transparent}}
-.ib{width:44px;height:44px;border-radius:14px;background:var(--s1);border:1px solid var(--line);display:grid;place-items:center;font-size:17px}
-.add{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--ring),var(--go));color:#fff;font-weight:600;padding:0 20px;height:44px;border-radius:14px;box-shadow:0 6px 20px color-mix(in srgb,var(--ring) 35%,transparent);transition:transform .15s}
+.ib{
+  width:46px;
+  height:46px;
+  border-radius:16px;
+  background:var(--s2);
+  border:1px solid var(--line);
+  display:grid;
+  place-items:center;
+  font-size:18px;
+  transition:transform .15s, background .15s;
+}
+.ib:hover{background:color-mix(in srgb, var(--ink) 8%, var(--s2))}
+.add{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:linear-gradient(135deg, var(--ring), var(--go));
+  color:#fff;
+  font-weight:700;
+  font-size:14.5px;
+  padding:0 24px;
+  height:46px;
+  border-radius:16px;
+  box-shadow:0 8px 25px color-mix(in srgb, var(--ring) 40%, transparent);
+  transition:transform .15s, box-shadow .2s;
+}
 .add:active{transform:scale(.97)}
+.add:hover{box-shadow:0 10px 30px color-mix(in srgb, var(--ring) 55%, transparent)}
 
-/* full width stats */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
-.stat{background:var(--s1);border:1px solid var(--line);border-radius:20px;padding:18px 20px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
-.stat:after{content:"";position:absolute;inset-inline-end:-20px;top:-20px;width:90px;height:90px;border-radius:50%;background:var(--c);opacity:.14;filter:blur(10px)}
-.stat span{display:flex;align-items:center;gap:8px;color:var(--mute);font-size:12.5px}
-.stat span i{width:8px;height:8px;border-radius:50%;background:var(--c)}
-.stat strong{display:block;font-size:36px;font-weight:700;margin-top:8px;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink)}
+/* 2. Full-Width Stats Row */
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:16px;
+  width:100%;
+}
+.stat{
+  background:color-mix(in srgb, var(--s1) 90%, transparent);
+  -webkit-backdrop-filter:blur(20px);
+  backdrop-filter:blur(20px);
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:20px 22px;
+  position:relative;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+  transition:transform .2s, border-color .2s;
+}
+.stat:hover{
+  transform:translateY(-2px);
+  border-color:color-mix(in srgb, var(--c) 40%, var(--line));
+}
+.stat:after{
+  content:"";
+  position:absolute;
+  inset-inline-end:-20px;
+  top:-20px;
+  width:95px;
+  height:95px;
+  border-radius:50%;
+  background:var(--c);
+  opacity:.16;
+  filter:blur(14px);
+}
+.stat span{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--mute);
+  font-size:13px;
+  font-weight:500;
+}
+.stat span i{
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:var(--c);
+  box-shadow:0 0 8px var(--c);
+}
+.stat strong{
+  display:block;
+  font-size:40px;
+  font-weight:800;
+  margin-top:10px;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+  color:var(--ink);
+}
 
-/* filter tabs */
-.tabs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-bottom:18px;padding-bottom:2px}
+/* 3. Centered Navigation Filter Tabs */
+.tabs-wrap{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  width:100%;
+}
+.tabs{
+  display:inline-flex;
+  gap:8px;
+  padding:6px;
+  border-radius:999px;
+  background:color-mix(in srgb, var(--s1) 90%, transparent);
+  -webkit-backdrop-filter:blur(20px);
+  backdrop-filter:blur(20px);
+  border:1px solid var(--line);
+  box-shadow:0 8px 24px rgba(0,0,0,.2);
+  overflow-x:auto;
+  scrollbar-width:none;
+}
 .tabs::-webkit-scrollbar{display:none}
-.tabs button{flex:none;padding:10px 18px;border-radius:999px;background:var(--s1);border:1px solid var(--line);color:var(--mute);font-weight:500;transition:all .15s}
-.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:transparent;font-weight:600}
+.tabs button{
+  flex:none;
+  padding:10px 22px;
+  border-radius:999px;
+  color:var(--mute);
+  font-weight:600;
+  font-size:13.5px;
+  transition:all .2s;
+}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-pressed="true"]{
+  background:linear-gradient(135deg, var(--ring), var(--go));
+  color:#fff;
+  box-shadow:0 4px 16px color-mix(in srgb, var(--ring) 35%, transparent);
+}
 
-/* orders list - full width grid */
-.orders{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
-.card{background:var(--s1);border:1px solid var(--line);border-radius:24px;padding:20px;display:flex;flex-direction:column;gap:14px;position:relative;transition:transform .15s,border-color .15s;box-shadow:var(--shadow)}
-.card:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--c) 50%,var(--line))}
-.card.waiting{--c:var(--wait)}.card.ringing{--c:var(--ring)}.card.onway{--c:var(--go)}.card.done{--c:var(--done)}
-.card.ringing{background:linear-gradient(180deg,color-mix(in srgb,var(--ring) 16%,var(--s1)),var(--s1) 75%);animation:ringcard 1.3s infinite}
-@keyframes ringcard{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--ring) 20%,transparent)}}
-.card.done{opacity:.6}
-.row{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);padding:5px 12px;border-radius:999px}
-.pill:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--c)}
-.ago{font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
-.num{font-size:52px;font-weight:700;line-height:1;letter-spacing:-1.5px;direction:ltr;text-align:right;font-variant-numeric:tabular-nums}
-.who{display:flex;align-items:center;gap:12px;min-height:38px}
-.av{width:36px;height:36px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:700;font-size:14px;background:color-mix(in srgb,var(--c) 18%,var(--s2));color:var(--c)}
-.who div{min-width:0}.who b{display:block;font-weight:600;font-size:14px}.who small{color:var(--mute);font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.acts{display:flex;gap:8px;margin-top:auto}
-.btn{flex:1;height:44px;border-radius:14px;font-weight:600;font-size:13px;background:var(--s2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
-.btn:hover{background:color-mix(in srgb,var(--ink) 8%,var(--s2))}
-.btn.main{background:var(--c);color:#fff;border-color:transparent}
-.btn.sq{flex:0 0 44px;color:var(--mute)}
-.btn.sq:hover{color:var(--ink);border-color:color-mix(in srgb,var(--ink) 25%,transparent)}
-.btn.sq.qr-btn{color:var(--go);background:color-mix(in srgb,var(--go) 12%,var(--s2))}
-.btn.sq.qr-btn:hover{background:color-mix(in srgb,var(--go) 22%,var(--s2));color:#fff}
-.empty{grid-column:1/-1;padding:64px 16px;text-align:center;color:var(--mute);border:1px dashed var(--line);border-radius:24px}
+/* 4. Orders Grid - Centered & Responsive */
+.orders-container{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  width:100%;
+}
+.orders{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(320px, 370px));
+  justify-content:center;
+  gap:20px;
+  width:100%;
+}
+.card{
+  background:color-mix(in srgb, var(--s1) 92%, transparent);
+  -webkit-backdrop-filter:blur(24px);
+  backdrop-filter:blur(24px);
+  border:1.5px solid var(--line);
+  border-radius:28px;
+  padding:22px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  position:relative;
+  transition:transform .2s, border-color .2s, box-shadow .2s;
+  box-shadow:var(--shadow);
+}
+.card:hover{
+  transform:translateY(-3px);
+  border-color:color-mix(in srgb, var(--c) 50%, var(--line));
+}
+.card.waiting{--c:var(--wait)}
+.card.ringing{--c:var(--ring)}
+.card.onway{--c:var(--go)}
+.card.done{--c:var(--done)}
 
-/* dialog / sheets */
+.card.ringing{
+  background:linear-gradient(180deg, color-mix(in srgb, var(--ring) 18%, var(--s1)), var(--s1) 75%);
+  border-color:var(--ring);
+  animation:ringcard 1.4s infinite;
+}
+@keyframes ringcard{
+  0%,100%{box-shadow:0 0 0 0 color-mix(in srgb, var(--ring) 40%, transparent)}
+  50%{box-shadow:0 0 0 10px color-mix(in srgb, var(--ring) 15%, transparent)}
+}
+.card.done{opacity:.65}
+
+.card-top-row, .row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:12px;
+  font-weight:700;
+  color:var(--c);
+  background:color-mix(in srgb, var(--c) 16%, transparent);
+  border:1px solid color-mix(in srgb, var(--c) 30%, transparent);
+  padding:5px 12px;
+  border-radius:999px;
+}
+.pill:before{
+  content:"";
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--c);
+}
+.ago{
+  font-size:12px;
+  color:var(--mute);
+  font-variant-numeric:tabular-nums;
+  font-weight:500;
+}
+.num{
+  font-size:62px;
+  font-weight:800;
+  line-height:1;
+  letter-spacing:-2px;
+  direction:ltr;
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+  color:var(--ink);
+  margin:2px 0;
+}
+.who{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  background:var(--s2);
+  border:1px solid var(--line);
+  padding:10px 14px;
+  border-radius:18px;
+}
+.av{
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  flex:none;
+  display:grid;
+  place-items:center;
+  font-weight:700;
+  font-size:15px;
+  background:color-mix(in srgb, var(--c) 20%, var(--s1));
+  color:var(--c);
+}
+.who div{min-width:0;flex:1}
+.who b{display:block;font-weight:600;font-size:14px;line-height:1.3}
+.who small{color:var(--mute);font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+
+.acts{
+  display:flex;
+  gap:10px;
+  margin-top:auto;
+}
+.btn{
+  flex:1;
+  height:46px;
+  border-radius:15px;
+  font-weight:700;
+  font-size:13.5px;
+  background:var(--s2);
+  border:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  transition:all .15s;
+}
+.btn:hover{background:color-mix(in srgb, var(--ink) 8%, var(--s2))}
+.btn.main{
+  background:linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 80%, #000));
+  color:#fff;
+  border-color:transparent;
+  box-shadow:0 6px 18px color-mix(in srgb, var(--c) 35%, transparent);
+}
+.btn.main:hover{box-shadow:0 8px 24px color-mix(in srgb, var(--c) 50%, transparent)}
+.btn.sq{
+  flex:0 0 46px;
+  color:var(--mute);
+}
+.btn.sq:hover{color:var(--ink);border-color:color-mix(in srgb, var(--ink) 25%, transparent)}
+.btn.sq.qr-btn{
+  color:var(--go);
+  background:color-mix(in srgb, var(--go) 14%, var(--s2));
+  border-color:color-mix(in srgb, var(--go) 30%, transparent);
+}
+.btn.sq.qr-btn:hover{
+  background:color-mix(in srgb, var(--go) 26%, var(--s2));
+  color:#fff;
+}
+.btn.sq.del-btn:hover{
+  color:var(--ring);
+  border-color:color-mix(in srgb, var(--ring) 40%, transparent);
+  background:color-mix(in srgb, var(--ring) 12%, var(--s2));
+}
+
+.empty{
+  grid-column:1/-1;
+  max-width:540px;
+  margin:20px auto 0;
+  padding:48px 24px;
+  text-align:center;
+  color:var(--mute);
+  background:color-mix(in srgb, var(--s1) 60%, transparent);
+  border:2px dashed var(--line);
+  border-radius:32px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:14px;
+}
+.empty-icon{
+  width:72px;
+  height:72px;
+  border-radius:50%;
+  background:var(--s2);
+  display:grid;
+  place-items:center;
+  font-size:32px;
+  border:1px solid var(--line);
+}
+.empty h3{font-size:18px;font-weight:700;color:var(--ink)}
+.empty p{font-size:13.5px;line-height:1.6}
+
+/* Modals */
 dialog{border:0;background:none;color:var(--ink);margin:auto;padding:0;max-width:100vw}
-dialog::backdrop{background:rgba(3,5,10,.7);backdrop-filter:blur(8px)}
-.sheet{width:min(440px,94vw);background:var(--s1);border:1px solid var(--line);border-radius:28px;padding:26px;box-shadow:var(--shadow)}
-.sheet h2{font-size:20px;margin-bottom:4px}.sheet .sub{color:var(--mute);font-size:12.5px;margin-bottom:8px}
+dialog::backdrop{background:rgba(3,5,10,.75);backdrop-filter:blur(10px)}
+.sheet{
+  width:min(440px,94vw);
+  background:var(--s1);
+  border:1px solid var(--line);
+  border-radius:28px;
+  padding:26px;
+  box-shadow:var(--shadow);
+}
+.sheet h2{font-size:21px;font-weight:700;margin-bottom:4px}
+.sheet .sub{color:var(--mute);font-size:13px;margin-bottom:8px}
 .f{display:block;margin-top:14px;font-size:12.5px;color:var(--mute)}
-.f input{display:block;width:100%;margin-top:7px;height:48px;padding:0 14px;border-radius:14px;background:var(--s2);border:1px solid var(--line);color:var(--ink);font-size:15px}
+.f input{
+  display:block;
+  width:100%;
+  margin-top:7px;
+  height:48px;
+  padding:0 14px;
+  border-radius:14px;
+  background:var(--s2);
+  border:1px solid var(--line);
+  color:var(--ink);
+  font-size:15px;
+}
 .f input:focus{outline:2px solid var(--go);outline-offset:0}
-.go{width:100%;height:52px;margin-top:20px;border-radius:16px;font-weight:700;font-size:15px;color:#fff;background:linear-gradient(135deg,var(--ring),var(--go))}
+.go{
+  width:100%;
+  height:52px;
+  margin-top:20px;
+  border-radius:16px;
+  font-weight:700;
+  font-size:15px;
+  color:#fff;
+  background:linear-gradient(135deg,var(--ring),var(--go));
+  box-shadow:0 8px 24px color-mix(in srgb,var(--ring) 35%,transparent);
+}
 .go:active{transform:scale(.98)}
 
-/* dedicated QR modal box */
+/* Dedicated QR Modal Box */
 .qr-box-modal{
-  width:220px;
-  height:220px;
+  width:230px;
+  height:230px;
   margin:20px auto 0;
-  padding:12px;
+  padding:14px;
   background:#fff;
-  border-radius:22px;
-  box-shadow:0 12px 35px rgba(0,0,0,.45);
+  border-radius:24px;
+  box-shadow:0 14px 40px rgba(0,0,0,.5);
   display:flex;
   align-items:center;
   justify-content:center;
@@ -110,7 +511,7 @@ dialog::backdrop{background:rgba(3,5,10,.7);backdrop-filter:blur(8px)}
   object-fit:contain;
 }
 
-/* custom confirmation modal */
+/* Custom confirmation modal */
 .confirm-icon{
   width:64px;
   height:64px;
@@ -122,39 +523,63 @@ dialog::backdrop{background:rgba(3,5,10,.7);backdrop-filter:blur(8px)}
   border:1px solid color-mix(in srgb,var(--ring) 30%,transparent);
 }
 
-.toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top,0px));transform:translate(-50%,-160%);background:var(--ink);color:var(--bg);padding:12px 22px;border-radius:16px;font-weight:600;font-size:13.5px;z-index:100;max-width:92vw;transition:transform .35s cubic-bezier(.2,1,.3,1);box-shadow:var(--shadow)}
+.toast{
+  position:fixed;
+  left:50%;
+  top:calc(18px + env(safe-area-inset-top,0px));
+  transform:translate(-50%,-160%);
+  background:var(--ink);
+  color:var(--bg);
+  padding:12px 24px;
+  border-radius:18px;
+  font-weight:700;
+  font-size:13.5px;
+  z-index:100;
+  max-width:92vw;
+  transition:transform .35s cubic-bezier(.2,1,.3,1);
+  box-shadow:var(--shadow);
+}
 .toast.show{transform:translate(-50%,0)}
 
-@media (max-width:800px){
+@media (max-width:880px){
   .stats{grid-template-columns:repeat(2,1fr)}
-  .orders{grid-template-columns:1fr}
+  .wrap{padding:20px 16px 40px}
 }
-@media (max-width:520px){
-  .wrap{padding:12px}.brand p{display:none}
+@media (max-width:540px){
+  .stats{grid-template-columns:1fr 1fr}
+  .brand p{display:none}
   .net{display:none}
+  .num{font-size:52px}
+  .orders{grid-template-columns:1fr}
 }
 </style>
 </head>
 <body>
 <div class="glow"></div>
 <div class="wrap">
-  <!-- Top Bar -->
+
+  <!-- 1. Top Bar -->
   <header class="bar">
     <div class="brand">
-      <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></div>
-      <div>
+      <div class="mark">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+          <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+        </svg>
+      </div>
+      <div class="brand-text">
         <h1>لوحة تحكم الكاشير</h1>
-        <p>إدارة واستدعاء طلبات الزبائن (Web Pager)</p>
+        <p>إدارة واستدعاء طلبات الزبائن لحظياً (Web Pager)</p>
       </div>
     </div>
     <div class="right">
       <div class="net"><span class="live"></span>الشبكة <b>{{ local_ip }}:{{ port }}</b></div>
       <button class="ib" id="theme" aria-label="تبديل المظهر">◐</button>
-      <button class="add" id="open"><b style="font-size:18px;line-height:1">+</b><span>طلب جديد</span></button>
+      <button class="add" id="open"><b style="font-size:20px;line-height:1">+</b><span>طلب جديد</span></button>
     </div>
   </header>
 
-  <!-- Full-Width Stats -->
+  <!-- 2. Full-Width Stats -->
   <section class="stats">
     <div class="stat" style="--c:var(--wait)"><span><i></i>قيد التحضير</span><strong id="c-waiting">0</strong></div>
     <div class="stat" style="--c:var(--ring)"><span><i></i>جاهز ويرن الآن</span><strong id="c-ringing">0</strong></div>
@@ -162,26 +587,30 @@ dialog::backdrop{background:rgba(3,5,10,.7);backdrop-filter:blur(8px)}
     <div class="stat" style="--c:var(--done)"><span><i></i>تم الاستلام</span><strong id="c-done">0</strong></div>
   </section>
 
-  <!-- Filter Tabs -->
-  <nav class="tabs" id="tabs">
-    <button data-f="all" aria-pressed="true">الكل</button>
-    <button data-f="waiting" aria-pressed="false">قيد التحضير</button>
-    <button data-f="ringing" aria-pressed="false">جاهز ويرن</button>
-    <button data-f="onway" aria-pressed="false">في الطريق</button>
-    <button data-f="done" aria-pressed="false">تم الاستلام</button>
-  </nav>
+  <!-- 3. Centered Filter Tabs -->
+  <div class="tabs-wrap">
+    <nav class="tabs" id="tabs">
+      <button data-f="all" aria-pressed="true">الكل</button>
+      <button data-f="waiting" aria-pressed="false">قيد التحضير</button>
+      <button data-f="ringing" aria-pressed="false">جاهز ويرن</button>
+      <button data-f="onway" aria-pressed="false">في الطريق</button>
+      <button data-f="done" aria-pressed="false">تم الاستلام</button>
+    </nav>
+  </div>
 
-  <!-- Orders Grid -->
-  <main class="orders" id="orders">
-    <!-- Injected via JavaScript -->
-  </main>
+  <!-- 4. Centered & Responsive Orders Grid -->
+  <div class="orders-container">
+    <main class="orders" id="orders">
+      <!-- Injected via JavaScript -->
+    </main>
+  </div>
 </div>
 
 <!-- Modal 1: Create New Order -->
 <dialog id="dlg">
   <form class="sheet" method="dialog" id="form">
     <h2>طلب جديد</h2>
-    <div class="sub">أدخل تفاصيل الطلب لإصدار البيجر فوراً</div>
+    <div class="sub">أدخل تفاصيل الطلب لإصدار البيجر ورمز الـ QR فوراً</div>
     <label class="f">رقم الطلب (Order #)<input id="fnum" inputmode="numeric" required></label>
     <label class="f">اسم العميل (اختياري)<input id="fname" placeholder="مثال: أحمد"></label>
     <label class="f">ملاحظات / الوجبة<input id="fnote" placeholder="مثال: 2 برجر لحم + بطاطس"></label>
@@ -189,19 +618,19 @@ dialog::backdrop{background:rgba(3,5,10,.7);backdrop-filter:blur(8px)}
   </form>
 </dialog>
 
-<!-- Modal 2: QR Code Viewer (Clean, Dedicated & Scannable Anytime) -->
+<!-- Modal 2: QR Code Viewer -->
 <dialog id="qrDlg">
   <div class="sheet" style="max-width:420px; text-align:center;">
     <h2 id="modalQrTitle" style="font-size:22px; font-weight:700;">بيجر الطلب #42</h2>
-    <p style="color:var(--mute); font-size:13px; margin-top:4px;">امسح الكود بكاميرا الجوال (iPhone أو Android) لفتح البيجر:</p>
+    <p style="color:var(--mute); font-size:13px; margin-top:4px;">امسح الكود بكاميرا الجوال لفتح بيجر العميل:</p>
 
     <div class="qr-box-modal">
       <img id="modalQrImg" src="" alt="QR Code">
     </div>
 
-    <label style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:12.5px; color:var(--text); margin-top:12px; cursor:pointer; background:rgba(255,255,255,0.06); padding:8px 12px; border-radius:12px; border:1px solid rgba(255,181,71,0.25);">
+    <label style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:12.5px; color:var(--text); margin-top:14px; cursor:pointer; background:rgba(255,255,255,0.06); padding:9px 12px; border-radius:14px; border:1px solid rgba(255,181,71,0.25);">
       <input type="checkbox" id="httpsQrToggle" checked style="accent-color:#ffb547; width:17px; height:17px;">
-      <span>🔒 رابط آمن مشفر (HTTPS) لتشغيل فلاش الكاميرا الحقيقي</span>
+      <span>🔒 رابط آمن مشفر (HTTPS) لإشعارات الويب وشاشة القفل</span>
     </label>
 
     <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px;">
@@ -220,7 +649,7 @@ dialog::backdrop{background:rgba(3,5,10,.7);backdrop-filter:blur(8px)}
   </div>
 </dialog>
 
-<!-- Modal 3: Custom Dark Confirm Modal (Replaces ugly native browser confirm) -->
+<!-- Modal 3: Custom Dark Confirm Modal -->
 <dialog id="confirmDlg">
   <div class="sheet" style="max-width:390px; text-align:center;">
     <div class="confirm-icon">
@@ -246,7 +675,7 @@ dialog::backdrop{background:rgba(3,5,10,.7);backdrop-filter:blur(8px)}
   </div>
 </dialog>
 
-<!-- Modern Custom Toast -->
+<!-- Toast -->
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -339,28 +768,50 @@ function render(){
           +'</svg>'
         +'</button>'
         // Delete button
-        +'<button class="btn sq" data-a="del" data-id="'+o.id+'" data-num="'+esc(o.num)+'" title="حذف الطلب">'
+        +'<button class="btn sq del-btn" data-a="del" data-id="'+o.id+'" data-num="'+esc(o.num)+'" title="حذف الطلب">'
           +'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
             +'<polyline points="3 6 5 6 21 6"></polyline>'
             +'<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>'
           +'</svg>'
         +'</button>'
       +'</div></article>';
-  }).join('') : '<div class="empty">لا توجد طلبات هنا بعد.<br>اضغط «طلب جديد» لإصدار بيجر.</div>';
+  }).join('') : '<div class="empty"><div class="empty-icon">📟</div><h3>لا توجد طلبات هنا حالياً</h3><p>اضغط على زر «+ طلب جديد» بالأعلى لإصدار بيجر للزبون ومتابعة دوره لحظياً.</p></div>';
+}
+
+function getTargetBaseUrl(){
+  var isHttps = $('#httpsQrToggle') && $('#httpsQrToggle').checked;
+  var u = new URL(BASE_URL);
+  if (isHttps) {
+    u.protocol = "https:";
+    if (u.port === "8000") u.port = "8443";
+  } else {
+    u.protocol = "http:";
+    if (u.port === "8443") u.port = "8000";
+  }
+  return u.origin;
 }
 
 function showQrModal(token, num){
-  var qrUrl = "/api/qr/" + token + "?host=" + encodeURIComponent(BASE_URL) + "&t=" + Date.now();
-  var pagerUrl = BASE_URL + "/pager/" + token;
+  function updateQr(){
+    var targetBase = getTargetBaseUrl();
+    var qrUrl = "/api/qr/" + token + "?host=" + encodeURIComponent(targetBase) + "&t=" + Date.now();
+    var pagerUrl = targetBase + "/pager/" + token;
 
-  $('#modalQrTitle').textContent = "بيجر الطلب #" + num;
-  $('#modalQrImg').src = qrUrl;
-  $('#modalQrOpenLink').href = pagerUrl;
+    $('#modalQrTitle').textContent = "بيجر الطلب #" + num;
+    $('#modalQrImg').src = qrUrl;
+    $('#modalQrOpenLink').href = pagerUrl;
 
-  $('#modalQrCopyBtn').onclick = function(){
-    navigator.clipboard.writeText(pagerUrl);
-    toast("📋 تم نسخ الرابط بنجاح!");
-  };
+    $('#modalQrCopyBtn').onclick = function(){
+      navigator.clipboard.writeText(pagerUrl);
+      toast("📋 تم نسخ الرابط بنجاح!");
+    };
+  }
+
+  updateQr();
+
+  if ($('#httpsQrToggle')) {
+    $('#httpsQrToggle').onchange = updateQr;
+  }
 
   $('#qrDlg').showModal();
 }

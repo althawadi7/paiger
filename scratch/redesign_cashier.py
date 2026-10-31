@@ -1,0 +1,696 @@
+#!/usr/bin/env python3
+
+with open("app/templates/cashier.html", "r", encoding="utf-8") as f:
+    orig = f.read()
+
+# Read the script section from orig (starting from <script> to </script>)
+script_start = orig.find("<script>")
+script_section = orig[script_start:]
+
+new_cashier_html = """<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>لوحة الكاشير - نظام البيجر الذكي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="/static/img/brand-logo.png">
+<style>
+:root{
+  --bg:#090b11;--s1:#121622;--s2:#192030;--line:rgba(255,255,255,.09);--ink:#f8fafc;--mute:#94a3b8;
+  --wait:#ffb547;--ring:#ff4d6d;--go:#8b7bff;--done:#36d9a0;
+  --shadow:0 20px 48px rgba(0,0,0,.45);
+  color-scheme:dark;
+}
+:root[data-theme="light"]{
+  --bg:#f1f5f9;--s1:#ffffff;--s2:#f8fafc;--line:rgba(15,23,42,.08);--ink:#0f172a;--mute:#64748b;
+  --wait:#d97706;--ring:#e11d48;--go:#6366f1;--done:#059669;
+  --shadow:0 16px 36px rgba(15,23,42,.08);
+  color-scheme:light;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:"Readex Pro",system-ui,-apple-system,sans-serif;
+  font-size:14px;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  overflow-x:hidden;
+  position:relative;
+}
+button,input{font:inherit;color:inherit;border:0;background:none}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--go);outline-offset:2px}
+
+/* Ambient Radial Glow */
+.glow{
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(900px 500px at 50% -10%, color-mix(in srgb, var(--go) 16%, transparent), transparent 70%),
+    radial-gradient(800px 500px at 10% 20%, color-mix(in srgb, var(--ring) 12%, transparent), transparent 70%),
+    radial-gradient(700px 400px at 90% 40%, color-mix(in srgb, var(--wait) 10%, transparent), transparent 70%);
+  z-index:0;
+}
+
+/* Centered Responsive Container with Balanced Vertical Spacing */
+.wrap{
+  position:relative;
+  z-index:1;
+  width:100%;
+  max-width:1320px;
+  margin:0 auto;
+  padding:32px 24px 64px;
+  display:flex;
+  flex-direction:column;
+  gap:26px;
+}
+
+/* 1. Header Bar */
+.bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  background:color-mix(in srgb, var(--s1) 85%, transparent);
+  -webkit-backdrop-filter:blur(24px);
+  backdrop-filter:blur(24px);
+  border:1px solid var(--line);
+  border-radius:26px;
+  padding:14px 22px;
+  box-shadow:var(--shadow);
+  flex-wrap:wrap;
+}
+.brand{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.mark{
+  width:48px;
+  height:48px;
+  border-radius:16px;
+  background:linear-gradient(135deg, var(--ring), var(--go));
+  display:grid;
+  place-items:center;
+  box-shadow:0 8px 24px color-mix(in srgb, var(--ring) 40%, transparent);
+}
+.mark img{
+  width:32px;
+  height:32px;
+  object-fit:contain;
+}
+.brand-text h1{
+  font-size:20px;
+  font-weight:700;
+  letter-spacing:-.3px;
+  line-height:1.2;
+}
+.brand-text p{
+  color:var(--mute);
+  font-size:12.5px;
+  margin-top:2px;
+}
+.right{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.net{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:9px 18px;
+  border-radius:999px;
+  background:var(--s2);
+  border:1px solid var(--line);
+  font-size:12.5px;
+  color:var(--mute);
+}
+.net b{color:var(--ink);font-weight:600;direction:ltr}
+.live{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:var(--done);
+  box-shadow:0 0 0 0 var(--done);
+  animation:live 2s infinite;
+}
+@keyframes live{70%{box-shadow:0 0 0 8px transparent}}
+.ib{
+  width:46px;
+  height:46px;
+  border-radius:16px;
+  background:var(--s2);
+  border:1px solid var(--line);
+  display:grid;
+  place-items:center;
+  font-size:18px;
+  transition:transform .15s, background .15s;
+}
+.ib:hover{background:color-mix(in srgb, var(--ink) 8%, var(--s2))}
+.add{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:linear-gradient(135deg, var(--ring), var(--go));
+  color:#fff;
+  font-weight:700;
+  font-size:14.5px;
+  padding:0 24px;
+  height:46px;
+  border-radius:16px;
+  box-shadow:0 8px 25px color-mix(in srgb, var(--ring) 40%, transparent);
+  transition:transform .15s, box-shadow .2s;
+}
+.add:active{transform:scale(.97)}
+.add:hover{box-shadow:0 10px 30px color-mix(in srgb, var(--ring) 55%, transparent)}
+
+/* 2. Full-Width Stats Row */
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:16px;
+  width:100%;
+}
+.stat{
+  background:color-mix(in srgb, var(--s1) 90%, transparent);
+  -webkit-backdrop-filter:blur(20px);
+  backdrop-filter:blur(20px);
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:20px 22px;
+  position:relative;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+  transition:transform .2s, border-color .2s;
+}
+.stat:hover{
+  transform:translateY(-2px);
+  border-color:color-mix(in srgb, var(--c) 40%, var(--line));
+}
+.stat:after{
+  content:"";
+  position:absolute;
+  inset-inline-end:-20px;
+  top:-20px;
+  width:95px;
+  height:95px;
+  border-radius:50%;
+  background:var(--c);
+  opacity:.16;
+  filter:blur(14px);
+}
+.stat span{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--mute);
+  font-size:13px;
+  font-weight:500;
+}
+.stat span i{
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:var(--c);
+  box-shadow:0 0 8px var(--c);
+}
+.stat strong{
+  display:block;
+  font-size:40px;
+  font-weight:800;
+  margin-top:10px;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+  color:var(--ink);
+}
+
+/* 3. Centered Navigation Filter Tabs */
+.tabs-wrap{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  width:100%;
+}
+.tabs{
+  display:inline-flex;
+  gap:8px;
+  padding:6px;
+  border-radius:999px;
+  background:color-mix(in srgb, var(--s1) 90%, transparent);
+  -webkit-backdrop-filter:blur(20px);
+  backdrop-filter:blur(20px);
+  border:1px solid var(--line);
+  box-shadow:0 8px 24px rgba(0,0,0,.2);
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{
+  flex:none;
+  padding:10px 22px;
+  border-radius:999px;
+  color:var(--mute);
+  font-weight:600;
+  font-size:13.5px;
+  transition:all .2s;
+}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-pressed="true"]{
+  background:linear-gradient(135deg, var(--ring), var(--go));
+  color:#fff;
+  box-shadow:0 4px 16px color-mix(in srgb, var(--ring) 35%, transparent);
+}
+
+/* 4. Orders Grid - Centered & Responsive */
+.orders-container{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  width:100%;
+}
+.orders{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(320px, 370px));
+  justify-content:center;
+  gap:20px;
+  width:100%;
+}
+.card{
+  background:color-mix(in srgb, var(--s1) 92%, transparent);
+  -webkit-backdrop-filter:blur(24px);
+  backdrop-filter:blur(24px);
+  border:1.5px solid var(--line);
+  border-radius:28px;
+  padding:22px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+  position:relative;
+  transition:transform .2s, border-color .2s, box-shadow .2s;
+  box-shadow:var(--shadow);
+}
+.card:hover{
+  transform:translateY(-3px);
+  border-color:color-mix(in srgb, var(--c) 50%, var(--line));
+}
+.card.waiting{--c:var(--wait)}
+.card.ringing{--c:var(--ring)}
+.card.onway{--c:var(--go)}
+.card.done{--c:var(--done)}
+
+.card.ringing{
+  background:linear-gradient(180deg, color-mix(in srgb, var(--ring) 18%, var(--s1)), var(--s1) 75%);
+  border-color:var(--ring);
+  animation:ringcard 1.4s infinite;
+}
+@keyframes ringcard{
+  0%,100%{box-shadow:0 0 0 0 color-mix(in srgb, var(--ring) 40%, transparent)}
+  50%{box-shadow:0 0 0 10px color-mix(in srgb, var(--ring) 15%, transparent)}
+}
+.card.done{opacity:.65}
+
+.card-top-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:12px;
+  font-weight:700;
+  color:var(--c);
+  background:color-mix(in srgb, var(--c) 16%, transparent);
+  border:1px solid color-mix(in srgb, var(--c) 30%, transparent);
+  padding:5px 12px;
+  border-radius:999px;
+}
+.pill:before{
+  content:"";
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--c);
+}
+.ago{
+  font-size:12px;
+  color:var(--mute);
+  font-variant-numeric:tabular-nums;
+  font-weight:500;
+}
+.num{
+  font-size:62px;
+  font-weight:800;
+  line-height:1;
+  letter-spacing:-2px;
+  direction:ltr;
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+  color:var(--ink);
+  margin:2px 0;
+}
+.who{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  background:var(--s2);
+  border:1px solid var(--line);
+  padding:10px 14px;
+  border-radius:18px;
+}
+.av{
+  width:38px;
+  height:38px;
+  border-radius:50%;
+  flex:none;
+  display:grid;
+  place-items:center;
+  font-weight:700;
+  font-size:15px;
+  background:color-mix(in srgb, var(--c) 20%, var(--s1));
+  color:var(--c);
+}
+.who div{min-width:0;flex:1}
+.who b{display:block;font-weight:600;font-size:14px;line-height:1.3}
+.who small{color:var(--mute);font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+
+.acts{
+  display:flex;
+  gap:10px;
+  margin-top:auto;
+}
+.btn{
+  flex:1;
+  height:46px;
+  border-radius:15px;
+  font-weight:700;
+  font-size:13.5px;
+  background:var(--s2);
+  border:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  transition:all .15s;
+}
+.btn:hover{background:color-mix(in srgb, var(--ink) 8%, var(--s2))}
+.btn.main{
+  background:linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 80%, #000));
+  color:#fff;
+  border-color:transparent;
+  box-shadow:0 6px 18px color-mix(in srgb, var(--c) 35%, transparent);
+}
+.btn.main:hover{box-shadow:0 8px 24px color-mix(in srgb, var(--c) 50%, transparent)}
+.btn.sq{
+  flex:0 0 46px;
+  color:var(--mute);
+}
+.btn.sq:hover{color:var(--ink);border-color:color-mix(in srgb, var(--ink) 25%, transparent)}
+.btn.sq.qr-btn{
+  color:var(--go);
+  background:color-mix(in srgb, var(--go) 14%, var(--s2));
+  border-color:color-mix(in srgb, var(--go) 30%, transparent);
+}
+.btn.sq.qr-btn:hover{
+  background:color-mix(in srgb, var(--go) 26%, var(--s2));
+  color:#fff;
+}
+.btn.sq.del-btn:hover{
+  color:var(--ring);
+  border-color:color-mix(in srgb, var(--ring) 40%, transparent);
+  background:color-mix(in srgb, var(--ring) 12%, var(--s2));
+}
+
+.empty{
+  grid-column:1/-1;
+  max-width:540px;
+  margin:20px auto 0;
+  padding:48px 24px;
+  text-align:center;
+  color:var(--mute);
+  background:color-mix(in srgb, var(--s1) 60%, transparent);
+  border:2px dashed var(--line);
+  border-radius:32px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:14px;
+}
+.empty-icon{
+  width:72px;
+  height:72px;
+  border-radius:50%;
+  background:var(--s2);
+  display:grid;
+  place-items:center;
+  font-size:32px;
+  border:1px solid var(--line);
+}
+.empty h3{font-size:18px;font-weight:700;color:var(--ink)}
+.empty p{font-size:13.5px;line-height:1.6}
+
+/* Modals */
+dialog{border:0;background:none;color:var(--ink);margin:auto;padding:0;max-width:100vw}
+dialog::backdrop{background:rgba(3,5,10,.75);backdrop-filter:blur(10px)}
+.sheet{
+  width:min(440px,94vw);
+  background:var(--s1);
+  border:1px solid var(--line);
+  border-radius:28px;
+  padding:26px;
+  box-shadow:var(--shadow);
+}
+.sheet h2{font-size:21px;font-weight:700;margin-bottom:4px}
+.sheet .sub{color:var(--mute);font-size:13px;margin-bottom:8px}
+.f{display:block;margin-top:14px;font-size:12.5px;color:var(--mute)}
+.f input{
+  display:block;
+  width:100%;
+  margin-top:7px;
+  height:48px;
+  padding:0 14px;
+  border-radius:14px;
+  background:var(--s2);
+  border:1px solid var(--line);
+  color:var(--ink);
+  font-size:15px;
+}
+.f input:focus{outline:2px solid var(--go);outline-offset:0}
+.go{
+  width:100%;
+  height:52px;
+  margin-top:20px;
+  border-radius:16px;
+  font-weight:700;
+  font-size:15px;
+  color:#fff;
+  background:linear-gradient(135deg,var(--ring),var(--go));
+  box-shadow:0 8px 24px color-mix(in srgb,var(--ring) 35%,transparent);
+}
+.go:active{transform:scale(.98)}
+
+/* Dedicated QR Modal Box */
+.qr-box-modal{
+  width:230px;
+  height:230px;
+  margin:20px auto 0;
+  padding:14px;
+  background:#fff;
+  border-radius:24px;
+  box-shadow:0 14px 40px rgba(0,0,0,.5);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.qr-box-modal img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+
+/* Custom confirmation modal */
+.confirm-icon{
+  width:64px;
+  height:64px;
+  border-radius:50%;
+  background:color-mix(in srgb,var(--ring) 15%,transparent);
+  display:grid;
+  place-items:center;
+  margin:0 auto;
+  border:1px solid color-mix(in srgb,var(--ring) 30%,transparent);
+}
+
+.toast{
+  position:fixed;
+  left:50%;
+  top:calc(18px + env(safe-area-inset-top,0px));
+  transform:translate(-50%,-160%);
+  background:var(--ink);
+  color:var(--bg);
+  padding:12px 24px;
+  border-radius:18px;
+  font-weight:700;
+  font-size:13.5px;
+  z-index:100;
+  max-width:92vw;
+  transition:transform .35s cubic-bezier(.2,1,.3,1);
+  box-shadow:var(--shadow);
+}
+.toast.show{transform:translate(-50%,0)}
+
+@media (max-width:880px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .wrap{padding:20px 16px 40px}
+}
+@media (max-width:540px){
+  .stats{grid-template-columns:1fr 1fr}
+  .brand p{display:none}
+  .net{display:none}
+  .num{font-size:52px}
+  .orders{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="wrap">
+
+  <!-- 1. Top Bar -->
+  <header class="bar">
+    <div class="brand">
+      <div class="mark">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+          <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>لوحة تحكم الكاشير</h1>
+        <p>إدارة واستدعاء طلبات الزبائن لحظياً (Web Pager)</p>
+      </div>
+    </div>
+    <div class="right">
+      <div class="net"><span class="live"></span>الشبكة <b>{{ local_ip }}:{{ port }}</b></div>
+      <button class="ib" id="theme" aria-label="تبديل المظهر">◐</button>
+      <button class="add" id="open"><b style="font-size:20px;line-height:1">+</b><span>طلب جديد</span></button>
+    </div>
+  </header>
+
+  <!-- 2. Full-Width Stats -->
+  <section class="stats">
+    <div class="stat" style="--c:var(--wait)"><span><i></i>قيد التحضير</span><strong id="c-waiting">0</strong></div>
+    <div class="stat" style="--c:var(--ring)"><span><i></i>جاهز ويرن الآن</span><strong id="c-ringing">0</strong></div>
+    <div class="stat" style="--c:var(--go)"><span><i></i>في الطريق للاستلام</span><strong id="c-onway">0</strong></div>
+    <div class="stat" style="--c:var(--done)"><span><i></i>تم الاستلام</span><strong id="c-done">0</strong></div>
+  </section>
+
+  <!-- 3. Centered Filter Tabs -->
+  <div class="tabs-wrap">
+    <nav class="tabs" id="tabs">
+      <button data-f="all" aria-pressed="true">الكل</button>
+      <button data-f="waiting" aria-pressed="false">قيد التحضير</button>
+      <button data-f="ringing" aria-pressed="false">جاهز ويرن</button>
+      <button data-f="onway" aria-pressed="false">في الطريق</button>
+      <button data-f="done" aria-pressed="false">تم الاستلام</button>
+    </nav>
+  </div>
+
+  <!-- 4. Centered & Responsive Orders Grid -->
+  <div class="orders-container">
+    <main class="orders" id="orders">
+      <!-- Injected via JavaScript -->
+    </main>
+  </div>
+</div>
+
+<!-- Modal 1: Create New Order -->
+<dialog id="dlg">
+  <form class="sheet" method="dialog" id="form">
+    <h2>طلب جديد</h2>
+    <div class="sub">أدخل تفاصيل الطلب لإصدار البيجر ورمز الـ QR فوراً</div>
+    <label class="f">رقم الطلب (Order #)<input id="fnum" inputmode="numeric" required></label>
+    <label class="f">اسم العميل (اختياري)<input id="fname" placeholder="مثال: أحمد"></label>
+    <label class="f">ملاحظات / الوجبة<input id="fnote" placeholder="مثال: 2 برجر لحم + بطاطس"></label>
+    <button class="go" id="issue" type="button">إصدار البيجر والـ QR</button>
+  </form>
+</dialog>
+
+<!-- Modal 2: QR Code Viewer -->
+<dialog id="qrDlg">
+  <div class="sheet" style="max-width:420px; text-align:center;">
+    <h2 id="modalQrTitle" style="font-size:22px; font-weight:700;">بيجر الطلب #42</h2>
+    <p style="color:var(--mute); font-size:13px; margin-top:4px;">امسح الكود بكاميرا الجوال لفتح بيجر العميل:</p>
+
+    <div class="qr-box-modal">
+      <img id="modalQrImg" src="" alt="QR Code">
+    </div>
+
+    <label style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:12.5px; color:var(--text); margin-top:14px; cursor:pointer; background:rgba(255,255,255,0.06); padding:9px 12px; border-radius:14px; border:1px solid rgba(255,181,71,0.25);">
+      <input type="checkbox" id="httpsQrToggle" checked style="accent-color:#ffb547; width:17px; height:17px;">
+      <span>🔒 رابط آمن مشفر (HTTPS) لإشعارات الويب وشاشة القفل</span>
+    </label>
+
+    <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px;">
+      <a id="modalQrOpenLink" class="go" target="_blank" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
+        <span>🚀</span> فتح البيجر للتجربة المباشرة
+      </a>
+      <div style="display:flex; gap:10px;">
+        <button class="btn" id="modalQrCopyBtn" style="flex:1; height:46px; border-radius:14px; font-weight:600;">
+          📋 نسخ الرابط
+        </button>
+        <button class="btn" id="modalQrCloseBtn" style="flex:1; height:46px; border-radius:14px; font-weight:600;">
+          إغلاق
+        </button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<!-- Modal 3: Custom Dark Confirm Modal -->
+<dialog id="confirmDlg">
+  <div class="sheet" style="max-width:390px; text-align:center;">
+    <div class="confirm-icon">
+      <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--ring)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"></polyline>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+        <line x1="10" y1="11" x2="10" y2="17"></line>
+        <line x1="14" y1="11" x2="14" y2="17"></line>
+      </svg>
+    </div>
+    <h2 id="confirmTitle" style="font-size:20px; font-weight:700; margin-top:14px;">حذف هذا الطلب؟</h2>
+    <p id="confirmDesc" style="color:var(--mute); font-size:13px; margin:8px 0 22px; line-height:1.6;">
+      هل أنت متأكد من حذف هذا الطلب نهائياً من شاشة الكاشير؟
+    </p>
+    <div style="display:flex; gap:10px;">
+      <button class="btn main" id="confirmOkBtn" style="background:var(--ring); color:#fff; border-radius:14px; height:48px; font-weight:700;">
+        تأكيد الحذف
+      </button>
+      <button class="btn" id="confirmCancelBtn" style="border-radius:14px; height:48px; font-weight:600;">
+        إلغاء
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Toast -->
+<div class="toast" id="toast" role="status"></div>
+
+""" + script_section
+
+with open("app/templates/cashier.html", "w", encoding="utf-8") as f:
+    f.write(new_cashier_html)
+
+print("cashier.html rewritten with centered, responsive and luxury dashboard design!")
+
