@@ -933,20 +933,25 @@ function startRingingAlarm(){
   // Show Floating Push Notification Banner
   if (pushBanner) pushBanner.classList.add("show");
 
-  // Show Service Worker Native Notification
+  // Show Service Worker Native Notification with Strong Vibration
   try {
     if ('Notification' in window && Notification.permission === 'granted') {
+      var custPart = order.name ? (" (" + order.name + ")") : "";
+      var notifOpts = {
+        body: "مطعم البرجر الذهبي 🍔 - تفضل إلى الكاونتر للاستلام الآن.",
+        icon: "/static/img/brand-ready.png",
+        badge: "/static/img/brand-logo.png",
+        vibrate: [600, 150, 600, 150, 900, 200, 600, 150, 900],
+        tag: "paiger-alert-" + order.num,
+        renotify: true,
+        requireInteraction: true,
+        data: { url: window.location.href }
+      };
       if (swReg && swReg.showNotification) {
-        var custPart = order.name ? (" (" + order.name + ")") : "";
-        swReg.showNotification("🚨 طلبك #" + order.num + custPart + " جاهز للاستلام!", {
-          body: "مطعم البرجر الذهبي 🍔 - تفضل إلى الكاونتر للاستلام الآن.",
-          icon: "/static/img/brand-ready.png",
-          badge: "/static/img/brand-logo.png",
-          vibrate: [500, 200, 500, 200, 800],
-          tag: "paiger-alert-" + order.num,
-          renotify: true,
-          requireInteraction: true,
-          data: { url: window.location.href }
+        swReg.showNotification("🚨 طلبك #" + order.num + custPart + " جاهز للاستلام!", notifOpts);
+      } else if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready.then(function(reg){
+          reg.showNotification("🚨 طلبك #" + order.num + custPart + " جاهز للاستلام!", notifOpts);
         });
       }
     }
@@ -974,19 +979,19 @@ function startRingingAlarm(){
   // D. Synthesizer & iPhone speaker haptic vibration loop
   if(!beepTimer){
     beepSynth();
-    beepTimer = setInterval(beepSynth, 1300);
+    beepTimer = setInterval(beepSynth, 1200);
   }
 
-  // E. Physical Motor Vibration (Android & Chrome)
+  // E. Physical Motor Vibration (Android & Chrome) - High Intensity Loop
   try {
     clearInterval(vibrateInterval);
     if(navigator.vibrate){
-      navigator.vibrate([500, 200, 500, 200, 800]);
+      navigator.vibrate([600, 150, 600, 150, 900, 200, 600, 150, 900]);
       vibrateInterval = setInterval(function(){
         if(order.status === 'ringing'){
-          navigator.vibrate([500, 200, 500, 200, 800]);
+          navigator.vibrate([600, 150, 600, 150, 900, 200, 600, 150, 900]);
         }
-      }, 2200);
+      }, 1600);
     }
   } catch(e){}
 

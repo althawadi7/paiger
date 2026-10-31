@@ -492,15 +492,48 @@ dialog::backdrop{background:rgba(3,5,10,.75);backdrop-filter:blur(10px)}
 }
 .go:active{transform:scale(.98)}
 
-/* Dedicated QR Modal Box */
+/* Dedicated QR Modal Box - Large & Customer Scannable */
+.qr-sheet{
+  width:min(520px, 94vw);
+  background:rgba(18, 22, 34, 0.97);
+  border:1.5px solid rgba(255, 181, 71, 0.35);
+  border-radius:36px;
+  padding:32px 28px;
+  text-align:center;
+  box-shadow:0 24px 70px rgba(0,0,0,.75), 0 0 50px rgba(255, 181, 71, 0.18);
+  -webkit-backdrop-filter:blur(30px);
+  backdrop-filter:blur(30px);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+}
+.qr-order-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-size:26px;
+  font-weight:800;
+  color:#fff;
+  letter-spacing:-.5px;
+}
+.qr-subtitle{
+  color:var(--mute);
+  font-size:13.5px;
+  line-height:1.5;
+  max-width:390px;
+  margin:0 auto;
+}
 .qr-box-modal{
-  width:230px;
-  height:230px;
-  margin:20px auto 0;
-  padding:14px;
+  width:320px;
+  height:320px;
+  max-width:80vw;
+  max-height:80vw;
+  margin:8px auto;
+  padding:16px;
   background:#fff;
-  border-radius:24px;
-  box-shadow:0 14px 40px rgba(0,0,0,.5);
+  border-radius:28px;
+  box-shadow:0 18px 50px rgba(0,0,0,.6), 0 0 0 3px rgba(255,255,255,.1);
   display:flex;
   align-items:center;
   justify-content:center;
@@ -509,6 +542,7 @@ dialog::backdrop{background:rgba(3,5,10,.75);backdrop-filter:blur(10px)}
   width:100%;
   height:100%;
   object-fit:contain;
+  image-rendering:pixelated;
 }
 
 /* Custom confirmation modal */

@@ -278,8 +278,8 @@ async def get_qr_image(request: Request, token: str, host: str = None):
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_M,
-        box_size=10,
-        border=2,
+        box_size=14,
+        border=3,
     )
     qr.add_data(url)
     qr.make(fit=True)
