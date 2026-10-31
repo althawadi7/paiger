@@ -120,6 +120,19 @@ async def pager_page(request: Request, token: str):
         {"request": request, "order": order, "token": token, "base_url": base_url}
     )
 
+@app.get("/api/pager/{token}/status")
+async def get_pager_status(token: str):
+    order = db.get_order_by_token(token)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return {
+        "id": order["id"],
+        "order_number": order["order_number"],
+        "customer_name": order["customer_name"],
+        "notes": order["notes"],
+        "status": order["status"]
+    }
+
 # Orders REST APIs
 @app.get("/api/orders")
 async def list_orders():
