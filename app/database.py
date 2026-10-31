@@ -26,6 +26,16 @@ def init_db():
                 completed_at TIMESTAMP
             )
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS push_subscriptions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                token TEXT NOT NULL,
+                endpoint TEXT UNIQUE NOT NULL,
+                p256dh TEXT NOT NULL,
+                auth TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
         conn.commit()
 
 def create_order(order_number: str, customer_name: str = "", notes: str = ""):
@@ -114,4 +124,29 @@ def delete_order(order_id: int):
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("DELETE FROM orders WHERE id = ?", (order_id,))
+        conn.commit()
+
+def save_push_subscription(token: str, endpoint: str, p256dh: str, auth: str):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO push_subscriptions (token, endpoint, p256dh, auth)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(endpoint) DO UPDATE SET token = excluded.token, p256dh = excluded.p256dh, auth = excluded.auth
+            """,
+            (token, endpoint, p256dh, auth)
+        )
+        conn.commit()
+
+def get_push_subscriptions_by_token(token: str):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM push_subscriptions WHERE token = ?", (token,))
+        return [dict(r) for r in cursor.fetchall()]
+
+def delete_push_subscription(endpoint: str):
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM push_subscriptions WHERE endpoint = ?", (endpoint,))
         conn.commit()

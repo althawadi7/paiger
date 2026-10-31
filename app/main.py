@@ -1,9 +1,10 @@
 import io
 import json
 import socket
+import asyncio
 from typing import Dict, List
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
-from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -11,6 +12,7 @@ import qrcode
 from pathlib import Path
 
 from . import database as db
+from . import push_service
 
 BASE_DIR = Path(__file__).parent
 app = FastAPI(title="Web Pager - جرس الطلبات الذكي")
@@ -80,9 +82,36 @@ class CreateOrderRequest(BaseModel):
     customer_name: str = ""
     notes: str = ""
 
+class PushSubscriptionRequest(BaseModel):
+    token: str
+    endpoint: str
+    p256dh: str
+    auth: str
+
 @app.on_event("startup")
 def startup_event():
     db.init_db()
+
+@app.api_route("/sw.js", methods=["GET", "HEAD"])
+async def get_service_worker():
+    return FileResponse(
+        str(BASE_DIR / "static" / "sw.js"),
+        media_type="application/javascript",
+        headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"}
+    )
+
+@app.api_route("/manifest.json", methods=["GET", "HEAD"])
+async def get_manifest():
+    return FileResponse(str(BASE_DIR / "static" / "manifest.json"), media_type="application/json")
+
+@app.get("/api/push/public_key")
+async def get_push_public_key():
+    return {"public_key": push_service.get_public_key()}
+
+@app.post("/api/push/subscribe")
+async def subscribe_push(req: PushSubscriptionRequest):
+    db.save_push_subscription(req.token, req.endpoint, req.p256dh, req.auth)
+    return {"status": "ok"}
 
 @app.get("/", response_class=RedirectResponse)
 async def index():
@@ -160,6 +189,13 @@ async def ring_order(order_id: int):
         "order": order
     })
     await manager.notify_cashiers({"event": "order_updated", "order": order})
+    
+    # Trigger Web Push Notification
+    try:
+        asyncio.create_task(push_service.notify_order_push(order))
+    except Exception as e:
+        print("WebPush trigger error:", e)
+
     return order
 
 @app.post("/api/orders/{order_id}/onway")
