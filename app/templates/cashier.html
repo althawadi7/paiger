@@ -652,30 +652,33 @@ dialog::backdrop{background:rgba(3,5,10,.75);backdrop-filter:blur(10px)}
   </form>
 </dialog>
 
-<!-- Modal 2: QR Code Viewer -->
+<!-- Modal 2: QR Code Viewer - High-Res & Scannable -->
 <dialog id="qrDlg">
-  <div class="sheet" style="max-width:420px; text-align:center;">
-    <h2 id="modalQrTitle" style="font-size:22px; font-weight:700;">بيجر الطلب #42</h2>
-    <p style="color:var(--mute); font-size:13px; margin-top:4px;">امسح الكود بكاميرا الجوال لفتح بيجر العميل:</p>
+  <div class="qr-sheet">
+    <div class="qr-order-badge">
+      <span>📟</span>
+      <span id="modalQrTitle">بيجر الطلب #42</span>
+    </div>
+    <p class="qr-subtitle">امسح الرمز بكاميرا الجوال (iPhone أو Android) لفتح بيجر طلبك ومتابعة دورك:</p>
 
     <div class="qr-box-modal">
       <img id="modalQrImg" src="" alt="QR Code">
     </div>
 
-    <label style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:12.5px; color:var(--text); margin-top:14px; cursor:pointer; background:rgba(255,255,255,0.06); padding:9px 12px; border-radius:14px; border:1px solid rgba(255,181,71,0.25);">
-      <input type="checkbox" id="httpsQrToggle" checked style="accent-color:#ffb547; width:17px; height:17px;">
+    <label style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:12.5px; color:var(--text); cursor:pointer; background:rgba(255,255,255,0.06); padding:9px 16px; border-radius:14px; border:1px solid rgba(255,181,71,0.25); width:100%;">
+      <input type="checkbox" id="httpsQrToggle" checked style="accent-color:#ffb547; width:18px; height:18px;">
       <span>🔒 رابط آمن مشفر (HTTPS) لإشعارات الويب وشاشة القفل</span>
     </label>
 
-    <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px;">
-      <a id="modalQrOpenLink" class="go" target="_blank" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
+    <div style="display:flex; flex-direction:column; gap:10px; width:100%; margin-top:4px;">
+      <a id="modalQrOpenLink" class="go" target="_blank" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; height:50px; font-size:15px; border-radius:16px;">
         <span>🚀</span> فتح البيجر للتجربة المباشرة
       </a>
       <div style="display:flex; gap:10px;">
-        <button class="btn" id="modalQrCopyBtn" style="flex:1; height:46px; border-radius:14px; font-weight:600;">
+        <button class="btn" id="modalQrCopyBtn" style="flex:1; height:46px; border-radius:15px; font-weight:700;">
           📋 نسخ الرابط
         </button>
-        <button class="btn" id="modalQrCloseBtn" style="flex:1; height:46px; border-radius:14px; font-weight:600;">
+        <button class="btn" id="modalQrCloseBtn" style="flex:1; height:46px; border-radius:15px; font-weight:700;">
           إغلاق
         </button>
       </div>

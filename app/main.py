@@ -75,6 +75,20 @@ class ConnectionManager:
             except Exception:
                 pass
 
+    async def broadcast_all(self, data: dict):
+        message = json.dumps(data)
+        for ws in list(self.cashier_connections):
+            try:
+                await ws.send_text(message)
+            except Exception:
+                pass
+        for token, ws_list in list(self.pager_connections.items()):
+            for ws in list(ws_list):
+                try:
+                    await ws.send_text(message)
+                except Exception:
+                    pass
+
 manager = ConnectionManager()
 
 class CreateOrderRequest(BaseModel):
@@ -87,6 +101,9 @@ class PushSubscriptionRequest(BaseModel):
     endpoint: str
     p256dh: str
     auth: str
+
+class ThemeSettingRequest(BaseModel):
+    theme: str
 
 @app.on_event("startup")
 def startup_event():
@@ -113,6 +130,20 @@ async def subscribe_push(req: PushSubscriptionRequest):
     db.save_push_subscription(req.token, req.endpoint, req.p256dh, req.auth)
     return {"status": "ok"}
 
+@app.get("/api/settings/theme")
+async def get_theme():
+    return {"theme": db.get_setting("theme", "dark")}
+
+@app.post("/api/settings/theme")
+async def set_theme(req: ThemeSettingRequest):
+    new_theme = "light" if req.theme == "light" else "dark"
+    db.set_setting("theme", new_theme)
+    await manager.broadcast_all({
+        "event": "theme_changed",
+        "theme": new_theme
+    })
+    return {"status": "ok", "theme": new_theme}
+
 @app.get("/", response_class=RedirectResponse)
 async def index():
     return RedirectResponse(url="/cashier")
@@ -123,9 +154,10 @@ async def cashier_page(request: Request):
     scheme = request.url.scheme
     port = request.url.port or (443 if scheme == "https" else 80)
     base_url = f"{scheme}://{local_ip}:{port}"
+    theme = db.get_setting("theme", "dark")
     return templates.TemplateResponse(
         "cashier.html", 
-        {"request": request, "local_ip": local_ip, "port": port, "base_url": base_url}
+        {"request": request, "local_ip": local_ip, "port": port, "base_url": base_url, "theme": theme}
     )
 
 @app.get("/pager/{token}", response_class=HTMLResponse)
@@ -147,6 +179,7 @@ async def pager_page(request: Request, token: str):
     port = request.url.port or (443 if scheme == "https" else 80)
     base_url = f"{scheme}://{local_ip}:{port}"
     queue_info = db.get_order_queue_info(order["id"])
+    theme = db.get_setting("theme", "dark")
     return templates.TemplateResponse(
         "pager.html",
         {
@@ -154,7 +187,8 @@ async def pager_page(request: Request, token: str):
             "order": order, 
             "token": token, 
             "base_url": base_url,
-            "queue_info": queue_info
+            "queue_info": queue_info,
+            "theme": theme
         }
     )
 
@@ -297,10 +331,12 @@ async def websocket_pager(websocket: WebSocket, token: str):
     order = db.get_order_by_token(token)
     if order:
         q_info = db.get_order_queue_info(order["id"])
+        theme = db.get_setting("theme", "dark")
         await websocket.send_text(json.dumps({
             "event": "connected",
             "order": order,
-            "queue_info": q_info
+            "queue_info": q_info,
+            "theme": theme
         }))
     try:
         while True:
