@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="{{ theme }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0f1220">
 <title>بيجر #{{ order.order_number }}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="/static/img/brand-logo.png">
 <link rel="manifest" href="/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
@@ -16,8 +16,172 @@
 <style>
 :root{
   --wait:#ffb547;--ring:#ff4d6d;--go:#8b7bff;--done:#36d9a0;
+  --bg-dark-base:#090b13;
+  --widget-dark-bg:rgba(18, 22, 38, 0.85);
+  --widget-dark-border:rgba(255,255,255,.16);
+  --ink:#ffffff;
+  --mute:#94a3b8;
 }
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+
+/* Luxury Espresso Light Mode Theme Variables */
+:root[data-theme="light"], body[data-theme="light"]{
+  --wait:#c05621;--ring:#dc2626;--go:#6d28d9;--done:#0f766e;
+  --ink:#24160f;
+  --mute:#7c6958;
+}
+
+body[data-theme="light"]{
+  background:
+    radial-gradient(110% 70% at 50% 12%, rgba(192, 86, 33, 0.14), transparent 65%),
+    radial-gradient(100% 60% at 10% 85%, rgba(140, 50, 20, 0.08), transparent 65%),
+    #f7f4ee;
+  color:#24160f;
+}
+
+body[data-theme="light"].ring{
+  background:
+    radial-gradient(120% 70% at 50% 30%, rgba(220, 38, 38, 0.16), transparent 70%),
+    #faf6f0;
+}
+
+body[data-theme="light"] .widget-box{
+  background:rgba(255, 255, 255, 0.92);
+  border:1.5px solid rgba(43, 29, 22, 0.12);
+  box-shadow:0 25px 65px rgba(43, 29, 22, 0.09), 0 0 40px rgba(192, 86, 33, 0.08);
+  color:#24160f;
+}
+
+body[data-theme="light"].ring .widget-box{
+  border-color:rgba(220, 38, 38, 0.55);
+  box-shadow:0 25px 65px rgba(220, 38, 38, 0.18), 0 0 45px rgba(220, 38, 38, 0.25);
+}
+
+body[data-theme="light"] .widget-header-brand{
+  border-bottom:1px solid rgba(43, 29, 22, 0.08);
+}
+body[data-theme="light"] .brand-title{
+  color:#24160f;
+}
+body[data-theme="light"] .brand-sub{
+  color:#7c6958;
+}
+body[data-theme="light"] .brand-clock{
+  background:rgba(43, 29, 22, 0.06);
+  border-color:rgba(43, 29, 22, 0.1);
+  color:#3a251a;
+}
+body[data-theme="light"] .brand-clock b{
+  color:#24160f;
+}
+
+body[data-theme="light"] .widget-body{
+  background:rgba(247, 244, 238, 0.85);
+  border-color:rgba(43, 29, 22, 0.1);
+}
+body[data-theme="light"] .widget-num{
+  color:#1e130c;
+  text-shadow:0 3px 12px rgba(43, 29, 22, 0.12);
+}
+body[data-theme="light"] .widget-label{
+  color:#7c6958;
+}
+body[data-theme="light"] .widget-name{
+  color:#3a251a;
+  background:rgba(43, 29, 22, 0.05);
+}
+body[data-theme="light"] .widget-status-title{
+  color:#1e130c;
+}
+body[data-theme="light"] .widget-status-sub{
+  color:#665446;
+}
+body[data-theme="light"] .widget-steps i{
+  background:rgba(43, 29, 22, 0.16);
+}
+body[data-theme="light"] .widget-steps i.on{
+  background:#24160f;
+  box-shadow:0 0 8px rgba(36, 22, 15, 0.35);
+}
+
+/* Queue Card in Espresso Light */
+body[data-theme="light"] .queue-card{
+  background:#ffffff;
+  border-color:rgba(43, 29, 22, 0.1);
+  box-shadow:0 12px 32px rgba(43, 29, 22, 0.06);
+}
+body[data-theme="light"] .queue-card:hover{
+  background:#faf7f2;
+}
+body[data-theme="light"] .queue-icon-circle{
+  background:rgba(15, 118, 110, 0.1);
+  border-color:rgba(15, 118, 110, 0.28);
+  color:#0f766e;
+}
+body[data-theme="light"] .queue-label{
+  color:#7c6958;
+}
+body[data-theme="light"] .queue-val{
+  color:#24160f;
+}
+body[data-theme="light"] .queue-val.time-val{
+  color:#24160f;
+}
+body[data-theme="light"] .queue-update-pill{
+  background:rgba(15, 118, 110, 0.08);
+  border-color:rgba(15, 118, 110, 0.22);
+  color:#0f766e;
+}
+body[data-theme="light"] .pulse-dot{
+  background:#0f766e;
+  box-shadow:0 0 8px #0f766e;
+}
+
+/* Permission Modal in Light Theme */
+body[data-theme="light"] .permission-backdrop{
+  background:rgba(36, 22, 15, 0.55);
+}
+body[data-theme="light"] .permission-sheet{
+  background:#ffffff;
+  border-color:rgba(43, 29, 22, 0.14);
+  box-shadow:0 24px 60px rgba(43, 29, 22, 0.2), 0 0 40px rgba(192, 86, 33, 0.15);
+}
+body[data-theme="light"] .permission-title{
+  color:#24160f;
+}
+body[data-theme="light"] .permission-desc{
+  color:#665446;
+}
+body[data-theme="light"] .perm-item{
+  background:#f7f4ee;
+  border-color:rgba(43, 29, 22, 0.08);
+}
+body[data-theme="light"] .perm-item-text strong{
+  color:#24160f;
+}
+body[data-theme="light"] .perm-item-text span{
+  color:#7c6958;
+}
+
+/* Push notification banner in Light Theme */
+body[data-theme="light"] .floating-push-banner{
+  background:rgba(255, 255, 255, 0.94);
+  border-color:rgba(43, 29, 22, 0.14);
+  box-shadow:0 24px 60px rgba(43, 29, 22, 0.15), 0 0 0 1px rgba(43, 29, 22, 0.08);
+}
+body[data-theme="light"] .banner-app-name{
+  color:#3a251a;
+}
+body[data-theme="light"] .banner-time{
+  color:#7c6958;
+}
+body[data-theme="light"] .banner-title{
+  color:#24160f;
+}
+body[data-theme="light"] .banner-body{
+  color:#5c493c;
+}
+
+* {box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{height:100%}
 body{
   width:100%;
@@ -32,7 +196,7 @@ body{
   padding:max(24px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
   overflow-y:auto;
   -webkit-overflow-scrolling:touch;
-  transition:background 0.4s ease;
+  transition:background 0.4s ease, color 0.4s ease;
   position:relative;
 }
 
@@ -610,7 +774,7 @@ body.ring .widget-box{
 
 </style>
 </head>
-<body id="pageBody">
+<body id="pageBody" data-theme="{{ theme }}">
 
   <!-- Modern Force Permission Modal Popup -->
   <div class="permission-backdrop" id="permissionModal">
@@ -1256,6 +1420,16 @@ function clock(){
 clock();
 setInterval(clock, 1000);
 
+function applyTheme(theme){
+  if(!theme) return;
+  document.documentElement.setAttribute('data-theme', theme);
+  document.body.setAttribute('data-theme', theme);
+  var metaTheme = document.querySelector('meta[name="theme-color"]');
+  if(metaTheme){
+    metaTheme.setAttribute('content', theme === 'light' ? '#f7f4ee' : '#0f1220');
+  }
+}
+
 // 10. WebSocket Connection with Keep-Alive Heartbeat
 function connectWS(){
   var protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -1266,6 +1440,12 @@ function connectWS(){
     ws.onmessage = function(event){
       try {
         var data = JSON.parse(event.data);
+        if(data.theme){
+          applyTheme(data.theme);
+        }
+        if(data.event === "theme_changed" && data.theme){
+          applyTheme(data.theme);
+        }
         if(data.order){
           order.status = data.order.status;
           updateUI();
@@ -1281,6 +1461,9 @@ function connectWS(){
     setTimeout(connectWS, 3000);
   }
 }
+
+// Initial theme apply
+applyTheme(document.body.getAttribute('data-theme') || 'dark');
 
 // WebSocket Heartbeat Ping every 5 seconds
 setInterval(function(){

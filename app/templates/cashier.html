@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html id="htmlRoot" lang="ar" dir="rtl" data-theme="{{ theme }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -15,10 +15,16 @@
   color-scheme:dark;
 }
 :root[data-theme="light"]{
-  --bg:#f1f5f9;--s1:#ffffff;--s2:#f8fafc;--line:rgba(15,23,42,.08);--ink:#0f172a;--mute:#64748b;
-  --wait:#d97706;--ring:#e11d48;--go:#6366f1;--done:#059669;
-  --shadow:0 16px 36px rgba(15,23,42,.08);
+  --bg:#f7f4ee;--s1:#ffffff;--s2:#f1ece3;--line:rgba(43,29,22,.09);--ink:#24160f;--mute:#7c6958;
+  --wait:#c05621;--ring:#dc2626;--go:#6d28d9;--done:#0f766e;
+  --shadow:0 18px 45px rgba(43,29,22,.08);
   color-scheme:light;
+}
+:root[data-theme="light"] .glow{
+  background:
+    radial-gradient(900px 500px at 50% -10%, rgba(192,86,33,0.12), transparent 70%),
+    radial-gradient(800px 500px at 10% 20%, rgba(220,38,38,0.08), transparent 70%),
+    radial-gradient(700px 400px at 90% 40%, rgba(109,40,217,0.08), transparent 70%);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{height:100%}
@@ -980,10 +986,30 @@ $('#tabs').onclick = function(e){
   render();
 };
 
-$('#theme').onclick = function(){
-  var r = document.documentElement;
-  var isDark = r.dataset.theme ? r.dataset.theme === 'dark' : !matchMedia('(prefers-color-scheme:light)').matches;
-  r.dataset.theme = isDark ? 'light' : 'dark';
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.style.colorScheme = theme;
+  var themeBtn = $('#theme');
+  if(themeBtn){
+    themeBtn.textContent = theme === 'dark' ? '☀️' : '☕';
+    themeBtn.title = theme === 'dark' ? 'التبديل إلى الوضع النهاري الإسبريسو' : 'التبديل إلى الوضع الليلي';
+  }
+}
+
+$('#theme').onclick = async function(){
+  var current = document.documentElement.getAttribute('data-theme') || 'dark';
+  var next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  try {
+    await fetch("/api/settings/theme", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({theme: next})
+    });
+    toast(next === 'light' ? '☕ تم التبديل إلى وضع الإسبريسو الفاتح لجميع الأجهزة' : '🌙 تم التبديل إلى الوضع الليلي لجميع الأجهزة');
+  } catch(e){
+    console.error("Theme change failed", e);
+  }
 };
 
 function connectWS(){
@@ -998,6 +1024,9 @@ function connectWS(){
           playDing();
           toast('🏃 صاحب الطلب #' + (data.order ? data.order.order_number : '') + ' في طريقه للاستلام الآن!');
         }
+        if(data.event === "theme_changed" && data.theme){
+          applyTheme(data.theme);
+        }
         loadOrders();
       } catch(e){}
     };
@@ -1007,6 +1036,8 @@ function connectWS(){
   }
 }
 
+// Initial theme icon setup
+applyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
 loadOrders();
 connectWS();
 })();
