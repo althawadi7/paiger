@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Paiger SaaS | نظام البيجر والنداء الذكي للمطاعم والمقاهي</title>
+  <meta name="description" content="النظام السحابي الذكي لاستبدال أجهزة البيجر البلاستيكية بنداء رقمي فوري عبر Apple App Clip والجزيرة التفاعلية Dynamic Island.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined">
+  <link rel="icon" href="/static/img/brand-logo.png">
+  <style>
+    :root {
+      --bg: #f6f3ed;
+      --card: #ffffff;
+      --card-soft: #fcfbfa;
+      --border: rgba(58, 38, 28, 0.12);
+      --border-soft: rgba(58, 38, 28, 0.07);
+      --ink: #23150d;
+      --ink-secondary: #5a463a;
+      --muted: #7a6656;
+      --primary: #3e2415;
+      --primary-hover: #2b190e;
+      --accent: #c05621;
+      --accent-soft: rgba(192, 86, 33, 0.09);
+      --accent-hover: #a84717;
+      --radius: 24px;
+      --radius-sm: 14px;
+      --shadow: 0 18px 45px rgba(45, 30, 20, 0.06), 0 2px 10px rgba(45, 30, 20, 0.03);
+      --shadow-lg: 0 24px 60px rgba(45, 30, 20, 0.12), 0 4px 16px rgba(45, 30, 20, 0.05);
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html { scroll-behavior: smooth; }
+    body {
+      background:
+        radial-gradient(1200px 700px at 50% -10%, rgba(192, 86, 33, 0.14), transparent 75%),
+        radial-gradient(900px 500px at 10% 25%, rgba(62, 36, 21, 0.04), transparent 75%),
+        radial-gradient(800px 600px at 90% 65%, rgba(110, 70, 45, 0.07), transparent 75%),
+        var(--bg);
+      color: var(--ink);
+      font-family: "Readex Pro", system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    /* Navigation Bar */
+    .landing-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-icon-box {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 18px rgba(62, 36, 21, 0.2);
+    }
+    .brand-name {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: -0.02em;
+    }
+    .nav-links-wrap {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink-secondary);
+    }
+    .nav-links-wrap a:hover {
+      color: var(--accent);
+    }
+    .nav-cta-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      border: 1px solid transparent;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), #522f1c);
+      color: #ffffff;
+      box-shadow: 0 8px 20px rgba(62, 36, 21, 0.16);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #2b190e, var(--primary));
+      transform: translateY(-1px);
+      box-shadow: 0 12px 24px rgba(62, 36, 21, 0.24);
+    }
+    .btn-accent {
+      background: linear-gradient(135deg, var(--accent), #d96932);
+      color: #ffffff;
+      box-shadow: 0 8px 20px rgba(192, 86, 33, 0.2);
+    }
+    .btn-accent:hover {
+      background: linear-gradient(135deg, #a84717, var(--accent));
+      transform: translateY(-1px);
+    }
+    .btn-outline {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      color: var(--ink);
+      box-shadow: 0 2px 8px rgba(45, 30, 20, 0.04);
+    }
+    .btn-outline:hover {
+      background: var(--bg);
+      border-color: rgba(58, 38, 28, 0.2);
+    }
+
+    /* Hero Section */
+    .hero-section {
+      max-width: 1200px;
+      margin: 50px auto 60px;
+      padding: 0 24px;
+      text-align: center;
+    }
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: var(--accent-soft);
+      border: 1px solid rgba(192, 86, 33, 0.2);
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 24px;
+    }
+    .hero-title {
+      font-size: 48px;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.03em;
+      line-height: 1.25;
+      max-width: 900px;
+      margin: 0 auto 20px;
+    }
+    .hero-title span {
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-desc {
+      font-size: 18px;
+      color: var(--muted);
+      max-width: 720px;
+      margin: 0 auto 34px;
+      line-height: 1.7;
+    }
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+    .hero-meta-badges {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink-secondary);
+    }
+    .meta-badge-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Interactive Showcase Grid */
+    .showcase-wrap {
+      max-width: 1100px;
+      margin: 0 auto 80px;
+      padding: 0 24px;
+    }
+    .showcase-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 40px;
+      box-shadow: var(--shadow-lg);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 36px;
+      align-items: center;
+    }
+    .demo-cashier-box {
+      background: #faf8f5;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      text-align: right;
+    }
+    .demo-order-badge {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: #ffffff;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      margin-bottom: 14px;
+      box-shadow: 0 4px 12px rgba(45, 30, 20, 0.04);
+    }
+    .demo-phone-box {
+      background: linear-gradient(135deg, #2b190e, #180d07);
+      border-radius: 28px;
+      padding: 28px 20px;
+      color: #ffffff;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+      border: 4px solid #3e2415;
+    }
+    .dynamic-island-preview {
+      background: #000000;
+      border-radius: 24px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    /* Comparison Section */
+    .section-wrap {
+      max-width: 1200px;
+      margin: 0 auto 90px;
+      padding: 0 24px;
+    }
+    .section-head {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .section-badge {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 4px 12px;
+      border-radius: 6px;
+      display: inline-block;
+      margin-bottom: 10px;
+    }
+    .section-title {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+    .section-desc {
+      font-size: 15.5px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    /* Comparison Table Card */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    .compare-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow: var(--shadow);
+    }
+    .compare-card.highlight {
+      border: 2px solid var(--accent);
+      background: linear-gradient(180deg, #ffffff, #fffaf6);
+      position: relative;
+    }
+    .compare-card.highlight::after {
+      content: 'الخيار الأذكى للمطاعم الحديثة';
+      position: absolute;
+      top: -13px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: #fff;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3px 12px;
+      border-radius: 20px;
+    }
+    .compare-card h3 {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 18px;
+    }
+    .compare-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .compare-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 14px;
+    }
+
+    /* Features Grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 30px;
+      box-shadow: var(--shadow);
+      transition: all 0.25s ease;
+    }
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: rgba(192, 86, 33, 0.3);
+    }
+    .feature-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 16px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .feature-card h3 {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 10px;
+      color: var(--ink);
+    }
+    .feature-card p {
+      font-size: 13.5px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* Steps Section */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      position: relative;
+    }
+    .step-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 24px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+    .step-num {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: var(--primary);
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 800;
+      font-family: "Sora", sans-serif;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      box-shadow: 0 6px 16px rgba(62, 36, 21, 0.2);
+    }
+    .step-card h3 {
+      font-size: 17px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: var(--ink);
+    }
+    .step-card p {
+      font-size: 13.5px;
+      color: var(--muted);
+    }
+
+    /* CTA Banner */
+    .cta-banner {
+      background: linear-gradient(135deg, var(--primary), #5a2e16);
+      border-radius: 30px;
+      padding: 56px 40px;
+      text-align: center;
+      color: #ffffff;
+      box-shadow: var(--shadow-lg);
+      margin-bottom: 80px;
+    }
+    .cta-banner h2 {
+      font-size: 34px;
+      font-weight: 800;
+      margin-bottom: 14px;
+      letter-spacing: -0.02em;
+    }
+    .cta-banner p {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.85);
+      max-width: 640px;
+      margin: 0 auto 30px;
+    }
+
+    /* Footer */
+    .site-footer {
+      background: #ffffff;
+      border-top: 1px solid var(--border);
+      padding: 50px 24px 30px;
+      margin-top: auto;
+    }
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .footer-top {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 40px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid var(--border);
+    }
+    .footer-brand p {
+      font-size: 13.5px;
+      color: var(--muted);
+      margin-top: 12px;
+      max-width: 340px;
+    }
+    .footer-col h4 {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 16px;
+    }
+    .footer-links {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 13.5px;
+      color: var(--muted);
+    }
+    .footer-links a:hover {
+      color: var(--accent);
+    }
+    .footer-bottom {
+      padding-top: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 900px) {
+      .showcase-card { grid-template-columns: 1fr; }
+      .compare-grid { grid-template-columns: 1fr; }
+      .steps-grid { grid-template-columns: 1fr; }
+      .footer-top { grid-template-columns: 1fr; }
+      .hero-title { font-size: 34px; }
+      .nav-links-wrap { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <header class="landing-nav">
+    <div class="nav-container">
+      <a href="/" class="brand-group">
+        <div class="brand-icon-box">
+          <span class="material-icons-outlined" style="font-size: 24px;">notifications_active</span>
+        </div>
+        <div class="brand-name">Paiger SaaS</div>
+      </a>
+
+      <nav class="nav-links-wrap">
+        <a href="#features">المميزات</a>
+        <a href="#howItWorks">كيف يعمل؟</a>
+        <a href="#comparison">مقارنة التكاليف</a>
+        <a href="#legalPages">الصفحات الرسمية</a>
+      </nav>
+
+      <div class="nav-cta-group">
+        {% if current_admin %}
+        <a href="/admin" class="btn btn-outline">لوحة الإدارة العليا</a>
+        {% elif current_restaurant %}
+        <a href="/dashboard" class="btn btn-outline">لوحة تحكم المتجر</a>
+        {% else %}
+        <a href="/login" class="btn btn-outline">دخول المتاجر</a>
+        {% endif %}
+        <a href="/r/main/cashier" target="_blank" class="btn btn-primary">تجربة الكاشير ↗</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main>
+    <section class="hero-section">
+      <div class="hero-pill">
+        <span class="material-icons-outlined" style="font-size: 16px;">verified</span>
+        <span>الجيل القادم من أنظمة نداء المطاعم والكافيهات</span>
+      </div>
+
+      <h1 class="hero-title">
+        ودّع أجهزة البيجر البلاستيكية.<br>
+        <span>نداء ذكي وفوري عبر هاتف العميل نفسه.</span>
+      </h1>
+
+      <p class="hero-desc">
+        نظام سحابي متطور يستبدل أجهزة النداء الميكانيكية المكلفة والمعرضة للضياع بنداء رقمي فوري يظهر في جوال العميل وشاشة القفل والجزيرة التفاعلية (Dynamic Island) عبر **Apple App Clip** بنقرة واحدة وبدون تحميل.
+      </p>
+
+      <div class="hero-actions">
+        <a href="/r/main/cashier" target="_blank" class="btn btn-accent" style="padding: 13px 26px; font-size: 15px;">
+          <span class="material-icons-outlined">point_of_sale</span>
+          <span>تجربة شاشة الكاشير المباشرة ↗</span>
+        </a>
+        <a href="/r/main/print" target="_blank" class="btn btn-outline" style="padding: 13px 24px; font-size: 15px;">
+          <span class="material-icons-outlined">qr_code_2</span>
+          <span>معاينة ستاند الاستقبال والـ QR</span>
+        </a>
+        <a href="/admin/login" class="btn btn-outline" style="padding: 13px 24px; font-size: 15px;">
+          <span class="material-icons-outlined">admin_panel_settings</span>
+          <span>لوحة الإدارة العامة (Super Admin)</span>
+        </a>
+      </div>
+
+      <div class="hero-meta-badges">
+        <div class="meta-badge-item">
+          <span class="material-icons-outlined" style="color: #10b981; font-size: 18px;">check_circle</span>
+          <span>بدون أي تحميل من App Store (App Clip)</span>
+        </div>
+        <div class="meta-badge-item">
+          <span class="material-icons-outlined" style="color: #10b981; font-size: 18px;">check_circle</span>
+          <span>تنبيه مباشر في Dynamic Island وشاشة القفل</span>
+        </div>
+        <div class="meta-badge-item">
+          <span class="material-icons-outlined" style="color: #10b981; font-size: 18px;">check_circle</span>
+          <span>هوية وألوان مخصصة لكل مطعم</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Interactive Live Showcase -->
+    <section class="showcase-wrap">
+      <div class="showcase-card">
+        <!-- Cashier Terminal Side -->
+        <div class="demo-cashier-box">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+            <div style="font-size: 13px; font-weight: 700; color: var(--primary);">🖥️ شاشة الكاشير السريعة</div>
+            <span style="font-size: 11.5px; background: #ecfdf5; color: #065f46; padding: 2px 8px; border-radius: 6px; font-weight: 700;">بث حي متصل</span>
+          </div>
+
+          <div class="demo-order-badge">
+            <div>
+              <strong style="font-size: 16px; font-family: 'Sora'; color: var(--primary);">طلب #42</strong>
+              <div style="font-size: 12px; color: var(--muted);">بارنز كافيه • سبانش لاتيه</div>
+            </div>
+            <span style="background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 8px;">🔔 يرن الآن</span>
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-top: 14px;">
+            <a href="/r/main/cashier" target="_blank" class="btn btn-primary btn-sm" style="flex: 1; font-size: 12.5px;">فتح الكاشير التجريبي</a>
+            <a href="/r/main/print" target="_blank" class="btn btn-outline btn-sm" style="flex: 1; font-size: 12.5px;">طباعة كود الستاند</a>
+          </div>
+        </div>
+
+        <!-- Dynamic Island Phone Side -->
+        <div class="demo-phone-box">
+          <div style="font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 12px; text-align: center;">جوال العميل • Apple Dynamic Island</div>
+
+          <div class="dynamic-island-preview">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="material-icons-outlined" style="color: #ef4444; font-size: 20px;">notifications_active</span>
+              <strong style="font-size: 14px; font-family: 'Sora';">طلبك جاهز #42</strong>
+            </div>
+            <span style="color: #f59e0b; font-size: 12px; font-weight: 700;">تفضل للاستلام 🏃</span>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; border: 1px solid rgba(255,255,255,0.12);">
+            <div style="display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px;">
+              <span>المطعم:</span>
+              <strong>بارنز كافيه (Barns)</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 13px; color: #34d399;">
+              <span>الحالة:</span>
+              <strong>جرس النداء يرن الآن بالصوت والاهتزاز</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Comparison Section -->
+    <section class="section-wrap" id="comparison">
+      <div class="section-head">
+        <div class="section-badge">مقارنة التكاليف والفاعلية</div>
+        <h2 class="section-title">لماذا تنتقل المقاهي الحديثة إلى بيجر SaaS؟</h2>
+        <p class="section-desc">مقارنة بالأرقام بين أجهزة البيجر البلاستيكية القديمة ونظامنا السحابي الذكي</p>
+      </div>
+
+      <div class="compare-grid">
+        <!-- Old Physical Pagers -->
+        <div class="compare-card">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center;">
+              <span class="material-icons-outlined">cancel</span>
+            </div>
+            <h3 style="margin: 0; color: #991b1b;">أجهزة البيجر البلاستيكية التقليدية</h3>
+          </div>
+          <div class="compare-list">
+            <div class="compare-item">
+              <span class="material-icons-outlined" style="color: #dc2626; font-size: 18px;">close</span>
+              <span>تكلفة شراء باهظة تبدأ من <strong>2,500 إلى 6,000 ريال</strong> لكل طقم أجهزة.</span>
+            </div>
+            <div class="compare-item">
+              <span class="material-icons-outlined" style="color: #dc2626; font-size: 18px;">close</span>
+              <span>تتعرض للكسر والتلف والضياع وسكب المشروبات عليها باستمرار.</span>
+            </div>
+            <div class="compare-item">
+              <span class="material-icons-outlined" style="color: #dc2626; font-size: 18px;">close</span>
+              <span>تتطلب شحناً مستمراً وقواعد شحن تأخذ مساحة كبيرة على كاونتر الكاشير.</span>
+            </div>
+            <div class="compare-item">
+              <span class="material-icons-outlined" style="color: #dc2626; font-size: 18px;">close</span>
+              <span>غير صحية وتنتقل بين أيدي مئات العملاء يومياً.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Paiger SaaS -->
+        <div class="compare-card highlight">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+            <div style="width: 40px; height: 40px; border-radius: 10px; background: #ecfdf5; color: #059669; display: flex; align-items: center; justify-content: center;">
+              <span class="material-icons-outlined">verified</span>
+            </div>
+            <h3 style="margin: 0; color: #065f46;">منصة بيجر السحابية (Paiger SaaS)</h3>
+          </div>
+          <div class="compare-list">
+            <div class="compare-item">
+              <span class="material-icons-outlined" style="color: #059669; font-size: 18px;">check</span>
+              <span><strong>صفر ريال</strong> تكلفة شراء أجهزة أو صيانة؛ يعمل مباشرة عبر جوال العميل.</span>
+            </div>
+            <div class="compare-item">
+              <span class="material-icons-outlined" style="color: #059669; font-size: 18px;">check</span>
+              <span>تجربة Apple App Clip فورية تظهر في الجزيرة التفاعلية وشاشة القفل.</span>
+            </div>
+            <div class="compare-item">
+              <span class="material-icons-outlined" style="color: #059669; font-size: 18px;">check</span>
+              <span>هوية مطعمك الخاصة: ألوانك وشعارك وستاندات كاونتر أنيقة جاهزة للطباعة.</span>
+            </div>
+            <div class="compare-item">
+              <span class="material-icons-outlined" style="color: #059669; font-size: 18px;">check</span>
+              <span>تقارير حية دقيقة لمتوسط أوقات التحضير وحجم الطلبات اليومية.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="section-wrap" id="howItWorks">
+      <div class="section-head">
+        <div class="section-badge">سلاسة الاستخدام</div>
+        <h2 class="section-title">كيف يعمل النظام في 3 خطوات بسيطة؟</h2>
+        <p class="section-desc">تجربة فائقة السهولة للعميل والموظف دون أي تدريب معقد</p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <h3>الطلب عند الكاشير</h3>
+          <p>يطلب العميل قهوته أو وجبته، فيقوم الكاشير بإدخال رقم الطلب بلمسة واحدة على شاشة الكاشير.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <h3>مسح كود الـ QR</h3>
+          <p>يوجه العميل كاميرا هاتفه نحو شاشة الكاشير أو ستاند الطاولة، فيفتح له كارت البيجر فورياً بدون تحميل.</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <h3>الرنين والاستلام</h3>
+          <p>عند اكتمال الطلب، يضغط الكاشير "رنين 🔔"؛ فيهتز جوال العميل ويضيء باللون الأحمر للاستلام فوراً.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section-wrap" id="features">
+      <div class="section-head">
+        <div class="section-badge">حلول متكاملة</div>
+        <h2 class="section-title">مميزات صُممت خصيصاً لقطاع الضيافة</h2>
+        <p class="section-desc">كل ما يحتاجه مقهاك أو مطعمك لتنظيم الطوابير ورفع رضا العملاء</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon"><span class="material-icons-outlined">bolt</span></div>
+          <h3>Apple App Clip فوري</h3>
+          <p>لا يحتاج العميل لانتظار تحميل أي تطبيق من المتجر؛ يفتح النظام في أقل من ثانية واحدة فور مسح الكود.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon"><span class="material-icons-outlined">dynamic_form</span></div>
+          <h3>شاشة القفل والـ Dynamic Island</h3>
+          <p>يتابع العميل تجهيز طلبه في الجزيرة التفاعلية بينما يتصفح هاتفه بحرية تامة دون إبقاء الشاشة مفتوحة.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon"><span class="material-icons-outlined">palette</span></div>
+          <h3>White-Label وهوية خاصة</h3>
+          <p>لكل مطعم رابط خاص به، مع تخصيص الألوان الرسمية والشعار وأيقونة النشاط ومتوسط أوقات التحضير.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon"><span class="material-icons-outlined">print</span></div>
+          <h3>ستاندات كاونتر جاهزة للطباعة</h3>
+          <p>نوفر لكل فرع صفحة ستاند استقبال فاخرة مجهزة بباركود الـ QR بنقرة واحدة لوضعها على الطاولات والكاونتر.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon"><span class="material-icons-outlined">analytics</span></div>
+          <h3>لوحة إحصائيات مركزية</h3>
+          <p>متابعة لحظية لحجم الطلبات، متوسط زمن الانتظار، وسجل الطلبات اليومي لتحسين كفاءة التشغيل.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon"><span class="material-icons-outlined">security</span></div>
+          <h3>حماية وخصوصية 100%</h3>
+          <p>لا نطلب أي تسجيل أو بيانات شخصية للعميل، متوافقون تماماً مع اشتراطات الخصوصية لمتجر أبل الدولي.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Call to Action Banner -->
+    <div class="section-wrap">
+      <div class="cta-banner">
+        <h2>جاهز لتطوير تجربة مقهاك اليوم؟</h2>
+        <p>ابدأ الآن مع بيجر واستمتع بنظام نداء فوري عصري يرفع مبيعاتك ويوفر تكاليف الأجهزة البلاستيكية القديمة.</p>
+        <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;">
+          <a href="/login" class="btn btn-accent" style="padding: 14px 30px; font-size: 15px;">تسجيل دخول المتاجر</a>
+          <a href="/p/contact-support" class="btn btn-outline" style="padding: 14px 28px; font-size: 15px;">طلب اشتراك لمطعمك</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Official Footer -->
+  <footer class="site-footer" id="legalPages">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <div class="brand-group" style="margin-bottom: 12px;">
+            <div class="brand-icon-box">
+              <span class="material-icons-outlined" style="font-size: 24px;">notifications_active</span>
+            </div>
+            <div class="brand-name">Paiger SaaS</div>
+          </div>
+          <p>النظام السحابي الذكي الأول لاستبدال أجهزة البيجر التقليدية بنداء فوري عبر Apple App Clip وشاشة القفل والـ Dynamic Island.</p>
+        </div>
+
+        <div class="footer-col">
+          <h4>روابط الوصول</h4>
+          <div class="footer-links">
+            <a href="/login">بوابة دخول المطاعم</a>
+            <a href="/r/main/cashier" target="_blank">شاشة الكاشير المباشرة</a>
+            <a href="/r/main/print" target="_blank">ستاند كود الـ QR للطباعة</a>
+            <a href="/admin/login">دخول الإدارة العامة (Super Admin)</a>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4>الصفحات الرسمية والقانونية</h4>
+          <div class="footer-links">
+            {% for fp in footer_pages %}
+            <a href="/p/{{ fp.slug }}" target="_blank">{{ fp.title }}</a>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4>المطورين والدعم</h4>
+          <div class="footer-links">
+            <a href="/flutterapp.md" target="_blank">دليل مطوري Flutter</a>
+            <a href="/p/contact-support">مركز المساعدة والدعم</a>
+            <a href="/.well-known/apple-app-site-association" target="_blank">ملف Apple AASA</a>
+            <a href="/docs" target="_blank">وثائق Swagger APIs</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>
+          © 2026 جميع الحقوق محفوظة لمنصة بيجر الذكية (Paiger SaaS) • تكنولوجيا نداء المطاعم الفورية
+        </div>
+        <div style="display: flex; gap: 16px;">
+          <span>🔒 شهادة SSL نشطة ومعتمدة</span>
+          <span>⚡ استضافة سحابية 99.9% Uptime</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

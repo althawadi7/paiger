@@ -713,14 +713,18 @@ async def default_cashier_redirect(request: Request):
         }
     )
 
-@app.get("/", response_class=RedirectResponse)
+@app.get("/", response_class=HTMLResponse)
 async def index_route(request: Request):
-    # Route intelligently based on login session
-    if auth.get_current_super_admin(request):
-        return RedirectResponse(url="/admin")
-    if auth.get_current_restaurant(request):
-        return RedirectResponse(url="/dashboard")
-    return RedirectResponse(url="/login")
+    footer_pages = db.get_all_custom_pages(published_only=True, footer_only=True)
+    return templates.TemplateResponse(
+        "landing.html",
+        {
+            "request": request,
+            "footer_pages": footer_pages,
+            "current_admin": auth.get_current_super_admin(request),
+            "current_restaurant": auth.get_current_restaurant(request),
+        }
+    )
 
 # ─────────────────────────────────────────────────────────────
 # PUBLIC CUSTOM PAGES & FLUTTER APIS
