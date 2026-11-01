@@ -772,6 +772,36 @@ body.ring .widget-box{
   transform: scale(0.97);
 }
 
+.tap-audio-banner {
+  display: none;
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  right: 18px;
+  z-index: 99999;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: #ffffff;
+  padding: 16px 20px;
+  border-radius: 18px;
+  font-weight: 700;
+  font-size: 15px;
+  text-align: center;
+  box-shadow: 0 12px 30px rgba(220, 38, 38, 0.45);
+  animation: pulseAlarm 1.2s infinite;
+  cursor: pointer;
+}
+.tap-audio-banner.show {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+@keyframes pulseAlarm {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
 </style>
 </head>
 <body id="pageBody" data-theme="{{ theme }}">
@@ -815,7 +845,7 @@ body.ring .widget-box{
     <div class=banner-top-row>
       <div class=banner-app-info>
         <img src=/static/img/brand-ready.png alt=Icon class=banner-app-icon>
-        <span class=banner-app-name>مطعم البرجر الذهبي • بيجر الطلبات</span>
+        <span class=banner-app-name>{{ order.restaurant_name or 'بيجر الطلبات الذكي' }}</span>
       </div>
       <span class=banner-time>الآن</span>
     </div>
@@ -830,6 +860,11 @@ body.ring .widget-box{
     <div class=banner-btn-row>
       <button class=banner-action-btn id=bannerActionBtn>🏃‍♂️ أنا في طريقي للاستلام</button>
     </div>
+  </div>
+
+  <!-- Prominent Tap-to-Audio Alert if Autoplay is restricted -->
+  <div id="tapAudioBanner" class="tap-audio-banner">
+    <span>🚨 طلبك جاهز! انقر هنا لتشغيل صوت الرنين 🔊</span>
   </div>
 
 
@@ -1090,43 +1125,70 @@ function beepSynth(){
   } catch(e){}
 }
 
-// 3. Ringing Alarm Starter (Audio, Vibration, Torch, Lock Screen)
+// 3. Prominent Tap-to-Audio Alert (if Autoplay was initially blocked by browser)
+function showTapToAudioPrompt(){
+  var el = document.getElementById("tapAudioBanner");
+  if(el) el.classList.add("show");
+}
+function hideTapToAudioPrompt(){
+  var el = document.getElementById("tapAudioBanner");
+  if(el) el.classList.remove("show");
+}
+
+// 4. Android & System Sticky Notification Widget (Foreground / Lock Screen)
+async function showStickyOrderNotification(status){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    var isRing = status === 'ringing';
+    var isDone = status === 'done';
+    var custPart = order.name ? (" (" + order.name + ")") : "";
+    var restName = "{{ order.restaurant_name or 'بيجر الطلبات الذكي' }}";
+
+    var title = isRing 
+      ? ("🚨 طلبك #" + order.num + custPart + " جاهز للاستلام! 🎉") 
+      : (isDone ? ("✅ تم استلام طلبك #" + order.num) : ("⏳ طلبك #" + order.num + custPart + " • قيد التحضير"));
+
+    var body = isRing 
+      ? (restName + " • تفضل إلى الكاونتر للاستلام الآن 🏃‍♂️") 
+      : (isDone ? "بالعافية! شكراً لزيارتك." : (restName + " • سنهتز ونرن فور أن يجهز طلبك"));
+
+    var notifOpts = {
+      body: body,
+      icon: isRing ? "/static/img/brand-ready.png" : "/static/img/brand-logo.png",
+      badge: "/static/img/brand-logo.png",
+      vibrate: isRing ? [600, 150, 600, 150, 900, 200, 600, 150, 900] : undefined,
+      tag: "paiger-order-" + order.num,
+      renotify: isRing,
+      requireInteraction: isRing,
+      silent: !isRing,
+      data: { url: window.location.href, order_id: order.id },
+      actions: isRing ? [{ action: "onway", title: "🏃‍♂️ أنا في طريقي للاستلام" }] : []
+    };
+
+    if(swReg && swReg.showNotification){
+      await swReg.showNotification(title, notifOpts);
+    } else if(navigator.serviceWorker && navigator.serviceWorker.ready){
+      var reg = await navigator.serviceWorker.ready;
+      await reg.showNotification(title, notifOpts);
+    }
+  } catch(e){}
+}
+
+// 5. Ringing Alarm Starter (Audio, Vibration, Lock Screen Widget)
 function startRingingAlarm(){
   pageBody.classList.add("ring");
 
   // Show Floating Push Notification Banner
   if (pushBanner) pushBanner.classList.add("show");
 
-  // Show Service Worker Native Notification with Strong Vibration
-  try {
-    if ('Notification' in window && Notification.permission === 'granted') {
-      var custPart = order.name ? (" (" + order.name + ")") : "";
-      var notifOpts = {
-        body: "مطعم البرجر الذهبي 🍔 - تفضل إلى الكاونتر للاستلام الآن.",
-        icon: "/static/img/brand-ready.png",
-        badge: "/static/img/brand-logo.png",
-        vibrate: [600, 150, 600, 150, 900, 200, 600, 150, 900],
-        tag: "paiger-alert-" + order.num,
-        renotify: true,
-        requireInteraction: true,
-        data: { url: window.location.href }
-      };
-      if (swReg && swReg.showNotification) {
-        swReg.showNotification("🚨 طلبك #" + order.num + custPart + " جاهز للاستلام!", notifOpts);
-      } else if (navigator.serviceWorker && navigator.serviceWorker.ready) {
-        navigator.serviceWorker.ready.then(function(reg){
-          reg.showNotification("🚨 طلبك #" + order.num + custPart + " جاهز للاستلام!", notifOpts);
-        });
-      }
-    }
-  } catch(e){}
-
-
-  // A. Update on-screen logo to flashing red ready logo
+  // Update on-screen logo to flashing red ready logo
   if(pageLogoImg) pageLogoImg.src = "/static/img/brand-ready.png";
 
   // B. Update Lock Screen MediaSession with red artwork & loud notification title
   updateMediaSession(true);
+
+  // Show System Sticky Notification Widget
+  showStickyOrderNotification('ringing');
 
   // C. Switch main continuous audio element to buzzer sound!
   try {
@@ -1137,8 +1199,17 @@ function startRingingAlarm(){
       mainAudio.volume = 1.0;
     }
     var p = mainAudio.play();
-    if(p && p.catch) p.catch(function(e){ console.warn("Buzzer play error", e); });
-  } catch(e){}
+    if(p && p.catch) {
+      p.catch(function(e){
+        console.warn("Autoplay blocked, showing tap prompt", e);
+        showTapToAudioPrompt();
+      });
+    } else {
+      hideTapToAudioPrompt();
+    }
+  } catch(e){
+    showTapToAudioPrompt();
+  }
 
   // D. Synthesizer & iPhone speaker haptic vibration loop
   if(!beepTimer){
@@ -1158,15 +1229,13 @@ function startRingingAlarm(){
       }, 1600);
     }
   } catch(e){}
-
-  // F. Physical Camera Flashlight Strobe (Hardware LED)
-  // flash removed
 }
 
-// 4. Ringing Alarm Stopper
+// 6. Ringing Alarm Stopper
 function stopRingingAlarm(){
   pageBody.classList.remove("ring");
   if (pushBanner) pushBanner.classList.remove("show");
+  hideTapToAudioPrompt();
   if(pageLogoImg) pageLogoImg.src = "/static/img/brand-logo.png";
 
   // Stop synthesizer
@@ -1179,9 +1248,6 @@ function stopRingingAlarm(){
   try {
     if(navigator.vibrate) navigator.vibrate(0);
   } catch(e){}
-
-  // Stop camera flashlight
-  // flash removed
 
   // Return audio stream to silence if order is still active
   if(order.status !== 'done'){
@@ -1202,32 +1268,32 @@ function stopRingingAlarm(){
   }
 }
 
-// 5. iOS & Android Lock Screen Media Session
+// 7. iOS & Android Lock Screen Media Session Widget
 function updateMediaSession(isRinging){
   if(!("mediaSession" in navigator)) return;
 
-  var logoB64 = isRinging ? window.BRAND_READY_B64 : window.BRAND_LOGO_B64;
   var staticUrl = window.location.origin + (isRinging ? "/static/img/brand-ready.png" : "/static/img/brand-logo.png");
+  var restName = "{{ order.restaurant_name or 'بيجر الطلبات الذكي' }}";
 
   try {
     var custPart = order.name ? (" (" + order.name + ")") : "";
-    var artList = [];
-    if(logoB64) {
-      artList.push({ src: logoB64, sizes: "512x512", type: "image/png" });
-    }
-    artList.push({ src: staticUrl, sizes: "512x512", type: "image/png" });
+    // Note: Android Chrome requires valid HTTPS URLs for MediaMetadata artwork (base64 is rejected)
+    var artList = [
+      { src: staticUrl, sizes: "512x512", type: "image/png" },
+      { src: staticUrl, sizes: "192x192", type: "image/png" }
+    ];
 
     if(isRinging){
       navigator.mediaSession.metadata = new MediaMetadata({
         title: "🚨 طلبك #" + order.num + custPart + " جاهز للاستلام!",
-        artist: "مطعم البرجر الذهبي • Golden Burger 🍔",
+        artist: restName,
         album: "تفضل إلى الكاونتر للاستلام الآن 🏃‍♂️",
         artwork: artList
       });
     } else {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: "⏳ طلبك #" + order.num + custPart + " • قيد التحضير",
-        artist: "مطعم البرجر الذهبي • Golden Burger 🍔",
+        artist: restName,
         album: "بيجر الطلبات الذكي • سنهتز ونرن فور أن يجهز طلبك",
         artwork: artList
       });
@@ -1235,7 +1301,6 @@ function updateMediaSession(isRinging){
 
     navigator.mediaSession.playbackState = "playing";
 
-    // Fix lock screen scrubber so it looks clean
     if("setPositionState" in navigator.mediaSession){
       try {
         navigator.mediaSession.setPositionState({
@@ -1246,18 +1311,14 @@ function updateMediaSession(isRinging){
       } catch(e){}
     }
 
-    // Hide unwanted playlist skip buttons
     ['previoustrack', 'nexttrack', 'seekbackward', 'seekforward'].forEach(function(act){
       try { navigator.mediaSession.setActionHandler(act, null); } catch(e){}
     });
 
-    // Tap on Lock Screen Play / Pause button
     navigator.mediaSession.setActionHandler("pause", function(){
       if(order.status === "ringing"){
-        // User clicked Pause on lock screen -> Confirm arrival to cashier!
         confirmArrival();
       } else {
-        // If customer tapped pause during waiting, keep silence active
         mainAudio.play().catch(function(){});
       }
     });
@@ -1274,13 +1335,14 @@ function updateMediaSession(isRinging){
   } catch(e){}
 }
 
-// 6. UI Synchronizer
+// 8. UI Synchronizer
 function updateUI(){
   var isRinging = order.status === 'ringing';
   var isDone = order.status === 'done';
   var isOnway = order.status === 'onway';
 
-  if(isRinging && isArmed){
+  // Immediate alarm trigger without waiting for separate boolean flags
+  if(isRinging){
     startRingingAlarm();
   } else {
     stopRingingAlarm();
@@ -1298,21 +1360,29 @@ function updateUI(){
     done: ['تم الاستلام', 'بالعافية! شكراً لزيارتك']
   }[order.status] || ['قيد الانتظار', ''];
 
-  wsEl.textContent = m[0];
-  wuEl.textContent = m[1];
+  if (wsEl) wsEl.textContent = m[0];
+  if (wuEl) wuEl.textContent = m[1];
 
   var lvl = {waiting: 1, ringing: 2, onway: 3, done: 3}[order.status] || 1;
-  for(var i = 0; i < 3; i++){
-    stpChildren[i].className = i < lvl ? 'on' : '';
+  if (stpChildren) {
+    for(var i = 0; i < 3; i++){
+      if(stpChildren[i]) stpChildren[i].className = i < lvl ? 'on' : '';
+    }
   }
+
+  updateMediaSession(isRinging);
+  showStickyOrderNotification(order.status);
 }
 
-// 7. Force Permission Modal Accept
+// 9. Force Permission Modal Accept & Universal Audio Arming
+var hasInteracted = false;
 async function activateArming(){
   isArmed = true;
+  hasInteracted = true;
 
-  // Hide Permission Modal smoothly
+  // Hide Permission Modal & Tap Banner smoothly
   if (permissionModal) permissionModal.classList.add("hide");
+  hideTapToAudioPrompt();
 
   // A. Unlock Web Audio Context
   try {
@@ -1320,45 +1390,82 @@ async function activateArming(){
     if(ctx.state === "suspended") await ctx.resume();
   } catch(e){}
 
-  // B. Start background silent audio to establish permanent MediaSession
+  // B. Start background audio to establish permanent Android & iOS Lock Screen MediaSession
   try {
-    mainAudio.src = "/static/audio/silent.wav";
-    mainAudio.loop = true;
-    mainAudio.volume = 1.0;
-    await mainAudio.play();
+    if(order.status === 'ringing'){
+      mainAudio.src = "/static/audio/buzzer.wav";
+      mainAudio.loop = true;
+      mainAudio.volume = 1.0;
+      await mainAudio.play();
+    } else {
+      mainAudio.src = "/static/audio/silent.wav";
+      mainAudio.loop = true;
+      mainAudio.volume = 1.0;
+      await mainAudio.play();
+    }
   } catch(e){}
 
-  // C. Update Lock Screen Notification Widget with Base64 Logo
-  updateMediaSession(false);
+  // C. Update Lock Screen Notification Widget
+  updateMediaSession(order.status === 'ringing');
 
-  // D. Play pleasant chime sound confirming audio is active
-  try {
-    var chime = new Audio("/static/audio/chime.wav");
-    chime.play().catch(function(){});
-  } catch(e){}
+  // D. Play pleasant chime sound confirming audio is active (only if not ringing)
+  if(order.status !== 'ringing'){
+    try {
+      var chime = new Audio("/static/audio/chime.wav");
+      chime.play().catch(function(){});
+    } catch(e){}
+  }
 
-  // E. Initialize Camera Torch LED
-  // flash removed
+  // E. Request notification permission & push subscription
   requestNotificationPermissionAndSubscribe();
 
-  // F. Test vibration burst
+  // F. Test short vibration burst
   try {
     if(navigator.vibrate) navigator.vibrate([200, 100, 200]);
   } catch(e){}
 
-  // G. Request Screen WakeLock if in secure context
-  if(window.isSecureContext && "wakeLock" in navigator){
-    try { navigator.wakeLock.request("screen"); } catch(e){}
-  }
+  // G. Request Screen WakeLock so phone screen stays active while waiting
+  requestWakeLock();
 
   updateUI();
 }
 
+// Universal interaction listener: ANY touch, click, tap anywhere arms audio & starts widgets!
+function onUserTap(){
+  if(!isArmed || (ctx && ctx.state === "suspended")){
+    activateArming();
+  }
+}
+['click', 'touchstart', 'touchend', 'pointerdown', 'keydown'].forEach(function(evt){
+  document.addEventListener(evt, onUserTap, { passive: true });
+});
+
 if (permissionAcceptBtn) {
-  permissionAcceptBtn.onclick = activateArming;
+  permissionAcceptBtn.onclick = function(e){
+    e.stopPropagation();
+    activateArming();
+  };
 }
 
-// 8. Customer confirms arrival (via Top Notification Banner button)
+var tapAudioBannerEl = document.getElementById("tapAudioBanner");
+if(tapAudioBannerEl){
+  tapAudioBannerEl.onclick = function(e){
+    e.stopPropagation();
+    activateArming();
+  };
+}
+
+// Screen WakeLock helper
+var wakeLockObj = null;
+async function requestWakeLock(){
+  if('wakeLock' in navigator){
+    try {
+      wakeLockObj = await navigator.wakeLock.request('screen');
+    } catch(e){}
+  }
+}
+
+// 10. Customer confirms arrival
 async function confirmArrival(){
   order.status = "onway";
   stopRingingAlarm();
@@ -1377,17 +1484,24 @@ if (bannerActionBtn) {
   bannerActionBtn.onclick = confirmArrival;
 }
 
-// 9. Instant Status Fetcher (Background recovery & wakeups)
+// 11. Instant Status Fetcher (Background recovery & wakeups - 1s cadence)
+var isFetchingStatus = false;
 async function checkStatusImmediate(){
+  if(isFetchingStatus) return;
+  isFetchingStatus = true;
   try {
     var res = await fetch("/api/pager/" + order.token + "/status?t=" + Date.now());
+    if(!res.ok){
+      res = await fetch("/api/orders/" + order.token + "/details?t=" + Date.now());
+    }
     if(res.ok){
       var data = await res.json();
-      if(data){
-        if(data.status && data.status !== order.status){
-          order.status = data.status;
-          updateUI();
-        }
+      if(data && data.status && data.status !== order.status){
+        console.log("Real-time status synced:", data.status);
+        order.status = data.status;
+        updateUI();
+      }
+      if(data && (data.orders_ahead !== undefined || data.estimated_wait !== undefined)){
         updateQueueDisplay({
           orders_ahead: data.orders_ahead,
           estimated_wait: data.estimated_wait
@@ -1395,19 +1509,22 @@ async function checkStatusImmediate(){
       }
     }
   } catch(e){}
+  finally {
+    isFetchingStatus = false;
+  }
 }
 
-// Poll every 1.5 seconds as guaranteed fallback
-setInterval(checkStatusImmediate, 1500);
+// Guaranteed real-time sync every 1.0 second (solves background mobile sleep & network latency)
+setInterval(checkStatusImmediate, 1000);
 
-// Screen Wakeup Listeners (when user picks up phone or turns screen on)
-['visibilitychange', 'focus', 'touchstart', 'touchend', 'click'].forEach(function(evt){
+// Screen Wakeup Listeners (when user picks up phone, unlocks screen, or switches back to tab)
+['visibilitychange', 'focus', 'pageshow', 'touchstart', 'click'].forEach(function(evt){
   document.addEventListener(evt, function(){
     if(!ws || ws.readyState !== WebSocket.OPEN){
-      registerServiceWorker();
       connectWS();
     }
     checkStatusImmediate();
+    requestWakeLock();
   }, { passive: true });
 });
 
@@ -1430,24 +1547,35 @@ function applyTheme(theme){
   }
 }
 
-// 10. WebSocket Connection with Keep-Alive Heartbeat
+// 12. WebSocket Connection with Keep-Alive & Instant Event Handling
 function connectWS(){
   var protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   var wsUrl = protocol + "//" + window.location.host + "/ws/pager/" + order.token;
 
   try {
+    if(ws){
+      try { ws.close(); } catch(e){}
+    }
     ws = new WebSocket(wsUrl);
+    ws.onopen = function(){
+      console.log("WebSocket connected to pager stream");
+      checkStatusImmediate();
+    };
     ws.onmessage = function(event){
       try {
         var data = JSON.parse(event.data);
         if(data.theme){
           applyTheme(data.theme);
         }
-        if(data.event === "theme_changed" && data.theme){
-          applyTheme(data.theme);
-        }
-        if(data.order){
-          order.status = data.order.status;
+        var newStatus = (data.order && data.order.status) || data.status;
+        if(data.event === "order_ringing") newStatus = "ringing";
+        if(data.event === "order_onway") newStatus = "onway";
+        if(data.event === "order_done") newStatus = "done";
+        if(data.event === "order_waiting") newStatus = "waiting";
+
+        if(newStatus && newStatus !== order.status){
+          console.log("Real-time status received via WebSocket:", newStatus);
+          order.status = newStatus;
           updateUI();
         }
         if(data.queue_info){
@@ -1455,10 +1583,10 @@ function connectWS(){
         }
       } catch(e){}
     };
-    ws.onclose = function(){ setTimeout(connectWS, 2000); };
+    ws.onclose = function(){ setTimeout(connectWS, 1500); };
     ws.onerror = function(){ try { ws.close(); } catch(e){} };
   } catch(e){
-    setTimeout(connectWS, 3000);
+    setTimeout(connectWS, 2000);
   }
 }
 

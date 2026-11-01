@@ -52,16 +52,18 @@ class ConnectionManager:
 
     async def connect_pager(self, token: str, websocket: WebSocket):
         await websocket.accept()
-        if token not in self.pager_connections:
-            self.pager_connections[token] = []
-        self.pager_connections[token].append(websocket)
+        token_str = str(token).strip()
+        if token_str not in self.pager_connections:
+            self.pager_connections[token_str] = []
+        self.pager_connections[token_str].append(websocket)
 
     def disconnect_pager(self, token: str, websocket: WebSocket):
-        if token in self.pager_connections:
-            if websocket in self.pager_connections[token]:
-                self.pager_connections[token].remove(websocket)
-            if not self.pager_connections[token]:
-                del self.pager_connections[token]
+        token_str = str(token).strip()
+        if token_str in self.pager_connections:
+            if websocket in self.pager_connections[token_str]:
+                self.pager_connections[token_str].remove(websocket)
+            if not self.pager_connections[token_str]:
+                del self.pager_connections[token_str]
 
     async def connect_cashier(self, websocket: WebSocket):
         await websocket.accept()
@@ -72,13 +74,17 @@ class ConnectionManager:
             self.cashier_connections.remove(websocket)
 
     async def notify_pager(self, token: str, data: dict):
-        if token in self.pager_connections:
+        token_str = str(token).strip()
+        if token_str in self.pager_connections:
             message = json.dumps(data)
-            for ws in list(self.pager_connections[token]):
+            dead_ws = []
+            for ws in list(self.pager_connections[token_str]):
                 try:
                     await ws.send_text(message)
                 except Exception:
-                    pass
+                    dead_ws.append(ws)
+            for ws in dead_ws:
+                self.disconnect_pager(token_str, ws)
 
     async def notify_cashiers(self, data: dict):
         message = json.dumps(data)
@@ -813,6 +819,7 @@ async def pager_page(request: Request, token: str):
         }
     )
 
+@app.get("/api/pager/{token}/status")
 @app.get("/api/orders/{token}/details")
 async def get_order_details(token: str):
     order = db.get_order_by_token(token)
@@ -902,6 +909,7 @@ async def ring_order(order_id: int):
 
     await manager.notify_pager(order["token"], {
         "event": "order_ringing",
+        "status": "ringing",
         "order": order
     })
     await manager.notify_cashiers({"event": "order_updated", "order": order})
@@ -921,6 +929,7 @@ async def onway_order(order_id: int):
 
     await manager.notify_pager(order["token"], {
         "event": "order_onway",
+        "status": "onway",
         "order": order
     })
     await manager.notify_cashiers({
@@ -938,6 +947,7 @@ async def complete_order(order_id: int):
 
     await manager.notify_pager(order["token"], {
         "event": "order_done",
+        "status": "done",
         "order": order
     })
     await manager.notify_cashiers({"event": "order_updated", "order": order})
@@ -952,6 +962,7 @@ async def reset_order(order_id: int):
 
     await manager.notify_pager(order["token"], {
         "event": "order_waiting",
+        "status": "waiting",
         "order": order
     })
     await manager.notify_cashiers({"event": "order_updated", "order": order})
