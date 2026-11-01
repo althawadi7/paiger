@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html id="htmlRoot" lang="ar" dir="rtl" data-theme="{{ theme }}">
+<html id="htmlRoot" lang="ar" dir="rtl" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -8,28 +8,32 @@
 <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="/static/img/brand-logo.png">
 <style>
+/* Pure Warm Espresso & Latte Theme (100% Light Mode) */
 :root{
-  --bg:#090b11;--s1:#121622;--s2:#192030;--line:rgba(255,255,255,.09);--ink:#f8fafc;--mute:#94a3b8;
-  --wait:#ffb547;--ring:#ff4d6d;--go:#8b7bff;--done:#36d9a0;
-  --shadow:0 20px 48px rgba(0,0,0,.45);
-  color-scheme:dark;
-}
-:root[data-theme="light"]{
-  --bg:#f7f4ee;--s1:#ffffff;--s2:#f1ece3;--line:rgba(43,29,22,.09);--ink:#24160f;--mute:#7c6958;
-  --wait:#c05621;--ring:#dc2626;--go:#6d28d9;--done:#0f766e;
-  --shadow:0 18px 45px rgba(43,29,22,.08);
+  --bg:#f6f3ed;
+  --s1:#ffffff;
+  --s2:#f0ebe1;
+  --s3:#e6ded2;
+  --line:rgba(58, 38, 28, 0.11);
+  --ink:#23150d;
+  --mute:#7a6656;
+  --primary:#3e2415;
+  --primary-hover:#2b190e;
+  --wait:#9c531d;
+  --ring:#b91c1c;
+  --go:#5b3829;
+  --done:#1e5647;
+  --shadow:0 18px 45px rgba(45, 30, 20, 0.07), 0 2px 10px rgba(45, 30, 20, 0.04);
   color-scheme:light;
-}
-:root[data-theme="light"] .glow{
-  background:
-    radial-gradient(900px 500px at 50% -10%, rgba(192,86,33,0.12), transparent 70%),
-    radial-gradient(800px 500px at 10% 20%, rgba(220,38,38,0.08), transparent 70%),
-    radial-gradient(700px 400px at 90% 40%, rgba(109,40,217,0.08), transparent 70%);
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{height:100%}
 body{
-  background:var(--bg);
+  background:
+    radial-gradient(1200px 700px at 50% -10%, rgba(190, 140, 98, 0.16), transparent 75%),
+    radial-gradient(900px 500px at 10% 30%, rgba(185, 28, 28, 0.05), transparent 75%),
+    radial-gradient(800px 600px at 90% 70%, rgba(110, 70, 45, 0.09), transparent 75%),
+    var(--bg);
   color:var(--ink);
   font-family:"Readex Pro",system-ui,-apple-system,sans-serif;
   font-size:14px;
@@ -43,31 +47,29 @@ body{
 }
 button,input{font:inherit;color:inherit;border:0;background:none}
 button{cursor:pointer}
-:focus-visible{outline:2px solid var(--go);outline-offset:2px}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 
-/* Ambient Radial Glow */
+/* Ambient Latte Crema Glow */
 .glow{
   position:fixed;
   inset:0;
   pointer-events:none;
-  background:
-    radial-gradient(900px 500px at 50% -10%, color-mix(in srgb, var(--go) 16%, transparent), transparent 70%),
-    radial-gradient(800px 500px at 10% 20%, color-mix(in srgb, var(--ring) 12%, transparent), transparent 70%),
-    radial-gradient(700px 400px at 90% 40%, color-mix(in srgb, var(--wait) 10%, transparent), transparent 70%);
+  background:radial-gradient(circle at 50% 0%, rgba(215, 175, 140, 0.12), transparent 70%);
   z-index:0;
 }
 
-/* Centered Responsive Container with Balanced Vertical Spacing */
+/* Full-Width Responsive Workspace */
 .wrap{
   position:relative;
   z-index:1;
   width:100%;
-  max-width:1320px;
+  max-width:1800px;
+  min-height:100vh;
   margin:0 auto;
-  padding:32px 24px 64px;
+  padding:20px 24px 32px;
   display:flex;
   flex-direction:column;
-  gap:26px;
+  gap:18px;
 }
 
 /* 1. Header Bar */
@@ -76,11 +78,11 @@ button{cursor:pointer}
   align-items:center;
   justify-content:space-between;
   gap:18px;
-  background:color-mix(in srgb, var(--s1) 85%, transparent);
+  background:rgba(255, 255, 255, 0.94);
   -webkit-backdrop-filter:blur(24px);
   backdrop-filter:blur(24px);
   border:1px solid var(--line);
-  border-radius:26px;
+  border-radius:24px;
   padding:14px 22px;
   box-shadow:var(--shadow);
   flex-wrap:wrap;
@@ -91,28 +93,30 @@ button{cursor:pointer}
   gap:14px;
 }
 .mark{
-  width:48px;
-  height:48px;
-  border-radius:16px;
-  background:linear-gradient(135deg, var(--ring), var(--go));
+  width:46px;
+  height:46px;
+  border-radius:15px;
+  background:var(--primary);
   display:grid;
   place-items:center;
-  box-shadow:0 8px 24px color-mix(in srgb, var(--ring) 40%, transparent);
+  box-shadow:0 6px 16px rgba(62, 36, 21, 0.22);
+  color:#fff;
 }
 .mark img{
-  width:32px;
-  height:32px;
+  width:30px;
+  height:30px;
   object-fit:contain;
 }
 .brand-text h1{
-  font-size:20px;
+  font-size:18px;
   font-weight:700;
   letter-spacing:-.3px;
   line-height:1.2;
+  color:var(--ink);
 }
 .brand-text p{
   color:var(--mute);
-  font-size:12.5px;
+  font-size:12px;
   margin-top:2px;
 }
 .right{
@@ -125,7 +129,7 @@ button{cursor:pointer}
   display:flex;
   align-items:center;
   gap:8px;
-  padding:9px 18px;
+  padding:8px 16px;
   border-radius:999px;
   background:var(--s2);
   border:1px solid var(--line);
@@ -268,37 +272,224 @@ button{cursor:pointer}
   box-shadow:0 4px 16px color-mix(in srgb, var(--ring) 35%, transparent);
 }
 
-/* 4. Orders Grid - Centered & Responsive */
-.orders-container{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  width:100%;
-}
-.orders{
+/* 3-Column Layout: Full Screen Split */
+.tri-board{
   display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(320px, 370px));
-  justify-content:center;
+  grid-template-columns: 360px 1fr 1fr;
   gap:20px;
   width:100%;
+  flex:1;
+  align-items:stretch;
 }
-.card{
-  background:color-mix(in srgb, var(--s1) 92%, transparent);
-  -webkit-backdrop-filter:blur(24px);
-  backdrop-filter:blur(24px);
-  border:1.5px solid var(--line);
-  border-radius:28px;
+@media (max-width: 1200px){
+  .tri-board{
+    grid-template-columns: 330px 1fr 1fr;
+  }
+}
+@media (max-width: 980px){
+  .tri-board{
+    grid-template-columns: 1fr;
+  }
+}
+
+.board-col{
+  background:rgba(255, 255, 255, 0.95);
+  border:1px solid var(--line);
+  border-radius:26px;
   padding:22px;
+  box-shadow:var(--shadow);
   display:flex;
   flex-direction:column;
   gap:16px;
+  min-height:calc(100vh - 120px);
+  position:relative;
+}
+
+.col-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding-bottom:14px;
+  border-bottom:1px solid var(--line);
+}
+.col-title{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:16.5px;
+  font-weight:700;
+  color:var(--ink);
+}
+.col-badge{
+  font-size:12px;
+  font-weight:700;
+  padding:5px 14px;
+  border-radius:999px;
+  background:var(--s2);
+  color:var(--ink);
+  border:1px solid var(--line);
+}
+
+/* Numpad Calculator Component (Right Column) */
+.numpad-container{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  flex:1;
+}
+
+.numpad-screen{
+  background:var(--s2);
+  border:1.5px solid var(--line);
+  border-radius:20px;
+  padding:16px 20px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  position:relative;
+  box-shadow:inset 0 2px 6px rgba(45, 30, 20, 0.04);
+}
+.numpad-screen-label{
+  font-size:11.5px;
+  color:var(--mute);
+  font-weight:600;
+  letter-spacing:.5px;
+}
+.numpad-display-val{
+  font-size:52px;
+  font-weight:800;
+  color:var(--ink);
+  line-height:1.1;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-1px;
+}
+.numpad-screen-clear{
+  position:absolute;
+  inset-inline-end:14px;
+  top:50%;
+  transform:translateY(-50%);
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  background:var(--s3);
+  color:var(--ink);
+  border:1px solid var(--line);
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  font-size:15px;
+  font-weight:700;
+  transition:all .15s;
+}
+.numpad-screen-clear:hover{
+  background:var(--primary);
+  color:#fff;
+}
+
+/* 3x4 Calculator Grid */
+.numpad-grid{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:10px;
+  flex:1;
+}
+.num-btn{
+  background:var(--s2);
+  border:1px solid var(--line);
+  border-radius:18px;
+  height:62px;
+  font-size:24px;
+  font-weight:700;
+  color:var(--ink);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:transform .1s, background .15s, border-color .15s;
+  box-shadow:0 3px 8px rgba(45, 30, 20, 0.03);
+}
+.num-btn:active{
+  transform:scale(.94);
+  background:var(--s3);
+}
+.num-btn:hover{
+  border-color:rgba(58, 38, 28, 0.25);
+  background:var(--s3);
+}
+.num-btn.action-del{
+  color:var(--ring);
+  font-size:20px;
+}
+.num-btn.action-plus{
+  color:var(--wait);
+  font-size:20px;
+}
+
+/* Issue Pager Button */
+.numpad-submit-btn{
+  height:56px;
+  border-radius:18px;
+  background:var(--primary);
+  color:#fff;
+  font-size:16.5px;
+  font-weight:700;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  cursor:pointer;
+  box-shadow:0 8px 22px rgba(62, 36, 21, 0.25);
+  transition:transform .15s, background .2s, box-shadow .2s;
+  border:none;
+  margin-top:4px;
+}
+.numpad-submit-btn:active{
+  transform:scale(.97);
+}
+.numpad-submit-btn:hover{
+  background:var(--primary-hover);
+  box-shadow:0 10px 28px rgba(62, 36, 21, 0.35);
+}
+
+/* Orders List Inside Middle & Left Columns */
+.col-orders-list{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  overflow-y:auto;
+  max-height:calc(100vh - 210px);
+  padding-inline-end:6px;
+  flex:1;
+}
+.col-orders-list::-webkit-scrollbar{
+  width:6px;
+}
+.col-orders-list::-webkit-scrollbar-thumb{
+  background:var(--s3);
+  border-radius:10px;
+}
+
+/* Espresso Order Card (Number Only) */
+.card{
+  background:var(--s2);
+  border:1px solid var(--line);
+  border-radius:22px;
+  padding:16px 20px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  gap:10px;
   position:relative;
   transition:transform .2s, border-color .2s, box-shadow .2s;
-  box-shadow:var(--shadow);
+  box-shadow:0 4px 14px rgba(45, 30, 20, 0.04);
 }
 .card:hover{
-  transform:translateY(-3px);
-  border-color:color-mix(in srgb, var(--c) 50%, var(--line));
+  transform:translateY(-2px);
+  border-color:rgba(58, 38, 28, 0.25);
 }
 .card.waiting{--c:var(--wait)}
 .card.ringing{--c:var(--ring)}
@@ -306,15 +497,104 @@ button{cursor:pointer}
 .card.done{--c:var(--done)}
 
 .card.ringing{
-  background:linear-gradient(180deg, color-mix(in srgb, var(--ring) 18%, var(--s1)), var(--s1) 75%);
-  border-color:var(--ring);
+  background:#fff5f5;
+  border-color:rgba(185, 28, 28, 0.45);
   animation:ringcard 1.4s infinite;
 }
 @keyframes ringcard{
-  0%,100%{box-shadow:0 0 0 0 color-mix(in srgb, var(--ring) 40%, transparent)}
-  50%{box-shadow:0 0 0 10px color-mix(in srgb, var(--ring) 15%, transparent)}
+  0%,100%{box-shadow:0 0 0 0 rgba(185, 28, 28, 0.25)}
+  50%{box-shadow:0 0 0 8px rgba(185, 28, 28, 0.08)}
 }
-.card.done{opacity:.65}
+.card.done{
+  opacity:.8;
+  background:#f4f6f4;
+}
+.card-num-huge{
+  font-size:46px;
+  font-weight:800;
+  color:var(--ink);
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-1px;
+}
+.card .acts{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+}
+.card .acts .btn.main{
+  flex:1;
+}
+
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:11.5px;
+  font-weight:700;
+  color:var(--c);
+  background:rgba(255, 255, 255, 0.85);
+  border:1px solid var(--line);
+  padding:4px 12px;
+  border-radius:999px;
+}
+.pill:before{
+  content:"";
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--c);
+}
+.ago{
+  font-size:11.5px;
+  color:var(--mute);
+  font-variant-numeric:tabular-nums;
+  font-weight:500;
+}
+
+.btn{
+  height:44px;
+  border-radius:14px;
+  font-weight:700;
+  font-size:13.5px;
+  background:#ffffff;
+  color:var(--ink);
+  border:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  transition:all .15s;
+}
+.btn:hover{background:var(--s2)}
+.btn.main{
+  background:var(--primary);
+  color:#fff;
+  border-color:transparent;
+  box-shadow:0 4px 14px rgba(62, 36, 21, 0.2);
+}
+.btn.main:hover{
+  background:var(--primary-hover);
+  box-shadow:0 6px 18px rgba(62, 36, 21, 0.28);
+}
+.btn.sq{
+  flex:0 0 44px;
+  color:var(--mute);
+}
+.btn.sq:hover{color:var(--ink);border-color:var(--primary)}
+.btn.sq.qr-btn{
+  color:var(--primary);
+  background:#ffffff;
+  border-color:var(--line);
+}
+.btn.sq.qr-btn:hover{
+  background:var(--s2);
+}
+.btn.sq.del-btn:hover{
+  color:var(--ring);
+}
 
 .card-top-row, .row{
   display:flex;
@@ -498,17 +778,40 @@ dialog::backdrop{background:rgba(3,5,10,.75);backdrop-filter:blur(10px)}
 }
 .go:active{transform:scale(.98)}
 
+/* Clean Espresso Dialogs */
+dialog{
+  border:none;
+  background:transparent;
+  max-width:100vw;
+  max-height:100vh;
+  padding:0;
+  margin:auto;
+}
+dialog::backdrop{
+  background:rgba(40, 25, 15, 0.45);
+  -webkit-backdrop-filter:blur(8px);
+  backdrop-filter:blur(8px);
+}
+.sheet{
+  width:min(440px, 92vw);
+  background:#ffffff;
+  border:1px solid var(--line);
+  border-radius:28px;
+  padding:30px 24px;
+  box-shadow:0 24px 60px rgba(45, 30, 20, 0.18);
+  display:flex;
+  flex-direction:column;
+}
+
 /* Dedicated QR Modal Box - Large & Customer Scannable */
 .qr-sheet{
-  width:min(520px, 94vw);
-  background:rgba(18, 22, 34, 0.97);
-  border:1.5px solid rgba(255, 181, 71, 0.35);
-  border-radius:36px;
-  padding:32px 28px;
+  width:min(460px, 94vw);
+  background:#ffffff;
+  border:1px solid var(--line);
+  border-radius:32px;
+  padding:30px 24px;
   text-align:center;
-  box-shadow:0 24px 70px rgba(0,0,0,.75), 0 0 50px rgba(255, 181, 71, 0.18);
-  -webkit-backdrop-filter:blur(30px);
-  backdrop-filter:blur(30px);
+  box-shadow:0 24px 70px rgba(45, 30, 20, 0.2);
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -520,7 +823,7 @@ dialog::backdrop{background:rgba(3,5,10,.75);backdrop-filter:blur(10px)}
   gap:8px;
   font-size:26px;
   font-weight:800;
-  color:#fff;
+  color:var(--ink);
   letter-spacing:-.5px;
 }
 .qr-subtitle{
@@ -537,9 +840,10 @@ dialog::backdrop{background:rgba(3,5,10,.75);backdrop-filter:blur(10px)}
   max-height:80vw;
   margin:8px auto;
   padding:16px;
-  background:#fff;
-  border-radius:28px;
-  box-shadow:0 18px 50px rgba(0,0,0,.6), 0 0 0 3px rgba(255,255,255,.1);
+  background:#ffffff;
+  border-radius:24px;
+  border:1.5px solid var(--line);
+  box-shadow:0 12px 36px rgba(45, 30, 20, 0.08);
   display:flex;
   align-items:center;
   justify-content:center;
@@ -556,11 +860,11 @@ dialog::backdrop{background:rgba(3,5,10,.75);backdrop-filter:blur(10px)}
   width:64px;
   height:64px;
   border-radius:50%;
-  background:color-mix(in srgb,var(--ring) 15%,transparent);
+  background:rgba(185, 28, 28, 0.1);
   display:grid;
   place-items:center;
   margin:0 auto;
-  border:1px solid color-mix(in srgb,var(--ring) 30%,transparent);
+  border:1px solid rgba(185, 28, 28, 0.2);
 }
 
 .toast{
@@ -568,8 +872,8 @@ dialog::backdrop{background:rgba(3,5,10,.75);backdrop-filter:blur(10px)}
   left:50%;
   top:calc(18px + env(safe-area-inset-top,0px));
   transform:translate(-50%,-160%);
-  background:var(--ink);
-  color:var(--bg);
+  background:var(--primary);
+  color:#ffffff;
   padding:12px 24px;
   border-radius:18px;
   font-weight:700;
@@ -602,7 +906,7 @@ dialog::backdrop{background:rgba(3,5,10,.75);backdrop-filter:blur(10px)}
   <header class="bar">
     <div class="brand">
       <div class="mark">
-        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
           <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
         </svg>
@@ -614,36 +918,92 @@ dialog::backdrop{background:rgba(3,5,10,.75);backdrop-filter:blur(10px)}
     </div>
     <div class="right">
       <div class="net"><span class="live"></span>الشبكة <b>{{ local_ip }}:{{ port }}</b></div>
-      <button class="ib" id="theme" aria-label="تبديل المظهر">◐</button>
-      <button class="add" id="open"><b style="font-size:20px;line-height:1">+</b><span>طلب جديد</span></button>
     </div>
   </header>
 
-  <!-- 2. Full-Width Stats -->
-  <section class="stats">
-    <div class="stat" style="--c:var(--wait)"><span><i></i>قيد التحضير</span><strong id="c-waiting">0</strong></div>
-    <div class="stat" style="--c:var(--ring)"><span><i></i>جاهز ويرن الآن</span><strong id="c-ringing">0</strong></div>
-    <div class="stat" style="--c:var(--go)"><span><i></i>في الطريق للاستلام</span><strong id="c-onway">0</strong></div>
-    <div class="stat" style="--c:var(--done)"><span><i></i>تم الاستلام</span><strong id="c-done">0</strong></div>
-  </section>
+  <!-- 2. Tri-Board Dashboard: Right (Create), Middle (Calling/Ringing & Waiting), Left (Done & History) -->
+  <main class="tri-board">
+    
+    <!-- Right Column: Create Order via Calculator Numpad -->
+    <section class="board-col col-create">
+      <div class="col-header">
+        <div class="col-title">
+          <span>🔢</span>
+          <span>إصدار بيجر الطلب</span>
+        </div>
+        <span class="col-badge" style="--badge-c:var(--go);">لوحة أرقام سريعة</span>
+      </div>
 
-  <!-- 3. Centered Filter Tabs -->
-  <div class="tabs-wrap">
-    <nav class="tabs" id="tabs">
-      <button data-f="all" aria-pressed="true">الكل</button>
-      <button data-f="waiting" aria-pressed="false">قيد التحضير</button>
-      <button data-f="ringing" aria-pressed="false">جاهز ويرن</button>
-      <button data-f="onway" aria-pressed="false">في الطريق</button>
-      <button data-f="done" aria-pressed="false">تم الاستلام</button>
-    </nav>
-  </div>
+      <div class="numpad-container">
+        <!-- Display Screen -->
+        <div class="numpad-screen">
+          <span class="numpad-screen-label">رقم الطلب (ORDER NUMBER)</span>
+          <div class="numpad-display-val" id="numpadDisplay">42</div>
+          <button class="numpad-screen-clear" id="numpadClearBtn" title="مسح الرقم">✕</button>
+        </div>
 
-  <!-- 4. Centered & Responsive Orders Grid -->
-  <div class="orders-container">
-    <main class="orders" id="orders">
-      <!-- Injected via JavaScript -->
-    </main>
-  </div>
+        <!-- 3x4 Calculator Grid -->
+        <div class="numpad-grid">
+  <button type="button" class="num-btn" data-key="1">1</button>
+  <button type="button" class="num-btn" data-key="2">2</button>
+  <button type="button" class="num-btn" data-key="3">3</button>
+
+  <button type="button" class="num-btn" data-key="4">4</button>
+  <button type="button" class="num-btn" data-key="5">5</button>
+  <button type="button" class="num-btn" data-key="6">6</button>
+
+  <button type="button" class="num-btn" data-key="7">7</button>
+  <button type="button" class="num-btn" data-key="8">8</button>
+  <button type="button" class="num-btn" data-key="9">9</button>
+
+  <button type="button" class="num-btn action-del" data-key="backspace" title="حذف رقم">⌫</button>
+  <button type="button" class="num-btn" data-key="0">0</button>
+  <button type="button" class="num-btn action-plus" data-key="inc" title="الطلب التالي (+1)">+1</button>
+        </div>
+
+        <!-- Issue Pager Button -->
+        <button class="numpad-submit-btn" id="numpadSubmitBtn" type="button">
+          <span>🚀</span>
+          <span>إصدار البيجر (ENTER)</span>
+        </button>
+      </div>
+
+      <div style="font-size:11.5px; color:var(--mute); text-align:center; line-height:1.5;">
+        اضغط على الأرقام أو استخدم لوحة المفاتيح ثم اضغط <b>Enter</b> لإصدار البيجر فوراً.
+      </div>
+    </section>
+
+    <!-- Middle Column: Calling & Active Orders (Waiting / Ringing / On Way) -->
+    <section class="board-col col-call">
+      <div class="col-header">
+        <div class="col-title">
+          <span>🔔</span>
+          <span>استدعاء الطلبات والتحضير</span>
+        </div>
+        <span class="col-badge" id="badgeActiveCount" style="--badge-c:var(--ring);">0 نشط</span>
+      </div>
+
+      <div class="col-orders-list" id="activeOrdersList">
+        <!-- Injected via JavaScript -->
+      </div>
+    </section>
+
+    <!-- Left Column: Done & Completed Orders -->
+    <section class="board-col col-done">
+      <div class="col-header">
+        <div class="col-title">
+          <span>✅</span>
+          <span>الطلبات المستلمة والمنتهية</span>
+        </div>
+        <span class="col-badge" id="badgeDoneCount" style="--badge-c:var(--done);">0 تم الاستلام</span>
+      </div>
+
+      <div class="col-orders-list" id="doneOrdersList">
+        <!-- Injected via JavaScript -->
+      </div>
+    </section>
+
+  </main>
 </div>
 
 <!-- Modal 1: Create New Order -->
@@ -671,20 +1031,20 @@ dialog::backdrop{background:rgba(3,5,10,.75);backdrop-filter:blur(10px)}
       <img id="modalQrImg" src="" alt="QR Code">
     </div>
 
-    <label style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:12.5px; color:var(--text); cursor:pointer; background:rgba(255,255,255,0.06); padding:9px 16px; border-radius:14px; border:1px solid rgba(255,181,71,0.25); width:100%;">
-      <input type="checkbox" id="httpsQrToggle" checked style="accent-color:#ffb547; width:18px; height:18px;">
+    <label style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:12.5px; color:var(--mute); cursor:pointer; background:var(--s2); padding:9px 16px; border-radius:14px; border:1px solid var(--line); width:100%;">
+      <input type="checkbox" id="httpsQrToggle" checked style="accent-color:var(--primary); width:18px; height:18px;">
       <span>🔒 رابط آمن مشفر (HTTPS) لإشعارات الويب وشاشة القفل</span>
     </label>
 
     <div style="display:flex; flex-direction:column; gap:10px; width:100%; margin-top:4px;">
-      <a id="modalQrOpenLink" class="go" target="_blank" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; height:50px; font-size:15px; border-radius:16px;">
+      <a id="modalQrOpenLink" class="btn main" target="_blank" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; height:48px; font-size:14.5px; border-radius:14px;">
         <span>🚀</span> فتح البيجر للتجربة المباشرة
       </a>
       <div style="display:flex; gap:10px;">
-        <button class="btn" id="modalQrCopyBtn" style="flex:1; height:46px; border-radius:15px; font-weight:700;">
+        <button class="btn" id="modalQrCopyBtn" style="flex:1; height:46px; border-radius:14px; font-weight:700;">
           📋 نسخ الرابط
         </button>
-        <button class="btn" id="modalQrCloseBtn" style="flex:1; height:46px; border-radius:15px; font-weight:700;">
+        <button class="btn" id="modalQrCloseBtn" style="flex:1; height:46px; border-radius:14px; font-weight:700;">
           إغلاق
         </button>
       </div>
@@ -692,7 +1052,7 @@ dialog::backdrop{background:rgba(3,5,10,.75);backdrop-filter:blur(10px)}
   </div>
 </dialog>
 
-<!-- Modal 3: Custom Dark Confirm Modal -->
+<!-- Modal 3: Custom Confirm Modal -->
 <dialog id="confirmDlg">
   <div class="sheet" style="max-width:390px; text-align:center;">
     <div class="confirm-icon">
@@ -703,15 +1063,15 @@ dialog::backdrop{background:rgba(3,5,10,.75);backdrop-filter:blur(10px)}
         <line x1="14" y1="11" x2="14" y2="17"></line>
       </svg>
     </div>
-    <h2 id="confirmTitle" style="font-size:20px; font-weight:700; margin-top:14px;">حذف هذا الطلب؟</h2>
+    <h2 id="confirmTitle" style="font-size:20px; font-weight:700; margin-top:14px; color:var(--ink);">حذف هذا الطلب؟</h2>
     <p id="confirmDesc" style="color:var(--mute); font-size:13px; margin:8px 0 22px; line-height:1.6;">
       هل أنت متأكد من حذف هذا الطلب نهائياً من شاشة الكاشير؟
     </p>
     <div style="display:flex; gap:10px;">
-      <button class="btn main" id="confirmOkBtn" style="background:var(--ring); color:#fff; border-radius:14px; height:48px; font-weight:700;">
+      <button class="btn" id="confirmOkBtn" style="flex:1; background:var(--ring); color:#fff; border-radius:14px; height:48px; font-weight:700;">
         تأكيد الحذف
       </button>
-      <button class="btn" id="confirmCancelBtn" style="border-radius:14px; height:48px; font-weight:600;">
+      <button class="btn" id="confirmCancelBtn" style="flex:1; border-radius:14px; height:48px; font-weight:600;">
         إلغاء
       </button>
     </div>
@@ -776,49 +1136,104 @@ async function loadOrders(){
   }
 }
 
+function buildCard(o){
+  var main = o.status === 'waiting' ? '<button type="button" class="btn main" data-a="ring" data-id="'+o.id+'">🔔 رنين البيجر</button>'
+    : o.status === 'ringing' ? '<button type="button" class="btn main" data-a="ring" data-id="'+o.id+'">↻ تكرار</button><button type="button" class="btn" data-a="done" data-id="'+o.id+'">✓ استلم</button>'
+    : o.status === 'onway' ? '<button type="button" class="btn main" data-a="done" data-id="'+o.id+'">✓ تم الاستلام</button>'
+    : '<button type="button" class="btn" data-a="wait" data-id="'+o.id+'">↩️ إعادة</button>';
+
+  return '<article class="card '+o.status+'" data-id="'+o.id+'">'
+    +'<div class="row" style="width:100%;"><span class="pill">'+(L[o.status]||o.status)+'</span><span class="ago">'+ago(o.created)+(o.rings?' · '+o.rings+'×':'')+'</span></div>'
+    +'<div class="card-num-huge">#'+esc(o.num)+'</div>'
+    +'<div class="acts">'
+      +main
+      +'<button type="button" class="btn sq qr-btn" data-a="qr" data-token="'+o.token+'" data-num="'+esc(o.num)+'" title="عرض رمز QR للعميل">'
+        +'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+          +'<rect x="3" y="3" width="7" height="7"></rect>'
+          +'<rect x="14" y="3" width="7" height="7"></rect>'
+          +'<rect x="14" y="14" width="7" height="7"></rect>'
+          +'<rect x="3" y="14" width="7" height="7"></rect>'
+          +'<line x1="7" y1="7" x2="7.01" y2="7"></line>'
+          +'<line x1="17" y1="7" x2="17.01" y2="7"></line>'
+          +'<line x1="7" y1="17" x2="7.01" y2="7"></line>'
+          +'<line x1="17" y1="17" x2="17.01" y2="17"></line>'
+        +'</svg>'
+      +'</button>'
+      +'<button type="button" class="btn sq del-btn" data-a="del" data-id="'+o.id+'" data-num="'+esc(o.num)+'" title="حذف الطلب">'
+        +'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+          +'<polyline points="3 6 5 6 21 6"></polyline>'
+          +'<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>'
+        +'</svg>'
+      +'</button>'
+    +'</div></article>';
+}
+
+var numpadValue = "42";
+
+function updateNumpadDisplay(){
+  var el = $('#numpadDisplay');
+  if(el){
+    el.textContent = numpadValue || '0';
+  }
+}
+
+function handleNumpadKey(key){
+  if(key === 'backspace'){
+    numpadValue = numpadValue.slice(0, -1);
+    if(!numpadValue) numpadValue = '';
+  } else if(key === 'clear'){
+    numpadValue = '';
+  } else if(key === 'inc'){
+    var cur = parseInt(numpadValue, 10) || 0;
+    numpadValue = String(cur + 1);
+  } else {
+    if(numpadValue.length < 5){
+      // If was 0, replace
+      if(numpadValue === '0') numpadValue = key;
+      else numpadValue += key;
+    }
+  }
+  updateNumpadDisplay();
+}
+
 function render(){
-  var c = {waiting:0, ringing:0, onway:0, done:0};
-  orders.forEach(function(o){ if(c[o.status] !== undefined) c[o.status]++ });
-  for(var k in c) $('#c-'+k).textContent = c[k];
-
   var rank = {ringing:0, onway:1, waiting:2, done:3};
-  var list = orders.filter(function(o){return filter==='all'||o.status===filter})
-                   .sort(function(a,b){return (rank[a.status] - rank[b.status]) || (b.id - a.id)});
+  var activeList = orders.filter(function(o){ return o.status !== 'done'; })
+                         .sort(function(a,b){ return (rank[a.status] - rank[b.status]) || (b.id - a.id); });
 
-  $('#orders').innerHTML = list.length ? list.map(function(o){
-    var main = o.status === 'waiting' ? '<button class="btn main" data-a="ring" data-id="'+o.id+'">🔔 رنين البيجر</button>'
-      : o.status === 'ringing' ? '<button class="btn main" data-a="ring" data-id="'+o.id+'">↻ تكرار</button><button class="btn" data-a="done" data-id="'+o.id+'">✓ استلم</button>'
-      : o.status === 'onway' ? '<button class="btn main" data-a="done" data-id="'+o.id+'">✓ تم الاستلام</button>'
-      : '<button class="btn" data-a="wait" data-id="'+o.id+'">↩️ إعادة</button>';
+  var doneList = orders.filter(function(o){ return o.status === 'done'; })
+                       .sort(function(a,b){ return b.id - a.id; });
 
-    return '<article class="card '+o.status+'" data-id="'+o.id+'">'
-      +'<div class="row"><span class="pill">'+(L[o.status]||o.status)+'</span><span class="ago">'+ago(o.created)+(o.rings?' · '+o.rings+'×':'')+'</span></div>'
-      +'<div class="num">#'+esc(o.num)+'</div>'
-      +'<div class="who"><span class="av">'+(o.name?esc(o.name.charAt(0)):'؟')+'</span><div><b>'+(o.name?esc(o.name):'بدون اسم')+'</b><small>'+(o.note?esc(o.note):'—')+'</small></div></div>'
-      +'<div class="acts">'
-        +main
-        // Explicit QR Code Button with clear SVG icon
-        +'<button class="btn sq qr-btn" data-a="qr" data-token="'+o.token+'" data-num="'+esc(o.num)+'" title="عرض رمز QR للعميل">'
-          +'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
-            +'<rect x="3" y="3" width="7" height="7"></rect>'
-            +'<rect x="14" y="3" width="7" height="7"></rect>'
-            +'<rect x="14" y="14" width="7" height="7"></rect>'
-            +'<rect x="3" y="14" width="7" height="7"></rect>'
-            +'<line x1="7" y1="7" x2="7.01" y2="7"></line>'
-            +'<line x1="17" y1="7" x2="17.01" y2="7"></line>'
-            +'<line x1="7" y1="17" x2="7.01" y2="7"></line>'
-            +'<line x1="17" y1="17" x2="17.01" y2="17"></line>'
-          +'</svg>'
-        +'</button>'
-        // Delete button
-        +'<button class="btn sq del-btn" data-a="del" data-id="'+o.id+'" data-num="'+esc(o.num)+'" title="حذف الطلب">'
-          +'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
-            +'<polyline points="3 6 5 6 21 6"></polyline>'
-            +'<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>'
-          +'</svg>'
-        +'</button>'
-      +'</div></article>';
-  }).join('') : '<div class="empty"><div class="empty-icon">📟</div><h3>لا توجد طلبات هنا حالياً</h3><p>اضغط على زر «+ طلب جديد» بالأعلى لإصدار بيجر للزبون ومتابعة دوره لحظياً.</p></div>';
+  // Update Badges
+  if($('#badgeActiveCount')) $('#badgeActiveCount').textContent = activeList.length + ' نشط';
+  if($('#badgeDoneCount')) $('#badgeDoneCount').textContent = doneList.length + ' تم الاستلام';
+
+  // Middle Column: Active & Ringing Orders
+  var activeEl = $('#activeOrdersList');
+  if(activeEl){
+    activeEl.innerHTML = activeList.length ? activeList.map(buildCard).join('') :
+      '<div class="col-empty">'
+        +'<div class="col-empty-icon">🔔</div>'
+        +'<h4>لا توجد طلبات نشطة حالياً</h4>'
+        +'<p>أدخل رقم الطلب من لوحة الآلة الحاسبة لإصدار البيجر واستدعاء العميل فور جهوزيته.</p>'
+      +'</div>';
+  }
+
+  // Left Column: Done Orders
+  var doneEl = $('#doneOrdersList');
+  if(doneEl){
+    doneEl.innerHTML = doneList.length ? doneList.map(buildCard).join('') :
+      '<div class="col-empty">'
+        +'<div class="col-empty-icon">📦</div>'
+        +'<h4>سجل الاستلام فارغ</h4>'
+        +'<p>عند تسليم الطلب للزبون، سيظهر هنا في السجل مع إمكانية إعادته أو حذفه.</p>'
+      +'</div>';
+  }
+
+  if(!numpadValue || numpadValue === '42'){
+    numpadValue = String(nextNum);
+    updateNumpadDisplay();
+  }
 }
 
 function getTargetBaseUrl(){
@@ -863,33 +1278,98 @@ $('#modalQrCloseBtn').onclick = function(){
   $('#qrDlg').close();
 };
 
-async function issue(){
-  var n = $('#fnum').value.trim();
-  if(!n){ $('#fnum').focus(); return }
-
+async function issueOrderWithValues(n, name, note){
+  if(!n) return;
   try {
     var res = await fetch("/api/orders", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({
         order_number: n,
-        customer_name: $('#fname').value.trim(),
-        notes: $('#fnote').value.trim()
+        customer_name: name,
+        notes: note
       })
     });
 
     if(res.ok){
       var created = await res.json();
       nextNum = (parseInt(n) || 0) + 1;
-      $('#dlg').close();
+      
+      // Reset inputs
+      if($('#qnum')) $('#qnum').value = nextNum;
+      if($('#qname')) $('#qname').value = '';
+      if($('#qnote')) $('#qnote').value = '';
+      
+      // Close modal if open
+      if($('#dlg') && $('#dlg').open) $('#dlg').close();
 
       await loadOrders();
-      // Immediately display the clean QR Code modal for this new order!
+      // Show QR Code modal immediately for customer scanning
       showQrModal(created.token, created.order_number);
+      toast("✨ تم إصدار بيجر الطلب #" + created.order_number);
     }
   } catch(e){
     toast("⚠️ خطأ أثناء إنشاء الطلب: " + e.message);
   }
+}
+
+async function issueNumpadOrder(){
+  var n = numpadValue.trim();
+  if(!n || n === '0'){
+    toast("⚠️ الرجاء إدخال رقم الطلب أولاً");
+    return;
+  }
+  await issueOrderWithValues(n, '', '');
+}
+
+// Calculator Click Listeners
+var numpadGrid = document.querySelector('.numpad-grid');
+if(numpadGrid){
+  numpadGrid.onclick = function(e){
+    var btn = e.target.closest('.num-btn');
+    if(!btn) return;
+    var k = btn.dataset.key;
+    if(k) handleNumpadKey(k);
+  };
+}
+
+if($('#numpadClearBtn')){
+  $('#numpadClearBtn').onclick = function(){
+    handleNumpadKey('clear');
+  };
+}
+
+if($('#numpadSubmitBtn')){
+  $('#numpadSubmitBtn').onclick = issueNumpadOrder;
+}
+
+// Physical Keyboard input listener for Numpad
+window.addEventListener('keydown', function(e){
+  // If a modal dialog is open, skip global shortcuts
+  if(($('#dlg') && $('#dlg').open) || ($('#qrDlg') && $('#qrDlg').open) || ($('#confirmDlg') && $('#confirmDlg').open)){
+    return;
+  }
+  
+  if(e.key >= '0' && e.key <= '9'){
+    handleNumpadKey(e.key);
+  } else if(e.key === 'Backspace'){
+    handleNumpadKey('backspace');
+  } else if(e.key === 'Enter'){
+    e.preventDefault();
+    issueNumpadOrder();
+  } else if(e.key === '+' || e.key === '='){
+    handleNumpadKey('inc');
+  } else if(e.key === 'Escape' || e.key === 'c' || e.key === 'C'){
+    handleNumpadKey('clear');
+  }
+});
+
+async function issue(){
+  var n = $('#fnum').value.trim();
+  if(!n){ $('#fnum').focus(); return; }
+  var name = $('#fname').value.trim();
+  var note = $('#fnote').value.trim();
+  await issueOrderWithValues(n, name, note);
 }
 
 function openCreateDlg(){
@@ -900,12 +1380,18 @@ function openCreateDlg(){
   setTimeout(function(){ $('#fname').focus() }, 50);
 }
 
-$('#open').onclick = openCreateDlg;
-$('#issue').onclick = issue;
+if($('#open')){
+  $('#open').onclick = openCreateDlg;
+}
+if($('#issue')){
+  $('#issue').onclick = issue;
+}
 
-$('#form').onkeydown = function(e){
-  if(e.key === 'Enter'){ e.preventDefault(); issue(); }
-};
+if($('#form')){
+  $('#form').onkeydown = function(e){
+    if(e.key === 'Enter'){ e.preventDefault(); issue(); }
+  };
+}
 
 // Close modals on clicking overlay backdrop
 [$('#dlg'), $('#qrDlg'), $('#confirmDlg')].forEach(function(d){
@@ -940,7 +1426,7 @@ $('#confirmOkBtn').onclick = async function(){
   }
 };
 
-$('#orders').onclick = async function(e){
+async function handleOrderAction(e){
   var b = e.target.closest('button');
   if(!b) return;
 
@@ -974,43 +1460,29 @@ $('#orders').onclick = async function(e){
   if(a === 'qr'){
     showQrModal(b.dataset.token, b.dataset.num);
   }
-};
-
-$('#tabs').onclick = function(e){
-  var b = e.target.closest('button');
-  if(!b) return;
-  filter = b.dataset.f;
-  [].forEach.call($('#tabs').children, function(x){
-    x.setAttribute('aria-pressed', x === b);
-  });
-  render();
-};
-
-function applyTheme(theme){
-  document.documentElement.setAttribute('data-theme', theme);
-  document.documentElement.style.colorScheme = theme;
-  var themeBtn = $('#theme');
-  if(themeBtn){
-    themeBtn.textContent = theme === 'dark' ? '☀️' : '☕';
-    themeBtn.title = theme === 'dark' ? 'التبديل إلى الوضع النهاري الإسبريسو' : 'التبديل إلى الوضع الليلي';
-  }
 }
 
-$('#theme').onclick = async function(){
-  var current = document.documentElement.getAttribute('data-theme') || 'dark';
-  var next = current === 'dark' ? 'light' : 'dark';
-  applyTheme(next);
-  try {
-    await fetch("/api/settings/theme", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({theme: next})
+if($('#activeOrdersList')){
+  $('#activeOrdersList').onclick = handleOrderAction;
+}
+if($('#doneOrdersList')){
+  $('#doneOrdersList').onclick = handleOrderAction;
+}
+if($('#orders')){
+  $('#orders').onclick = handleOrderAction;
+}
+
+if($('#tabs')){
+  $('#tabs').onclick = function(e){
+    var b = e.target.closest('button');
+    if(!b) return;
+    filter = b.dataset.f;
+    [].forEach.call($('#tabs').children, function(x){
+      x.setAttribute('aria-pressed', x === b);
     });
-    toast(next === 'light' ? '☕ تم التبديل إلى وضع الإسبريسو الفاتح لجميع الأجهزة' : '🌙 تم التبديل إلى الوضع الليلي لجميع الأجهزة');
-  } catch(e){
-    console.error("Theme change failed", e);
-  }
-};
+    render();
+  };
+}
 
 function connectWS(){
   var protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -1024,9 +1496,6 @@ function connectWS(){
           playDing();
           toast('🏃 صاحب الطلب #' + (data.order ? data.order.order_number : '') + ' في طريقه للاستلام الآن!');
         }
-        if(data.event === "theme_changed" && data.theme){
-          applyTheme(data.theme);
-        }
         loadOrders();
       } catch(e){}
     };
@@ -1036,8 +1505,6 @@ function connectWS(){
   }
 }
 
-// Initial theme icon setup
-applyTheme(document.documentElement.getAttribute('data-theme') || 'dark');
 loadOrders();
 connectWS();
 })();
