@@ -1088,9 +1088,27 @@ dialog::backdrop{
 (function(){
 var BASE_URL = "{{ base_url }}";
 var $ = function(s){return document.querySelector(s)};
-var orders = [], filter = 'all', nextNum = 42, ws = null;
+var orders = [], filter = 'all', nextNum = 1, ws = null;
 var pendingDeleteId = null;
+var hasUserManuallyEditedNumpad = false;
 var L = {waiting:'قيد التحضير', ringing:'جاهز - يرن', onway:'في الطريق', done:'تم الاستلام'};
+
+function computeNextOrderNumber(){
+  if(!orders || !orders.length){
+    nextNum = 1;
+    return;
+  }
+  // Find the latest created order by id that has a positive numeric order number
+  var sorted = orders.slice().sort(function(a, b){ return (b.id || 0) - (a.id || 0); });
+  for(var i = 0; i < sorted.length; i++){
+    var val = parseInt(sorted[i].num, 10);
+    if(!isNaN(val) && val > 0 && val < 999999){
+      nextNum = val + 1;
+      return;
+    }
+  }
+  nextNum = 1;
+}
 
 function esc(t){return String(t||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function ago(created){
@@ -1134,6 +1152,11 @@ async function loadOrders(){
           created: item.created_at
         };
       });
+      computeNextOrderNumber();
+      if(!hasUserManuallyEditedNumpad || !numpadValue || numpadValue === '42' || numpadValue === '0'){
+        numpadValue = String(nextNum);
+        updateNumpadDisplay();
+      }
       render();
     }
   } catch(e){
@@ -1173,7 +1196,7 @@ function buildCard(o){
     +'</div></article>';
 }
 
-var numpadValue = "42";
+var numpadValue = "";
 
 function updateNumpadDisplay(){
   var el = $('#numpadDisplay');
@@ -1183,6 +1206,7 @@ function updateNumpadDisplay(){
 }
 
 function handleNumpadKey(key){
+  hasUserManuallyEditedNumpad = true;
   if(key === 'backspace'){
     numpadValue = numpadValue.slice(0, -1);
     if(!numpadValue) numpadValue = '';
@@ -1235,7 +1259,7 @@ function render(){
       +'</div>';
   }
 
-  if(!numpadValue || numpadValue === '42'){
+  if(!numpadValue || !hasUserManuallyEditedNumpad){
     numpadValue = String(nextNum);
     updateNumpadDisplay();
   }
@@ -1299,9 +1323,18 @@ async function issueOrderWithValues(n, name, note){
 
     if(res.ok){
       var created = await res.json();
-      nextNum = (parseInt(n) || 0) + 1;
+      var parsedN = parseInt(n, 10);
+      nextNum = (!isNaN(parsedN) && parsedN > 0) ? (parsedN + 1) : 1;
+      
+      // Auto-fill next sequential order number on calculator
+      numpadValue = String(nextNum);
+      hasUserManuallyEditedNumpad = false;
+      updateNumpadDisplay();
       
       // Reset inputs
+      if($('#fnum')) $('#fnum').value = nextNum;
+      if($('#fname')) $('#fname').value = '';
+      if($('#fnote')) $('#fnote').value = '';
       if($('#qnum')) $('#qnum').value = nextNum;
       if($('#qname')) $('#qname').value = '';
       if($('#qnote')) $('#qnote').value = '';
@@ -1379,6 +1412,7 @@ async function issue(){
 }
 
 function openCreateDlg(){
+  computeNextOrderNumber();
   $('#fnum').value = nextNum;
   $('#fname').value = '';
   $('#fnote').value = '';

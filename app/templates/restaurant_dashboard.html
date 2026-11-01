@@ -668,8 +668,17 @@
     }
 
     function openCreateOrderModal() {
+      const nums = Array.from(document.querySelectorAll('.order-num-badge')).map(el => {
+        const t = el.textContent.replace(/[^0-9]/g, '');
+        return parseInt(t, 10);
+      }).filter(n => !isNaN(n) && n > 0);
+      const next = nums.length ? (Math.max(...nums) + 1) : 1;
+      const input = document.getElementById('orderNumber');
+      if (input && (!input.value || input.value === '42')) {
+        input.value = next;
+      }
       document.getElementById('createOrderModal').classList.add('show');
-      document.getElementById('orderNumber').focus();
+      if (input) input.focus();
     }
     function closeCreateOrderModal() {
       document.getElementById('createOrderModal').classList.remove('show');
