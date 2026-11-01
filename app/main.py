@@ -1,10 +1,11 @@
 import io
+import os
 import json
 import socket
 import asyncio
-from typing import Dict, List
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
-from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse, FileResponse
+from typing import Dict, List, Optional
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request, Form, Depends, status
+from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse, FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -13,9 +14,10 @@ from pathlib import Path
 
 from . import database as db
 from . import push_service
+from . import auth
 
 BASE_DIR = Path(__file__).parent
-app = FastAPI(title="Web Pager - جرس الطلبات الذكي")
+app = FastAPI(title="Paiger SaaS - جرس الطلبات الذكي للمطاعم")
 
 # Static files & templates
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
@@ -31,6 +33,16 @@ def get_local_ip() -> str:
     finally:
         s.close()
     return ip
+
+def get_public_base_url(request: Request) -> str:
+    env_domain = os.getenv("DOMAIN", "").strip()
+    if env_domain:
+        return f"https://{env_domain}"
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host")
+    proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+    if host:
+        return f"{proto}://{host}"
+    return f"{request.url.scheme}://{get_local_ip()}:8035"
 
 class ConnectionManager:
     def __init__(self):
@@ -91,10 +103,18 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
+# ─────────────────────────────────────────────────────────────
+# PYDANTIC SCHEMAS
+# ─────────────────────────────────────────────────────────────
+
 class CreateOrderRequest(BaseModel):
     order_number: str
     customer_name: str = ""
     notes: str = ""
+    restaurant_id: Optional[int] = 1
+    restaurant_name: Optional[str] = ""
+    brand_color: Optional[str] = ""
+    brand_icon: Optional[str] = ""
 
 class PushSubscriptionRequest(BaseModel):
     token: str
@@ -105,9 +125,72 @@ class PushSubscriptionRequest(BaseModel):
 class ThemeSettingRequest(BaseModel):
     theme: str
 
+class LiveActivityTokenRequest(BaseModel):
+    push_token: str
+    device_type: Optional[str] = "ios_live_activity"
+
+class CreateRestaurantDto(BaseModel):
+    name: str
+    slug: str
+    email: str
+    password: str
+    phone: Optional[str] = ""
+    brand_color: Optional[str] = "#C05621"
+    brand_icon: Optional[str] = "cup.and.saucer.fill"
+    avg_prep_time: Optional[int] = 5
+
+class UpdateRestaurantDto(BaseModel):
+    name: Optional[str] = None
+    slug: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    brand_color: Optional[str] = None
+    brand_icon: Optional[str] = None
+    avg_prep_time: Optional[int] = None
+    is_active: Optional[int] = None
+    password: Optional[str] = None
+
+class MerchantSettingsDto(BaseModel):
+    name: str
+    phone: Optional[str] = ""
+    brand_color: Optional[str] = "#C05621"
+    brand_icon: Optional[str] = "cup.and.saucer.fill"
+    avg_prep_time: Optional[int] = 5
+    new_password: Optional[str] = None
+
 @app.on_event("startup")
 def startup_event():
     db.init_db()
+
+# ─────────────────────────────────────────────────────────────
+# APPLE APP CLIP & SYSTEM FILES
+# ─────────────────────────────────────────────────────────────
+
+@app.api_route("/.well-known/apple-app-site-association", methods=["GET", "HEAD"])
+@app.api_route("/apple-app-site-association", methods=["GET", "HEAD"])
+async def apple_app_site_association():
+    aasa_path = BASE_DIR / "static" / "apple-app-site-association"
+    if aasa_path.exists():
+        return FileResponse(
+            str(aasa_path),
+            media_type="application/json",
+            headers={"Cache-Control": "public, max-age=60"}
+        )
+    return JSONResponse(
+        content={
+            "appclips": {"apps": ["TEAMID.com.rahapp.pager.Clip"]},
+            "applinks": {
+                "apps": [],
+                "details": [
+                    {
+                        "appIDs": ["TEAMID.com.rahapp.pager"],
+                        "components": [{"/": "/pager/*"}]
+                    }
+                ]
+            }
+        },
+        headers={"Cache-Control": "public, max-age=60"}
+    )
 
 @app.api_route("/sw.js", methods=["GET", "HEAD"])
 async def get_service_worker():
@@ -121,44 +204,375 @@ async def get_service_worker():
 async def get_manifest():
     return FileResponse(str(BASE_DIR / "static" / "manifest.json"), media_type="application/json")
 
-@app.get("/api/push/public_key")
-async def get_push_public_key():
-    return {"public_key": push_service.get_public_key()}
+# ─────────────────────────────────────────────────────────────
+# SUPER ADMIN AUTH & DASHBOARD
+# ─────────────────────────────────────────────────────────────
 
-@app.post("/api/push/subscribe")
-async def subscribe_push(req: PushSubscriptionRequest):
-    db.save_push_subscription(req.token, req.endpoint, req.p256dh, req.auth)
+@app.get("/admin/login", response_class=HTMLResponse)
+async def super_admin_login_page(request: Request):
+    user = auth.get_current_super_admin(request)
+    if user:
+        return RedirectResponse(url="/admin", status_code=status.HTTP_302_FOUND)
+    return templates.TemplateResponse("super_admin_login.html", {"request": request, "error": None})
+
+@app.post("/admin/login", response_class=HTMLResponse)
+async def super_admin_login_submit(
+    request: Request,
+    response: Response,
+    identifier: str = Form(...),
+    password: str = Form(...)
+):
+    admin = db.get_super_admin_by_identifier(identifier.strip())
+    if not admin or not auth.verify_password(password, admin["password_hash"]):
+        return templates.TemplateResponse(
+            "super_admin_login.html",
+            {"request": request, "error": "بيانات الدخول غير صحيحة، يرجى التحقق من الاسم أو كلمة المرور", "identifier": identifier},
+            status_code=400
+        )
+
+    # Issue JWT token
+    token = auth.create_access_token({
+        "sub": str(admin["id"]),
+        "username": admin["username"],
+        "role": "super_admin"
+    })
+
+    redirect = RedirectResponse(url="/admin", status_code=status.HTTP_302_FOUND)
+    redirect.set_cookie(
+        key=auth.SUPER_ADMIN_COOKIE,
+        value=token,
+        httponly=True,
+        max_age=86400 * 7,
+        samesite="lax",
+        secure=True
+    )
+    return redirect
+
+@app.get("/admin/logout")
+async def super_admin_logout():
+    redirect = RedirectResponse(url="/admin/login", status_code=status.HTTP_302_FOUND)
+    redirect.delete_cookie(auth.SUPER_ADMIN_COOKIE)
+    return redirect
+
+@app.get("/admin", response_class=HTMLResponse)
+@app.get("/admin/dashboard", response_class=HTMLResponse)
+async def super_admin_dashboard(request: Request):
+    user = auth.get_current_super_admin(request)
+    if not user:
+        return RedirectResponse(url="/admin/login", status_code=status.HTTP_302_FOUND)
+
+    admin_record = db.get_super_admin_by_id(int(user["sub"])) or {"full_name": "مدير النظام العام"}
+    stats = db.get_platform_stats()
+    restaurants = db.get_all_restaurants(limit=200)
+    all_orders = db.get_all_orders(limit=300)
+
+    return templates.TemplateResponse(
+        "super_admin_dashboard.html",
+        {
+            "request": request,
+            "admin_user": admin_record,
+            "stats": stats,
+            "restaurants": restaurants,
+            "all_orders": all_orders
+        }
+    )
+
+# Super Admin Restaurant Management APIs
+@app.post("/api/admin/restaurants")
+async def api_admin_create_restaurant(req: CreateRestaurantDto, request: Request):
+    user = auth.get_current_super_admin(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Check slug uniqueness
+    existing_slug = db.get_restaurant_by_slug(req.slug)
+    if existing_slug:
+        raise HTTPException(status_code=400, detail="المعرف (slug) مستخدم بالفعل، اختر معرفاً آخر")
+
+    existing_email = db.get_restaurant_by_email(req.email)
+    if existing_email:
+        raise HTTPException(status_code=400, detail="البريد الإلكتروني مستخدم بالفعل")
+
+    pwd_hash = auth.hash_password(req.password)
+    new_rest = db.create_restaurant(
+        name=req.name,
+        slug=req.slug,
+        email=req.email,
+        password_hash=pwd_hash,
+        phone=req.phone or "",
+        brand_color=req.brand_color or "#C05621",
+        brand_icon=req.brand_icon or "cup.and.saucer.fill",
+        avg_prep_time=req.avg_prep_time or 5
+    )
+    return {"status": "ok", "restaurant": new_rest}
+
+@app.get("/api/admin/stats")
+async def api_admin_stats(request: Request):
+    user = auth.get_current_super_admin(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return db.get_platform_stats()
+
+@app.put("/api/admin/restaurants/{restaurant_id}")
+async def api_admin_update_restaurant(restaurant_id: int, req: UpdateRestaurantDto, request: Request):
+    user = auth.get_current_super_admin(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    rest = db.get_restaurant_by_id(restaurant_id)
+    if not rest:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+
+    new_pwd_hash = auth.hash_password(req.password) if req.password and req.password.strip() else None
+
+    updated = db.update_restaurant(
+        restaurant_id=restaurant_id,
+        name=req.name if req.name is not None else rest["name"],
+        slug=req.slug if req.slug is not None else rest["slug"],
+        email=req.email if req.email is not None else rest["email"],
+        phone=req.phone if req.phone is not None else rest["phone"],
+        brand_color=req.brand_color if req.brand_color is not None else rest["brand_color"],
+        brand_icon=req.brand_icon if req.brand_icon is not None else rest["brand_icon"],
+        avg_prep_time=req.avg_prep_time if req.avg_prep_time is not None else rest["avg_prep_time"],
+        is_active=req.is_active if req.is_active is not None else rest["is_active"],
+        new_password_hash=new_pwd_hash
+    )
+    return {"status": "ok", "restaurant": updated}
+
+@app.post("/api/admin/restaurants/{restaurant_id}/toggle-status")
+async def api_admin_toggle_restaurant_status(restaurant_id: int, request: Request):
+    user = auth.get_current_super_admin(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    rest = db.get_restaurant_by_id(restaurant_id)
+    if not rest:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+
+    new_status = 0 if rest.get("is_active", 1) == 1 else 1
+    updated = db.update_restaurant(
+        restaurant_id=restaurant_id,
+        name=rest["name"],
+        slug=rest["slug"],
+        email=rest["email"],
+        phone=rest["phone"],
+        brand_color=rest["brand_color"],
+        brand_icon=rest["brand_icon"],
+        avg_prep_time=rest["avg_prep_time"],
+        is_active=new_status
+    )
+    return {"status": "ok", "is_active": new_status, "restaurant": updated}
+
+@app.delete("/api/admin/restaurants/{restaurant_id}")
+async def api_admin_delete_restaurant(restaurant_id: int, request: Request):
+    user = auth.get_current_super_admin(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    if restaurant_id == 1:
+        raise HTTPException(status_code=400, detail="لا يمكن حذف المطعم الافتراضي الرئيسي")
+
+    db.delete_restaurant(restaurant_id)
     return {"status": "ok"}
 
-@app.get("/api/settings/theme")
-async def get_theme():
-    return {"theme": db.get_setting("theme", "dark")}
+# ─────────────────────────────────────────────────────────────
+# RESTAURANT TENANT AUTH & DASHBOARD
+# ─────────────────────────────────────────────────────────────
 
-@app.post("/api/settings/theme")
-async def set_theme(req: ThemeSettingRequest):
-    new_theme = "light" if req.theme == "light" else "dark"
-    db.set_setting("theme", new_theme)
-    await manager.broadcast_all({
-        "event": "theme_changed",
-        "theme": new_theme
+@app.get("/login", response_class=HTMLResponse)
+@app.get("/restaurant/login", response_class=HTMLResponse)
+async def restaurant_login_page(request: Request):
+    user = auth.get_current_restaurant(request)
+    if user:
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+    return templates.TemplateResponse("restaurant_login.html", {"request": request, "error": None})
+
+@app.post("/login", response_class=HTMLResponse)
+@app.post("/restaurant/login", response_class=HTMLResponse)
+async def restaurant_login_submit(
+    request: Request,
+    identifier: str = Form(...),
+    password: str = Form(...)
+):
+    ident = identifier.strip().lower()
+    # Check by email or slug
+    rest = db.get_restaurant_by_email(ident) or db.get_restaurant_by_slug(ident)
+    if not rest or not auth.verify_password(password, rest["password_hash"]):
+        return templates.TemplateResponse(
+            "restaurant_login.html",
+            {"request": request, "error": "بيانات الدخول غير صحيحة، يرجى التحقق من البريد أو اسم المستخدم وكلمة المرور", "identifier": identifier},
+            status_code=400
+        )
+
+    if rest.get("is_active") == 0:
+        return templates.TemplateResponse(
+            "restaurant_login.html",
+            {"request": request, "error": "حساب هذا المطعم معطل حالياً من قبل الإدارة العامة", "identifier": identifier},
+            status_code=403
+        )
+
+    token = auth.create_access_token({
+        "sub": str(rest["id"]),
+        "slug": rest["slug"],
+        "name": rest["name"],
+        "role": "restaurant"
     })
-    return {"status": "ok", "theme": new_theme}
 
-@app.get("/", response_class=RedirectResponse)
-async def index():
-    return RedirectResponse(url="/cashier")
+    redirect = RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+    redirect.set_cookie(
+        key=auth.RESTAURANT_COOKIE,
+        value=token,
+        httponly=True,
+        max_age=86400 * 30,
+        samesite="lax",
+        secure=True
+    )
+    return redirect
+
+@app.get("/logout")
+@app.get("/restaurant/logout")
+async def restaurant_logout():
+    redirect = RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+    redirect.delete_cookie(auth.RESTAURANT_COOKIE)
+    return redirect
+
+@app.get("/dashboard", response_class=HTMLResponse)
+@app.get("/merchant", response_class=HTMLResponse)
+async def restaurant_dashboard(request: Request):
+    user = auth.get_current_restaurant(request)
+    if not user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+
+    rest_id = int(user["sub"])
+    rest = db.get_restaurant_by_id(rest_id)
+    if not rest:
+        return RedirectResponse(url="/logout", status_code=status.HTTP_302_FOUND)
+
+    stats = db.get_restaurant_stats(rest_id)
+    orders = db.get_restaurant_orders(rest_id, limit=150)
+
+    return templates.TemplateResponse(
+        "restaurant_dashboard.html",
+        {
+            "request": request,
+            "restaurant": rest,
+            "stats": stats,
+            "orders": orders
+        }
+    )
+
+@app.post("/api/merchant/settings")
+async def api_merchant_save_settings(req: MerchantSettingsDto, request: Request):
+    user = auth.get_current_restaurant(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    rest_id = int(user["sub"])
+    rest = db.get_restaurant_by_id(rest_id)
+    if not rest:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+
+    new_pwd_hash = auth.hash_password(req.new_password) if req.new_password and req.new_password.strip() else None
+
+    updated = db.update_restaurant(
+        restaurant_id=rest_id,
+        name=req.name,
+        slug=rest["slug"],
+        email=rest["email"],
+        phone=req.phone or rest.get("phone", ""),
+        brand_color=req.brand_color or rest.get("brand_color", "#C05621"),
+        brand_icon=req.brand_icon or rest.get("brand_icon", "cup.and.saucer.fill"),
+        avg_prep_time=req.avg_prep_time or rest.get("avg_prep_time", 5),
+        is_active=rest.get("is_active", 1),
+        new_password_hash=new_pwd_hash
+    )
+    return {"status": "ok", "restaurant": updated}
+
+# ─────────────────────────────────────────────────────────────
+# CASHIER TERMINALS (PER-RESTAURANT & CENTRAL)
+# ─────────────────────────────────────────────────────────────
+
+@app.get("/r/{slug}/cashier", response_class=HTMLResponse)
+async def restaurant_dedicated_cashier(request: Request, slug: str):
+    rest = db.get_restaurant_by_slug(slug)
+    if not rest:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+
+    local_ip = get_local_ip()
+    base_url = get_public_base_url(request)
+    port = request.url.port or (443 if request.url.scheme == "https" else 80)
+    theme = db.get_setting("theme", "light")
+
+    return templates.TemplateResponse(
+        "cashier.html",
+        {
+            "request": request,
+            "restaurant": rest,
+            "local_ip": local_ip,
+            "port": port,
+            "base_url": base_url,
+            "theme": theme
+        }
+    )
+
+@app.get("/r/{slug}/print", response_class=HTMLResponse)
+async def restaurant_qr_print_sheet(request: Request, slug: str):
+    rest = db.get_restaurant_by_slug(slug)
+    if not rest:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+
+    return templates.TemplateResponse(
+        "qr_print.html",
+        {
+            "request": request,
+            "restaurant": rest
+        }
+    )
 
 @app.get("/cashier", response_class=HTMLResponse)
-async def cashier_page(request: Request):
+async def default_cashier_redirect(request: Request):
+    # If logged in as restaurant, redirect to their dedicated cashier
+    rest_user = auth.get_current_restaurant(request)
+    if rest_user and "slug" in rest_user:
+        return RedirectResponse(url=f"/r/{rest_user['slug']}/cashier", status_code=status.HTTP_302_FOUND)
+
+    # Otherwise load primary restaurant 1
+    rest = db.get_restaurant_by_id(1) or {
+        "id": 1,
+        "name": "بيجر الطلبات - الفرع الرئيسي",
+        "slug": "main",
+        "brand_color": "#C05621",
+        "brand_icon": "cup.and.saucer.fill"
+    }
+
     local_ip = get_local_ip()
-    scheme = request.url.scheme
-    port = request.url.port or (443 if scheme == "https" else 80)
-    base_url = f"{scheme}://{local_ip}:{port}"
-    theme = db.get_setting("theme", "dark")
+    base_url = get_public_base_url(request)
+    port = request.url.port or (443 if request.url.scheme == "https" else 80)
+    theme = db.get_setting("theme", "light")
+
     return templates.TemplateResponse(
-        "cashier.html", 
-        {"request": request, "local_ip": local_ip, "port": port, "base_url": base_url, "theme": theme}
+        "cashier.html",
+        {
+            "request": request,
+            "restaurant": rest,
+            "local_ip": local_ip,
+            "port": port,
+            "base_url": base_url,
+            "theme": theme
+        }
     )
+
+@app.get("/", response_class=RedirectResponse)
+async def index_route(request: Request):
+    # Route intelligently based on login session
+    if auth.get_current_super_admin(request):
+        return RedirectResponse(url="/admin")
+    if auth.get_current_restaurant(request):
+        return RedirectResponse(url="/dashboard")
+    return RedirectResponse(url="/login")
+
+# ─────────────────────────────────────────────────────────────
+# CUSTOMER PAGER PAGE & MOBILE CLIENT APIS
+# ─────────────────────────────────────────────────────────────
 
 @app.get("/pager/{token}", response_class=HTMLResponse)
 async def pager_page(request: Request, token: str):
@@ -169,56 +583,104 @@ async def pager_page(request: Request, token: str):
             <div style="font-family:'Readex Pro',sans-serif; text-align:center; padding:50px; background:#08090d; color:#f3f5f9; height:100vh;">
                 <h1>⚠️ طلب غير موجود | Order Not Found</h1>
                 <p style="color:#8a93a6; margin-top:10px;">الرابط غير صحيح أو قد تم حذف الطلب من الكاشير.</p>
-                <a href="/cashier" style="display:inline-block; margin-top:20px; color:#8b7bff; text-decoration:none;">العودة للرئيسية</a>
+                <a href="/login" style="display:inline-block; margin-top:20px; color:#8b7bff; text-decoration:none;">العودة للرئيسية</a>
             </div>
-            """, 
+            """,
             status_code=404
         )
     local_ip = get_local_ip()
-    scheme = request.url.scheme
-    port = request.url.port or (443 if scheme == "https" else 80)
-    base_url = f"{scheme}://{local_ip}:{port}"
+    base_url = get_public_base_url(request)
+    port = request.url.port or (443 if request.url.scheme == "https" else 80)
     queue_info = db.get_order_queue_info(order["id"])
-    theme = db.get_setting("theme", "dark")
+    theme = db.get_setting("theme", "light")
     return templates.TemplateResponse(
         "pager.html",
         {
-            "request": request, 
-            "order": order, 
-            "token": token, 
+            "request": request,
+            "order": order,
+            "token": token,
             "base_url": base_url,
             "queue_info": queue_info,
             "theme": theme
         }
     )
 
-@app.get("/api/pager/{token}/status")
-async def get_pager_status(token: str):
+@app.get("/api/orders/{token}/details")
+async def get_order_details(token: str):
     order = db.get_order_by_token(token)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     q_info = db.get_order_queue_info(order["id"])
+    theme = db.get_setting("theme", "light")
+    default_rest = db.get_setting("restaurant_name", "بيجر الطلبات")
     return {
         "id": order["id"],
         "order_number": order["order_number"],
         "customer_name": order["customer_name"],
         "notes": order["notes"],
         "status": order["status"],
+        "token": order["token"],
+        "restaurant_id": order.get("restaurant_id", 1),
+        "restaurant_name": order.get("restaurant_name") or default_rest,
+        "brand_color": order.get("brand_color") or "#C05621",
+        "brand_icon": order.get("brand_icon") or "cup.and.saucer.fill",
+        "call_count": order.get("call_count", 0),
+        "created_at": order["created_at"],
+        "called_at": order["called_at"],
+        "completed_at": order["completed_at"],
         "orders_ahead": q_info["orders_ahead"],
-        "estimated_wait": q_info["estimated_wait"]
+        "estimated_wait": q_info["estimated_wait"],
+        "avg_prep_mins": q_info["avg_prep_mins"],
+        "theme": theme
     }
 
-# Orders REST APIs
+@app.post("/api/orders/{token}/onway")
+async def mobile_onway_order(token: str):
+    order = db.get_order_by_token(token)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    updated = db.update_order_status(order["id"], "onway")
+    await manager.notify_cashiers({
+        "event": "customer_onway",
+        "order": updated
+    })
+    await manager.notify_pager(token, {
+        "event": "order_onway",
+        "order": updated
+    })
+    return updated
+
+@app.post("/api/orders/{token}/live-activity-token")
+@app.post("/api/orders/{token}/live-activity")
+async def register_live_activity_token(token: str, req: LiveActivityTokenRequest):
+    order = db.get_order_by_token(token)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    db.save_live_activity_token(
+        order_token=token,
+        push_token=req.push_token,
+        device_type=req.device_type or "ios_live_activity"
+    )
+    return {"status": "ok", "message": "Live Activity token registered successfully"}
+
+# ─────────────────────────────────────────────────────────────
+# CORE ORDERS REST APIS
+# ─────────────────────────────────────────────────────────────
+
 @app.get("/api/orders")
-async def list_orders():
-    return db.get_all_orders()
+async def list_orders(restaurant_id: Optional[int] = None):
+    return db.get_all_orders(limit=150, restaurant_id=restaurant_id)
 
 @app.post("/api/orders")
 async def create_new_order(order_data: CreateOrderRequest):
     order = db.create_order(
         order_number=order_data.order_number,
         customer_name=order_data.customer_name,
-        notes=order_data.notes
+        notes=order_data.notes,
+        restaurant_id=order_data.restaurant_id or 1,
+        restaurant_name=order_data.restaurant_name or "",
+        brand_color=order_data.brand_color or "",
+        brand_icon=order_data.brand_icon or ""
     )
     await manager.notify_cashiers({"event": "order_created", "order": order})
     return order
@@ -229,14 +691,13 @@ async def ring_order(order_id: int):
     order = db.update_order_status(order_id, "ringing")
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    
+
     await manager.notify_pager(order["token"], {
         "event": "order_ringing",
         "order": order
     })
     await manager.notify_cashiers({"event": "order_updated", "order": order})
-    
-    # Trigger Web Push Notification
+
     try:
         asyncio.create_task(push_service.notify_order_push(order))
     except Exception as e:
@@ -249,7 +710,7 @@ async def onway_order(order_id: int):
     order = db.update_order_status(order_id, "onway")
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    
+
     await manager.notify_pager(order["token"], {
         "event": "order_onway",
         "order": order
@@ -266,7 +727,7 @@ async def complete_order(order_id: int):
     order = db.update_order_status(order_id, "done")
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    
+
     await manager.notify_pager(order["token"], {
         "event": "order_done",
         "order": order
@@ -280,7 +741,7 @@ async def reset_order(order_id: int):
     order = db.update_order_status(order_id, "waiting")
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    
+
     await manager.notify_pager(order["token"], {
         "event": "order_waiting",
         "order": order
@@ -297,18 +758,18 @@ async def delete_order(order_id: int):
         await manager.notify_cashiers({"event": "order_deleted", "order_id": order_id})
     return {"status": "success"}
 
-# QR Code Generator
+# ─────────────────────────────────────────────────────────────
+# QR GENERATOR & PUSH NOTIFICATIONS
+# ─────────────────────────────────────────────────────────────
+
 @app.api_route("/api/qr/{token}", methods=["GET", "HEAD"])
 async def get_qr_image(request: Request, token: str, host: str = None):
     if host:
-        base = host.rstrip('/')
+        url = host
     else:
-        client_host = request.headers.get("host") or f"{get_local_ip()}:8000"
-        scheme = request.url.scheme
-        base = f"{scheme}://{client_host}"
+        base = get_public_base_url(request)
+        url = f"{base}/pager/{token}"
 
-    url = f"{base}/pager/{token}"
-    
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_M,
@@ -318,20 +779,32 @@ async def get_qr_image(request: Request, token: str, host: str = None):
     qr.add_data(url)
     qr.make(fit=True)
     img = qr.make_image(fill_color="#000000", back_color="#ffffff")
-    
+
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     buf.seek(0)
     return StreamingResponse(buf, media_type="image/png")
 
-# WebSocket for client pager
+@app.get("/api/push/public_key")
+async def get_push_public_key():
+    return {"public_key": push_service.get_public_key()}
+
+@app.post("/api/push/subscribe")
+async def subscribe_push(req: PushSubscriptionRequest):
+    db.save_push_subscription(req.token, req.endpoint, req.p256dh, req.auth)
+    return {"status": "ok"}
+
+# ─────────────────────────────────────────────────────────────
+# WEBSOCKET CONNECTIONS
+# ─────────────────────────────────────────────────────────────
+
 @app.websocket("/ws/pager/{token}")
 async def websocket_pager(websocket: WebSocket, token: str):
     await manager.connect_pager(token, websocket)
     order = db.get_order_by_token(token)
     if order:
         q_info = db.get_order_queue_info(order["id"])
-        theme = db.get_setting("theme", "dark")
+        theme = db.get_setting("theme", "light")
         await websocket.send_text(json.dumps({
             "event": "connected",
             "order": order,
@@ -361,7 +834,6 @@ async def websocket_pager(websocket: WebSocket, token: str):
     except WebSocketDisconnect:
         manager.disconnect_pager(token, websocket)
 
-# WebSocket for cashier dashboard
 @app.websocket("/ws/cashier")
 async def websocket_cashier(websocket: WebSocket):
     await manager.connect_cashier(websocket)

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ستاند كاونتر البيجر الذكي | {{ restaurant.name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700;800&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #f0ebe1;
+      font-family: "Readex Pro", system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .print-actions {
+      margin-bottom: 24px;
+      display: flex;
+      gap: 12px;
+    }
+    .btn-print {
+      background: #23150d;
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 15px;
+      font-family: inherit;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    }
+    .btn-print:hover {
+      background: #3e2415;
+    }
+    .stand-card {
+      width: 420px;
+      background: #ffffff;
+      border-radius: 28px;
+      padding: 40px 32px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(45, 30, 20, 0.12);
+      border: 2px solid rgba(58, 38, 28, 0.08);
+      position: relative;
+    }
+    .stand-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 999px;
+      background: rgba(192, 86, 33, 0.12);
+      color: {{ restaurant.brand_color|default('#C05621') }};
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .restaurant-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: #23150d;
+      margin-bottom: 6px;
+    }
+    .stand-subtitle {
+      font-size: 13.5px;
+      color: #7c6958;
+      margin-bottom: 24px;
+    }
+    .qr-frame {
+      display: inline-flex;
+      padding: 16px;
+      background: #fff;
+      border: 3px solid #23150d;
+      border-radius: 24px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+      margin-bottom: 24px;
+    }
+    .qr-frame img {
+      width: 230px;
+      height: 230px;
+      display: block;
+    }
+    .instructions-ar {
+      font-size: 16px;
+      font-weight: 700;
+      color: #23150d;
+      margin-bottom: 4px;
+    }
+    .instructions-en {
+      font-size: 13px;
+      color: #7c6958;
+      font-family: "Sora", sans-serif;
+    }
+    .stand-footer {
+      margin-top: 24px;
+      padding-top: 18px;
+      border-top: 1px dashed rgba(58, 38, 28, 0.15);
+      font-size: 11.5px;
+      color: #a39282;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .print-actions { display: none; }
+      .stand-card { box-shadow: none; border: 2px solid #000; width: 100%; max-width: 480px; margin: 0 auto; page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="print-actions">
+    <button onclick="window.print()" class="btn-print">🖨️ طباعة الستاند الآن (Print Stand)</button>
+    <button onclick="window.close()" class="btn-print" style="background: #fff; color: #23150d; border: 1px solid #d0c8be;">إغلاق</button>
+  </div>
+
+  <div class="stand-card">
+    <div class="stand-badge">⚡ نظام البيجر الفوري الذكي</div>
+    <h1 class="restaurant-title">{{ restaurant.name }}</h1>
+    <p class="stand-subtitle">تابع دورك واستلم طلبك طازجاً فور جهوزيته</p>
+
+    <div class="qr-frame">
+      <img src="/api/qr/demo?host=https://pager.rahapp.com/r/{{ restaurant.slug }}/cashier" alt="QR Code" id="standQrImg">
+    </div>
+
+    <div class="instructions-ar">وجّه كاميرا هاتفك نحو الكود لمتابعة طلبك 📱</div>
+    <div class="instructions-en">Scan with phone camera to track your order</div>
+
+    <div class="stand-footer">
+      <span>مدعوم بواسطة Paiger</span>
+      <span>pager.rahapp.com</span>
+    </div>
+  </div>
+
+</body>
+</html>
+

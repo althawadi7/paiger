@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>تسجيل دخول الإدارة العامة | Super Admin - Paiger</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined">
+  <style>
+    :root {
+      --bg: #f6f3ed;
+      --card: #ffffff;
+      --border: rgba(58, 38, 28, 0.12);
+      --ink: #23150d;
+      --muted: #7a6656;
+      --primary: #3e2415;
+      --primary-hover: #2b190e;
+      --accent: #c05621;
+      --radius: 24px;
+      --shadow: 0 20px 50px rgba(45, 30, 20, 0.08), 0 4px 15px rgba(45, 30, 20, 0.04);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      background:
+        radial-gradient(1200px 700px at 50% -10%, rgba(192, 86, 33, 0.14), transparent 75%),
+        radial-gradient(900px 500px at 10% 40%, rgba(62, 36, 21, 0.05), transparent 75%),
+        radial-gradient(800px 600px at 90% 70%, rgba(110, 70, 45, 0.08), transparent 75%),
+        var(--bg);
+      color: var(--ink);
+      font-family: "Readex Pro", system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .login-container {
+      width: 100%;
+      max-width: 440px;
+    }
+    .brand-header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .brand-logo-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      height: 72px;
+      border-radius: 24px;
+      background: linear-gradient(135deg, rgba(62, 36, 21, 0.12), rgba(192, 86, 33, 0.16));
+      border: 1px solid rgba(192, 86, 33, 0.25);
+      margin-bottom: 16px;
+      box-shadow: 0 10px 25px rgba(45, 30, 20, 0.08);
+    }
+    .brand-logo-badge span {
+      font-size: 36px;
+      color: var(--primary);
+    }
+    .brand-title {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+    .brand-subtitle {
+      font-size: 13.5px;
+      color: var(--muted);
+    }
+    .glass-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 38px 32px;
+      box-shadow: var(--shadow);
+    }
+    .error-box {
+      background: rgba(220, 38, 38, 0.08);
+      border: 1px solid rgba(220, 38, 38, 0.25);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: #b91c1c;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .input-wrap .material-icons-outlined {
+      position: absolute;
+      right: 14px;
+      color: var(--muted);
+      font-size: 20px;
+      pointer-events: none;
+    }
+    .form-input {
+      width: 100%;
+      background: #faf8f5;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 13px 44px 13px 14px;
+      color: var(--ink);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .form-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(62, 36, 21, 0.12);
+      background: #ffffff;
+    }
+    .btn-submit {
+      width: 100%;
+      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+      color: #ffffff;
+      border: none;
+      border-radius: 14px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 8px 25px -4px rgba(45, 30, 20, 0.25);
+      margin-top: 26px;
+    }
+    .btn-submit:hover {
+      background: #23150d;
+      transform: translateY(-1px);
+      box-shadow: 0 12px 28px -4px rgba(45, 30, 20, 0.35);
+    }
+    .btn-submit:active {
+      transform: translateY(0);
+    }
+    .footer-links {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+    .footer-links a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .footer-links a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="brand-header">
+      <div class="brand-logo-badge">
+        <span class="material-icons-outlined">shield</span>
+      </div>
+      <h1 class="brand-title">الإدارة العامة لمنصة Paiger</h1>
+      <p class="brand-subtitle">لوحة الإشراف المركزية وإدارة المطاعم السحابية</p>
+    </div>
+
+    <div class="glass-card">
+      {% if error %}
+      <div class="error-box">
+        <span class="material-icons-outlined" style="font-size: 18px;">error_outline</span>
+        <span>{{ error }}</span>
+      </div>
+      {% endif %}
+
+      <form method="POST" action="/admin/login">
+        <div class="form-group">
+          <label class="form-label">اسم المستخدم أو البريد الإلكتروني</label>
+          <div class="input-wrap">
+            <span class="material-icons-outlined">person</span>
+            <input type="text" name="identifier" class="form-input" placeholder="admin" required autofocus value="{{ identifier|default('') }}">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">كلمة المرور</label>
+          <div class="input-wrap">
+            <span class="material-icons-outlined">lock</span>
+            <input type="password" name="password" class="form-input" placeholder="••••••••••••" required>
+          </div>
+        </div>
+
+        <button type="submit" class="btn-submit">
+          <span>دخول لوحة الإدارة</span>
+          <span class="material-icons-outlined" style="font-size: 18px;">arrow_back</span>
+        </button>
+      </form>
+    </div>
+
+    <div class="footer-links">
+      <span>هل أنت صاحب مطعم أو كافيه؟ </span>
+      <a href="/login">تسجيل دخول المطاعم من هنا</a>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>لوحة تحكم المطعم | {{ restaurant.name }} - Paiger</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined">
+  <style>
+    :root {
+      --bg: #f7f4ee;
+      --card: #ffffff;
+      --border: rgba(58, 38, 28, 0.1);
+      --ink: #23150d;
+      --muted: #7c6958;
+      --brand: {{ restaurant.brand_color|default('#C05621') }};
+      --brand-soft: rgba(192, 86, 33, 0.12);
+      --wait: #c05621;
+      --ring: #dc2626;
+      --onway: #6d28d9;
+      --done: #0f766e;
+      --radius: 20px;
+      --shadow: 0 16px 40px rgba(43, 29, 22, 0.06), 0 2px 8px rgba(43, 29, 22, 0.04);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background:
+        radial-gradient(1200px 700px at 50% -10%, var(--brand-soft), transparent 70%),
+        radial-gradient(800px 600px at 90% 70%, rgba(110, 70, 45, 0.06), transparent 75%),
+        var(--bg);
+      color: var(--ink);
+      font-family: "Readex Pro", system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    /* Header */
+    .top-nav {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 14px 28px;
+    }
+    .nav-container {
+      max-width: 1300px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-icon-box {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: var(--brand);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    }
+    .brand-meta h1 {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .brand-meta p {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 14px;
+      font-size: 13.5px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+    }
+    .btn-brand {
+      background: var(--brand);
+      color: #ffffff;
+      box-shadow: 0 6px 20px -4px rgba(0,0,0,0.25);
+    }
+    .btn-brand:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+    }
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--border);
+      color: var(--ink);
+    }
+    .btn-outline:hover {
+      background: #f1ece3;
+    }
+
+    /* Container */
+    .main-body {
+      max-width: 1300px;
+      width: 100%;
+      margin: 28px auto;
+      padding: 0 24px 60px;
+      flex: 1;
+    }
+
+    /* Hero Banner for Cashier Link */
+    .cashier-hero {
+      background: linear-gradient(135deg, #ffffff, #fbf9f5);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+    .cashier-hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 6px;
+      height: 100%;
+      background: var(--brand);
+    }
+    .hero-info h2 {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .hero-url-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      background: #f4ede3;
+      padding: 6px 14px;
+      border-radius: 10px;
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--ink);
+      border: 1px dashed rgba(58, 38, 28, 0.2);
+    }
+    .hero-btns {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Stats Grid */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .stat-label {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .stat-val {
+      font-size: 32px;
+      font-weight: 800;
+      margin-top: 8px;
+      color: var(--ink);
+    }
+    .stat-desc {
+      font-size: 11.5px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* Orders Management Panel */
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 26px;
+      box-shadow: var(--shadow);
+    }
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .tabs-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #f1ece3;
+      padding: 5px;
+      border-radius: 12px;
+    }
+    .tab-btn {
+      padding: 7px 14px;
+      border-radius: 9px;
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: #ffffff;
+      color: var(--ink);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    /* Table */
+    .table-container {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: right;
+      font-size: 13.5px;
+    }
+    th {
+      padding: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 16px 14px;
+      border-bottom: 1px solid rgba(58, 38, 28, 0.06);
+      vertical-align: middle;
+    }
+    tr:hover td {
+      background: #faf8f5;
+    }
+    .order-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .badge-waiting {
+      background: rgba(192, 86, 33, 0.12);
+      color: var(--wait);
+    }
+    .badge-ringing {
+      background: rgba(220, 38, 38, 0.14);
+      color: var(--ring);
+      animation: pulse 1.5s infinite;
+    }
+    .badge-onway {
+      background: rgba(109, 40, 217, 0.14);
+      color: var(--onway);
+    }
+    .badge-done {
+      background: rgba(15, 118, 110, 0.12);
+      color: var(--done);
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.03); }
+    }
+    .btn-action {
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+    .btn-ring {
+      background: var(--ring);
+      color: #fff;
+    }
+    .btn-ring:hover {
+      background: #b91c1c;
+    }
+    .btn-complete {
+      background: var(--done);
+      color: #fff;
+    }
+    .btn-delete {
+      background: transparent;
+      color: #b91c1c;
+      border-color: rgba(185, 28, 28, 0.2);
+    }
+    .btn-delete:hover {
+      background: rgba(185, 28, 28, 0.1);
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(35, 21, 13, 0.6);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .modal-backdrop.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-card {
+      background: #ffffff;
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 500px;
+      padding: 30px;
+      box-shadow: var(--shadow);
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-label {
+      display: block;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .form-input {
+      width: 100%;
+      background: #fbf9f5;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: var(--ink);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+    }
+    .form-input:focus {
+      border-color: var(--brand);
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Nav -->
+  <header class="top-nav">
+    <div class="nav-container">
+      <div class="brand-group">
+        <div class="brand-icon-box">
+          <span class="material-icons-outlined">restaurant</span>
+        </div>
+        <div class="brand-meta">
+          <h1>{{ restaurant.name }}</h1>
+          <p>لوحة التحكم والإحصائيات | Slug: {{ restaurant.slug }}</p>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <a href="/r/{{ restaurant.slug }}/cashier" target="_blank" class="btn btn-brand">
+          <span class="material-icons-outlined">point_of_sale</span>
+          <span>شاشة الكاشير المباشرة</span>
+        </a>
+        <button onclick="openSettingsModal()" class="btn btn-outline" title="إعدادات الهوية والمطعم">
+          <span class="material-icons-outlined">settings</span>
+          <span>الإعدادات</span>
+        </button>
+        <a href="/logout" class="btn btn-outline" style="color: #dc2626;" title="تسجيل الخروج">
+          <span class="material-icons-outlined">logout</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div class="main-body">
+    <!-- Cashier Screen Hero Banner -->
+    <div class="cashier-hero">
+      <div class="hero-info">
+        <h2>
+          <span class="material-icons-outlined" style="color: var(--brand);">storefront</span>
+          <span>شاشة الكاشير الخاصة بمطعمك جاهزة الآن!</span>
+        </h2>
+        <p style="color: var(--muted); font-size: 13.5px;">يمكنك فتحها على أي آيباد أو كمبيوتر على كاونتر الطلبات لإصدار أرقام البيجر ومسحها فورياً.</p>
+        <div class="hero-url-box">
+          <span class="material-icons-outlined" style="font-size: 16px; color: var(--muted);">link</span>
+          <span id="cashierUrlText">https://pager.rahapp.com/r/{{ restaurant.slug }}/cashier</span>
+          <button onclick="copyCashierUrl()" style="color: var(--brand); font-weight: 700; display: inline-flex; align-items: center; gap: 4px; border: 0; background: none; cursor: pointer;">
+            <span class="material-icons-outlined" style="font-size: 15px;">content_copy</span>
+            <span id="copyBtnText">نسخ الرابط</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="hero-btns">
+        <a href="/r/{{ restaurant.slug }}/cashier" target="_blank" class="btn btn-brand" style="padding: 12px 22px;">
+          <span class="material-icons-outlined">open_in_new</span>
+          <span>فتح شاشة الكاشير</span>
+        </a>
+        <a href="/r/{{ restaurant.slug }}/print" target="_blank" class="btn btn-outline">
+          <span class="material-icons-outlined">print</span>
+          <span>طباعة ستاند الكاونتر</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-box">
+        <div class="stat-label">
+          <span>طلبات اليوم</span>
+          <span class="material-icons-outlined" style="color: var(--brand);">today</span>
+        </div>
+        <div class="stat-val">{{ stats.today_orders }}</div>
+        <div class="stat-desc">طلبات مسجلة اليوم</div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-label">
+          <span>طلبات نشطة الآن</span>
+          <span class="material-icons-outlined" style="color: var(--ring);">hourglass_empty</span>
+        </div>
+        <div class="stat-val" style="color: var(--ring);">{{ stats.active_orders }}</div>
+        <div class="stat-desc">{{ stats.waiting_orders }} انتظار | {{ stats.ringing_orders }} يرن</div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-label">
+          <span>استلموا اليوم</span>
+          <span class="material-icons-outlined" style="color: var(--done);">check_circle</span>
+        </div>
+        <div class="stat-val" style="color: var(--done);">{{ stats.done_today }}</div>
+        <div class="stat-desc">تم تسليمهم بنجاح</div>
+      </div>
+
+      <div class="stat-box">
+        <div class="stat-label">
+          <span>إجمالي الطلبات التاريخي</span>
+          <span class="material-icons-outlined" style="color: var(--muted);">bar_chart</span>
+        </div>
+        <div class="stat-val">{{ stats.total_orders }}</div>
+        <div class="stat-desc">متوسط التحضير: {{ stats.avg_prep_mins }} دقيقة</div>
+      </div>
+    </div>
+
+    <!-- Orders Management Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <h3 style="font-size: 18px; font-weight: 800;">إدارة الطلبات الحية</h3>
+          <button onclick="openCreateOrderModal()" class="btn btn-brand" style="padding: 7px 14px; font-size: 13px;">
+            <span class="material-icons-outlined" style="font-size: 18px;">add</span>
+            <span>+ طلب جديد</span>
+          </button>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <div class="tabs-group">
+            <div class="tab-btn active" onclick="filterStatus('all', this)">الكل</div>
+            <div class="tab-btn" onclick="filterStatus('waiting', this)">قيد الانتظار</div>
+            <div class="tab-btn" onclick="filterStatus('ringing', this)">🔔 يرن</div>
+            <div class="tab-btn" onclick="filterStatus('onway', this)">🏃 في الطريق</div>
+            <div class="tab-btn" onclick="filterStatus('done', this)">✅ مكتمل</div>
+          </div>
+
+          <div style="position: relative;">
+            <input type="text" id="orderSearch" placeholder="بحث بالرقم أو الاسم..." onkeyup="searchOrders()" style="padding: 8px 32px 8px 12px; border: 1px solid var(--border); border-radius: 10px; font-family: inherit; font-size: 13px; outline: none; background: #faf8f5;">
+            <span class="material-icons-outlined" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--muted);">search</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Orders Table -->
+      <div class="table-container">
+        <table id="ordersTable">
+          <thead>
+            <tr>
+              <th>رقم الطلب</th>
+              <th>اسم العميل</th>
+              <th>الملاحظات</th>
+              <th>الحالة</th>
+              <th>الوقت</th>
+              <th>رابط البيجر</th>
+              <th>إجراءات سريعة</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for o in orders %}
+            <tr data-status="{{ o.status }}" data-text="{{ o.order_number }} {{ o.customer_name }} {{ o.notes }}">
+              <td>
+                <strong style="font-size: 18px; color: var(--brand);">#{{ o.order_number }}</strong>
+              </td>
+              <td>{{ o.customer_name or '—' }}</td>
+              <td style="color: var(--muted); font-size: 12.5px;">{{ o.notes or '—' }}</td>
+              <td>
+                {% if o.status == 'ringing' %}
+                <span class="order-badge badge-ringing">🔔 يرن الآن ({{ o.call_count }})</span>
+                {% elif o.status == 'onway' %}
+                <span class="order-badge badge-onway">🏃 في الطريق للاستلام</span>
+                {% elif o.status == 'waiting' %}
+                <span class="order-badge badge-waiting">⏳ قيد الانتظار</span>
+                {% else %}
+                <span class="order-badge badge-done">✅ تم الاستلام</span>
+                {% endif %}
+              </td>
+              <td style="color: var(--muted); font-size: 12px;">{{ o.created_at[:16].replace('T', ' ') if o.created_at else '' }}</td>
+              <td>
+                <a href="/pager/{{ o.token }}" target="_blank" style="color: var(--brand); font-size: 12.5px; font-weight: 600;">
+                  عرض البيجر ↗
+                </a>
+              </td>
+              <td>
+                <div style="display: flex; gap: 6px;">
+                  {% if o.status != 'done' %}
+                  <button onclick="ringOrder({{ o.id }})" class="btn-action btn-ring" title="إرسال رنين">
+                    <span class="material-icons-outlined" style="font-size: 16px;">notifications_active</span>
+                    <span>رنين</span>
+                  </button>
+                  <button onclick="completeOrder({{ o.id }})" class="btn-action btn-complete" title="إنهاء وتسليم">
+                    <span class="material-icons-outlined" style="font-size: 16px;">check</span>
+                    <span>تسليم</span>
+                  </button>
+                  {% endif %}
+                  <button onclick="deleteOrder({{ o.id }})" class="btn-action btn-delete" title="حذف الطلب">
+                    <span class="material-icons-outlined" style="font-size: 16px;">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 40px; color: var(--muted);">
+                لا توجد طلبات مسجلة بعد. اضغط على "+ طلب جديد" لإصدار أول بيجر!
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Order Modal -->
+  <div id="createOrderModal" class="modal-backdrop">
+    <div class="modal-card">
+      <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 16px;">إصدار بيجر لطلب جديد</h3>
+      <form onsubmit="submitCreateOrder(event)">
+        <div class="form-group">
+          <label class="form-label">رقم الطلب (Order #) *</label>
+          <input type="text" id="orderNumber" class="form-input" placeholder="مثلاً: 14" required autofocus style="font-size: 18px; font-weight: 700;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">اسم العميل (اختياري)</label>
+          <input type="text" id="custName" class="form-input" placeholder="مثلاً: عبدالله">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ملاحظات التحضير (اختياري)</label>
+          <input type="text" id="orderNotes" class="form-input" placeholder="مثلاً: بدون ثلج / سفري">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 24px;">
+          <button type="submit" class="btn btn-brand" style="flex: 1; justify-content: center;">إصدار البيجر فوراً</button>
+          <button type="button" onclick="closeCreateOrderModal()" class="btn btn-outline">إلغاء</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal-backdrop">
+    <div class="modal-card">
+      <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 16px;">إعدادات المطعم والهوية</h3>
+      <form onsubmit="submitSaveSettings(event)">
+        <div class="form-group">
+          <label class="form-label">اسم المطعم أو الكافيه *</label>
+          <input type="text" id="setRestName" class="form-input" value="{{ restaurant.name }}" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">رقم الهاتف / الواتساب</label>
+          <input type="text" id="setPhone" class="form-input" value="{{ restaurant.phone }}">
+        </div>
+        <div class="form-group">
+          <label class="form-label">لون الهوية البصري للبيجر</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="color" id="setColorPicker" value="{{ restaurant.brand_color|default('#C05621') }}" style="height: 42px; width: 60px; padding: 2px; border-radius: 8px; border: 1px solid var(--border); background: none; cursor: pointer;">
+            <input type="text" id="setColorText" class="form-input" value="{{ restaurant.brand_color|default('#C05621') }}" onchange="document.getElementById('setColorPicker').value = this.value">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">متوسط وقت التحضير التقديري (بالدقائق)</label>
+          <input type="number" id="setPrepTime" class="form-input" value="{{ restaurant.avg_prep_time|default(5) }}" min="1" max="60">
+        </div>
+        <div class="form-group">
+          <label class="form-label">تغيير كلمة المرور (اتركه فارغاً دون تغيير)</label>
+          <input type="password" id="setNewPassword" class="form-input" placeholder="••••••••••••">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 24px;">
+          <button type="submit" class="btn btn-brand" style="flex: 1; justify-content: center;">حفظ التغييرات</button>
+          <button type="button" onclick="closeSettingsModal()" class="btn btn-outline">إلغاء</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const restId = {{ restaurant.id }};
+    const restSlug = "{{ restaurant.slug }}";
+
+    function copyCashierUrl() {
+      const url = document.getElementById('cashierUrlText').innerText;
+      navigator.clipboard.writeText(url).then(() => {
+        const btn = document.getElementById('copyBtnText');
+        btn.innerText = 'تم النسخ! ✅';
+        setTimeout(() => btn.innerText = 'نسخ الرابط', 2500);
+      });
+    }
+
+    function openCreateOrderModal() {
+      document.getElementById('createOrderModal').classList.add('show');
+      document.getElementById('orderNumber').focus();
+    }
+    function closeCreateOrderModal() {
+      document.getElementById('createOrderModal').classList.remove('show');
+    }
+    function openSettingsModal() {
+      document.getElementById('settingsModal').classList.add('show');
+    }
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').classList.remove('show');
+    }
+
+    document.getElementById('setColorPicker').addEventListener('input', function() {
+      document.getElementById('setColorText').value = this.value;
+    });
+
+    async function submitCreateOrder(e) {
+      e.preventDefault();
+      const num = document.getElementById('orderNumber').value.trim();
+      const name = document.getElementById('custName').value.trim();
+      const notes = document.getElementById('orderNotes').value.trim();
+
+      try {
+        const res = await fetch('/api/orders', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            order_number: num,
+            customer_name: name,
+            notes: notes,
+            restaurant_id: restId
+          })
+        });
+        if (res.ok) {
+          location.reload();
+        } else {
+          alert('تعذر إنشاء الطلب');
+        }
+      } catch (err) {
+        alert('خطأ: ' + err.message);
+      }
+    }
+
+    async function ringOrder(orderId) {
+      try {
+        const res = await fetch(`/api/orders/${orderId}/ring`, { method: 'POST' });
+        if (res.ok) {
+          location.reload();
+        }
+      } catch (err) {
+        alert('خطأ: ' + err.message);
+      }
+    }
+
+    async function completeOrder(orderId) {
+      try {
+        const res = await fetch(`/api/orders/${orderId}/done`, { method: 'POST' });
+        if (res.ok) {
+          location.reload();
+        }
+      } catch (err) {
+        alert('خطأ: ' + err.message);
+      }
+    }
+
+    async function deleteOrder(orderId) {
+      if (!confirm('هل أنت متأكد من حذف هذا الطلب؟')) return;
+      try {
+        const res = await fetch(`/api/orders/${orderId}`, { method: 'DELETE' });
+        if (res.ok) {
+          location.reload();
+        }
+      } catch (err) {
+        alert('خطأ: ' + err.message);
+      }
+    }
+
+    async function submitSaveSettings(e) {
+      e.preventDefault();
+      const name = document.getElementById('setRestName').value.trim();
+      const phone = document.getElementById('setPhone').value.trim();
+      const color = document.getElementById('setColorText').value.trim();
+      const prep = parseInt(document.getElementById('setPrepTime').value) || 5;
+      const pwd = document.getElementById('setNewPassword').value;
+
+      try {
+        const res = await fetch('/api/merchant/settings', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            name: name,
+            phone: phone,
+            brand_color: color,
+            avg_prep_time: prep,
+            new_password: pwd || null
+          })
+        });
+        if (res.ok) {
+          alert('✅ تم حفظ إعدادات المطعم بنجاح!');
+          location.reload();
+        } else {
+          alert('تعذر الحفظ');
+        }
+      } catch (err) {
+        alert('خطأ: ' + err.message);
+      }
+    }
+
+    function filterStatus(status, el) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      const rows = document.querySelectorAll('#ordersTable tbody tr');
+      rows.forEach(r => {
+        const s = r.getAttribute('data-status');
+        if (status === 'all' || s === status) {
+          r.style.display = '';
+        } else {
+          r.style.display = 'none';
+        }
+      });
+    }
+
+    function searchOrders() {
+      const q = document.getElementById('orderSearch').value.toLowerCase();
+      const rows = document.querySelectorAll('#ordersTable tbody tr');
+      rows.forEach(r => {
+        const text = (r.getAttribute('data-text') || '').toLowerCase();
+        r.style.display = text.includes(q) ? '' : 'none';
+      });
+    }
+
+    // Connect WebSocket to listen to live cashier notifications
+    const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${wsProto}//${window.location.host}/ws/cashier`);
+    ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.event === 'order_created' || msg.event === 'order_updated' || msg.event === 'customer_onway') {
+          // If customer pressed on-the-way or status changed, play subtle beep & reload
+          location.reload();
+        }
+      } catch (e) {}
+    };
+  </script>
+</body>
+</html>
+

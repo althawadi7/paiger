@@ -905,19 +905,22 @@ dialog::backdrop{
   <!-- 1. Top Bar -->
   <header class="bar">
     <div class="brand">
-      <div class="mark">
+      <div class="mark" style="background: {{ restaurant.brand_color if restaurant else 'var(--primary)' }};">
         <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
           <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
         </svg>
       </div>
       <div class="brand-text">
-        <h1>لوحة تحكم الكاشير</h1>
-        <p>إدارة واستدعاء طلبات الزبائن لحظياً (Web Pager)</p>
+        <h1>{{ restaurant.name if restaurant else 'لوحة تحكم الكاشير' }}</h1>
+        <p>{{ restaurant.name if restaurant else 'نظام البيجر الذكي' }} | شاشة الكاشير المباشرة</p>
       </div>
     </div>
-    <div class="right">
-      <div class="net"><span class="live"></span>الشبكة <b>{{ local_ip }}:{{ port }}</b></div>
+    <div class="right" style="display: flex; align-items: center; gap: 10px;">
+      <a href="/dashboard" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 12px; background: #fff; border: 1px solid var(--line); font-size: 12.5px; font-weight: 700; color: var(--ink); text-decoration: none;">
+        <span>📊 لوحة المتجر</span>
+      </a>
+      <div class="net"><span class="live"></span><b>{{ restaurant.slug if restaurant else 'live' }}</b></div>
     </div>
   </header>
 
@@ -1112,9 +1115,11 @@ function playDing(){
   } catch(e){}
 }
 
+var currentRestaurantId = {{ restaurant.id if restaurant else 1 }};
+
 async function loadOrders(){
   try {
-    var res = await fetch("/api/orders");
+    var res = await fetch("/api/orders?restaurant_id=" + currentRestaurantId);
     if(res.ok){
       var list = await res.json();
       orders = list.map(function(item){
@@ -1287,7 +1292,8 @@ async function issueOrderWithValues(n, name, note){
       body: JSON.stringify({
         order_number: n,
         customer_name: name,
-        notes: note
+        notes: note,
+        restaurant_id: currentRestaurantId
       })
     });
 
