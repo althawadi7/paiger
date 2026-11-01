@@ -1,12 +1,41 @@
+import os
+import sys
 import asyncio
-import socket
 from pathlib import Path
 import uvicorn
+from dotenv import load_dotenv
+
+ENV_FILE = Path(__file__).parent / ".env"
+load_dotenv(ENV_FILE)
+
 from app.main import app, get_local_ip
 
 BASE_DIR = Path(__file__).parent
 CERT_FILE = str(BASE_DIR / "cert.pem")
 KEY_FILE = str(BASE_DIR / "key.pem")
+
+HOST = os.getenv("HOST", "127.0.0.1")
+PORT = int(os.getenv("PORT", "8035"))
+DOMAIN = os.getenv("DOMAIN", "pager.rahapp.com")
+
+async def run_single_server():
+    print("=" * 68)
+    print(f"🚀  WEB PAGER SERVER RUNNING FOR DOMAIN: {DOMAIN}")
+    print(f"👉 Listening on: http://{HOST}:{PORT}")
+    print(f"👉 Public URL:   https://{DOMAIN}")
+    print("=" * 68)
+
+    config = uvicorn.Config(
+        app,
+        host=HOST,
+        port=PORT,
+        log_level="info",
+        access_log=True,
+        proxy_headers=True,
+        forwarded_allow_ips="*"
+    )
+    server = uvicorn.Server(config)
+    await server.serve()
 
 async def run_dual_servers():
     local_ip = get_local_ip()
@@ -14,15 +43,7 @@ async def run_dual_servers():
     https_port = 8443
 
     print("=" * 68)
-    print("🚀  WEB PAGER DUAL SERVER (HTTP & SECURE HTTPS) IS STARTING...")
-    print("=" * 68)
-    print(f"👉 لوحة الكاشير (Cashier Dashboard):")
-    print(f"   HTTP:  http://localhost:{http_port}/cashier  (أو http://{local_ip}:{http_port}/cashier)")
-    print(f"   HTTPS: https://localhost:{https_port}/cashier (أو https://{local_ip}:{https_port}/cashier)")
-    print("-" * 68)
-    print(f"📱 تجربة الجوال مع فلاش الكاميرا الحقيقي (Camera Torch LED):")
-    print(f"   افتح رابط HTTPS على هاتفك لتشغيل فلاش الكاميرا الحقيقي والاهتزاز:")
-    print(f"   👉 https://{local_ip}:{https_port}")
+    print("🚀  WEB PAGER DUAL LOCAL DEV SERVER IS STARTING...")
     print("=" * 68)
 
     config_http = uvicorn.Config(
@@ -49,7 +70,10 @@ async def run_dual_servers():
 
 def main():
     try:
-        asyncio.run(run_dual_servers())
+        if "--dual" in sys.argv:
+            asyncio.run(run_dual_servers())
+        else:
+            asyncio.run(run_single_server())
     except (KeyboardInterrupt, SystemExit):
         pass
 

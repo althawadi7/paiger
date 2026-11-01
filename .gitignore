@@ -1,0 +1,51 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.dylib
+
+# Virtual Environments
+venv/
+venv*/
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+lib/
+lib64/
+
+# Environment variables & Secrets
+.env
+.env.*
+!.env.example
+
+# Local SQLite databases & backups
+*.db
+*.sqlite3
+
+# Certificates and keys
+*.pem
+*.key
+*.crt
+*.p12
+*.cer
+certbot/
+
+# OS and IDE generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs and scratch
+*.log
+scratch/
