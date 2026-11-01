@@ -1,0 +1,33 @@
+{
+  "appclips": {
+    "apps": [
+      "7V3J58823K.com.rahapp.pager.clip"
+    ]
+  },
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": [
+          "7V3J58823K.com.rahapp.pager.clip",
+          "7V3J58823K.com.rahapp.pager"
+        ],
+        "components": [
+          {
+            "/": "/pager/*",
+            "comment": "Customer Order Pager URL"
+          },
+          {
+            "/": "/order/*",
+            "comment": "Customer Order Pager URL"
+          }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "7V3J58823K.com.rahapp.pager"
+    ]
+  }
+}

@@ -152,8 +152,8 @@ class CashierController {
   showQrModal(token, orderNumber) {
     this.currentQrToken = token;
     this.modalOrderNum.textContent = `#${orderNumber}`;
-    this.modalQrImg.src = `/api/qr/${token}?host=${encodeURIComponent(this.baseUrl)}&t=${Date.now()}`;
     const url = `${this.baseUrl}/pager/${token}`;
+    this.modalQrImg.src = `/api/qr/${token}?host=${encodeURIComponent(url)}&t=${Date.now()}`;
     this.modalLink.value = url;
     this.qrModal.style.display = "flex";
   }

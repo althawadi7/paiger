@@ -515,6 +515,20 @@ def get_order_by_token(token: str) -> Optional[Dict[str, Any]]:
     finally:
         conn.close()
 
+def get_order_by_number_and_restaurant(order_number: str, restaurant_id: int) -> Optional[Dict[str, Any]]:
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT * FROM orders 
+                WHERE order_number = %s AND restaurant_id = %s 
+                ORDER BY id DESC LIMIT 1
+            """, (str(order_number).strip(), restaurant_id))
+            row = cur.fetchone()
+            return _serialize_row(row)
+    finally:
+        conn.close()
+
 def get_all_orders(limit: int = 150, restaurant_id: Optional[int] = None) -> List[Dict[str, Any]]:
     conn = get_db_connection()
     try:

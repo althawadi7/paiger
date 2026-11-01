@@ -1257,8 +1257,8 @@ function getTargetBaseUrl(){
 function showQrModal(token, num){
   function updateQr(){
     var targetBase = getTargetBaseUrl();
-    var qrUrl = "/api/qr/" + token + "?host=" + encodeURIComponent(targetBase) + "&t=" + Date.now();
     var pagerUrl = targetBase + "/pager/" + token;
+    var qrUrl = "/api/qr/" + token + "?host=" + encodeURIComponent(pagerUrl) + "&t=" + Date.now();
 
     $('#modalQrTitle').textContent = "بيجر الطلب #" + num;
     $('#modalQrImg').src = qrUrl;

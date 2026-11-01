@@ -491,6 +491,27 @@ async def api_merchant_save_settings(req: MerchantSettingsDto, request: Request)
 # CASHIER TERMINALS (PER-RESTAURANT & CENTRAL)
 # ─────────────────────────────────────────────────────────────
 
+@app.get("/r/{slug}", response_class=HTMLResponse)
+async def restaurant_customer_track(request: Request, slug: str, num: Optional[str] = None):
+    rest = db.get_restaurant_by_slug(slug)
+    if not rest:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+
+    if num and num.strip():
+        matched = db.get_order_by_number_and_restaurant(num.strip(), rest["id"])
+        if matched and matched.get("token"):
+            return RedirectResponse(url=f"/pager/{matched['token']}", status_code=status.HTTP_302_FOUND)
+
+    return templates.TemplateResponse(
+        "customer_track.html",
+        {
+            "request": request,
+            "restaurant": rest,
+            "num": num,
+            "error": "لم يتم العثور على طلب نشط بهذا الرقم" if num else None
+        }
+    )
+
 @app.get("/r/{slug}/cashier", response_class=HTMLResponse)
 async def restaurant_dedicated_cashier(request: Request, slug: str):
     rest = db.get_restaurant_by_slug(slug)
@@ -575,6 +596,7 @@ async def index_route(request: Request):
 # ─────────────────────────────────────────────────────────────
 
 @app.get("/pager/{token}", response_class=HTMLResponse)
+@app.get("/order/{token}", response_class=HTMLResponse)
 async def pager_page(request: Request, token: str):
     order = db.get_order_by_token(token)
     if not order:
@@ -764,10 +786,21 @@ async def delete_order(order_id: int):
 
 @app.api_route("/api/qr/{token}", methods=["GET", "HEAD"])
 async def get_qr_image(request: Request, token: str, host: str = None):
+    base = get_public_base_url(request).rstrip('/')
+
     if host:
-        url = host
+        clean_host = host.strip().rstrip('/')
+        # If host already includes the token path, use it directly
+        if f"/pager/{token}" in clean_host or f"/order/{token}" in clean_host:
+            url = clean_host
+        elif clean_host.endswith("/pager") or clean_host.endswith("/order"):
+            url = f"{clean_host}/{token}"
+        elif token in ("demo", "stand"):
+            url = clean_host
+        else:
+            # Guarantee the customer gets to their specific pager page!
+            url = f"{clean_host}/pager/{token}"
     else:
-        base = get_public_base_url(request)
         url = f"{base}/pager/{token}"
 
     qr = qrcode.QRCode(
@@ -799,6 +832,7 @@ async def subscribe_push(req: PushSubscriptionRequest):
 # ─────────────────────────────────────────────────────────────
 
 @app.websocket("/ws/pager/{token}")
+@app.websocket("/ws/order/{token}")
 async def websocket_pager(websocket: WebSocket, token: str):
     await manager.connect_pager(token, websocket)
     order = db.get_order_by_token(token)
