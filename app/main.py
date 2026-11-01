@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import qrcode
+import markdown
 from pathlib import Path
 
 from . import database as db
@@ -158,6 +159,28 @@ class MerchantSettingsDto(BaseModel):
     avg_prep_time: Optional[int] = 5
     new_password: Optional[str] = None
 
+class CreateCustomPageDto(BaseModel):
+    slug: str
+    title: str
+    content: str
+    title_en: Optional[str] = ""
+    content_en: Optional[str] = ""
+    meta_description: Optional[str] = ""
+    is_published: Optional[int] = 1
+    show_in_footer: Optional[int] = 1
+    sort_order: Optional[int] = 0
+
+class UpdateCustomPageDto(BaseModel):
+    slug: Optional[str] = None
+    title: Optional[str] = None
+    content: Optional[str] = None
+    title_en: Optional[str] = None
+    content_en: Optional[str] = None
+    meta_description: Optional[str] = None
+    is_published: Optional[int] = None
+    show_in_footer: Optional[int] = None
+    sort_order: Optional[int] = None
+
 @app.on_event("startup")
 def startup_event():
     db.init_db()
@@ -213,7 +236,8 @@ async def super_admin_login_page(request: Request):
     user = auth.get_current_super_admin(request)
     if user:
         return RedirectResponse(url="/admin", status_code=status.HTTP_302_FOUND)
-    return templates.TemplateResponse("super_admin_login.html", {"request": request, "error": None})
+    footer_pages = db.get_all_custom_pages(published_only=True, footer_only=True)
+    return templates.TemplateResponse("super_admin_login.html", {"request": request, "error": None, "footer_pages": footer_pages})
 
 @app.post("/admin/login", response_class=HTMLResponse)
 async def super_admin_login_submit(
@@ -265,6 +289,7 @@ async def super_admin_dashboard(request: Request):
     stats = db.get_platform_stats()
     restaurants = db.get_all_restaurants(limit=200)
     all_orders = db.get_all_orders(limit=300)
+    custom_pages = db.get_all_custom_pages()
 
     return templates.TemplateResponse(
         "super_admin_dashboard.html",
@@ -273,7 +298,8 @@ async def super_admin_dashboard(request: Request):
             "admin_user": admin_record,
             "stats": stats,
             "restaurants": restaurants,
-            "all_orders": all_orders
+            "all_orders": all_orders,
+            "custom_pages": custom_pages
         }
     )
 
@@ -375,6 +401,110 @@ async def api_admin_delete_restaurant(restaurant_id: int, request: Request):
     return {"status": "ok"}
 
 # ─────────────────────────────────────────────────────────────
+# SUPER ADMIN CUSTOM PAGES MANAGEMENT APIS (CRUD)
+# ─────────────────────────────────────────────────────────────
+
+@app.get("/api/admin/pages")
+async def api_admin_list_pages(request: Request):
+    user = auth.get_current_super_admin(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return {"status": "ok", "pages": db.get_all_custom_pages()}
+
+@app.post("/api/admin/pages")
+async def api_admin_create_page(req: CreateCustomPageDto, request: Request):
+    user = auth.get_current_super_admin(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    clean_slug = req.slug.strip().lower().replace(" ", "-")
+    existing = db.get_custom_page_by_slug(clean_slug)
+    if existing:
+        raise HTTPException(status_code=400, detail="المعرف (slug) مستخدم لصفحة أخرى بالفعل")
+
+    page = db.create_custom_page(
+        slug=clean_slug,
+        title=req.title,
+        content=req.content,
+        title_en=req.title_en or "",
+        content_en=req.content_en or "",
+        meta_description=req.meta_description or "",
+        is_published=req.is_published if req.is_published is not None else 1,
+        show_in_footer=req.show_in_footer if req.show_in_footer is not None else 1,
+        sort_order=req.sort_order or 0
+    )
+    return {"status": "ok", "page": page}
+
+@app.put("/api/admin/pages/{page_id}")
+async def api_admin_update_page(page_id: int, req: UpdateCustomPageDto, request: Request):
+    user = auth.get_current_super_admin(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    page = db.get_custom_page_by_id(page_id)
+    if not page:
+        raise HTTPException(status_code=404, detail="الصفحة غير موجودة")
+
+    clean_slug = req.slug.strip().lower().replace(" ", "-") if req.slug else page["slug"]
+    if clean_slug != page["slug"]:
+        existing = db.get_custom_page_by_slug(clean_slug)
+        if existing and existing["id"] != page_id:
+            raise HTTPException(status_code=400, detail="المعرف (slug) مستخدم لصفحة أخرى بالفعل")
+
+    updated = db.update_custom_page(
+        page_id=page_id,
+        title=req.title if req.title is not None else page["title"],
+        slug=clean_slug,
+        content=req.content if req.content is not None else page["content"],
+        title_en=req.title_en if req.title_en is not None else page.get("title_en", ""),
+        content_en=req.content_en if req.content_en is not None else page.get("content_en", ""),
+        meta_description=req.meta_description if req.meta_description is not None else page.get("meta_description", ""),
+        is_published=req.is_published if req.is_published is not None else page["is_published"],
+        show_in_footer=req.show_in_footer if req.show_in_footer is not None else page["show_in_footer"],
+        sort_order=req.sort_order if req.sort_order is not None else page["sort_order"]
+    )
+    return {"status": "ok", "page": updated}
+
+@app.delete("/api/admin/pages/{page_id}")
+async def api_admin_delete_page(page_id: int, request: Request):
+    user = auth.get_current_super_admin(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    page = db.get_custom_page_by_id(page_id)
+    if not page:
+        raise HTTPException(status_code=404, detail="الصفحة غير موجودة")
+    if page["slug"] in ("privacy-policy", "terms-of-service"):
+        raise HTTPException(status_code=400, detail="لا يمكن حذف سياسة الخصوصية أو شروط الاستخدام الأساسية")
+
+    db.delete_custom_page(page_id)
+    return {"status": "ok"}
+
+@app.post("/api/admin/pages/{page_id}/toggle-published")
+async def api_admin_toggle_page_published(page_id: int, request: Request):
+    user = auth.get_current_super_admin(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    page = db.get_custom_page_by_id(page_id)
+    if not page:
+        raise HTTPException(status_code=404, detail="الصفحة غير موجودة")
+    new_status = 0 if page["is_published"] == 1 else 1
+    updated = db.update_custom_page(page_id=page_id, is_published=new_status)
+    return {"status": "ok", "is_published": new_status, "page": updated}
+
+@app.post("/api/admin/pages/{page_id}/toggle-footer")
+async def api_admin_toggle_page_footer(page_id: int, request: Request):
+    user = auth.get_current_super_admin(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    page = db.get_custom_page_by_id(page_id)
+    if not page:
+        raise HTTPException(status_code=404, detail="الصفحة غير موجودة")
+    new_footer = 0 if page["show_in_footer"] == 1 else 1
+    updated = db.update_custom_page(page_id=page_id, show_in_footer=new_footer)
+    return {"status": "ok", "show_in_footer": new_footer, "page": updated}
+
+# ─────────────────────────────────────────────────────────────
 # RESTAURANT TENANT AUTH & DASHBOARD
 # ─────────────────────────────────────────────────────────────
 
@@ -384,7 +514,8 @@ async def restaurant_login_page(request: Request):
     user = auth.get_current_restaurant(request)
     if user:
         return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
-    return templates.TemplateResponse("restaurant_login.html", {"request": request, "error": None})
+    footer_pages = db.get_all_custom_pages(published_only=True, footer_only=True)
+    return templates.TemplateResponse("restaurant_login.html", {"request": request, "error": None, "footer_pages": footer_pages})
 
 @app.post("/login", response_class=HTMLResponse)
 @app.post("/restaurant/login", response_class=HTMLResponse)
@@ -590,6 +721,57 @@ async def index_route(request: Request):
     if auth.get_current_restaurant(request):
         return RedirectResponse(url="/dashboard")
     return RedirectResponse(url="/login")
+
+# ─────────────────────────────────────────────────────────────
+# PUBLIC CUSTOM PAGES & FLUTTER APIS
+# ─────────────────────────────────────────────────────────────
+
+@app.get("/api/pages")
+async def api_get_public_pages():
+    pages = db.get_all_custom_pages(published_only=True)
+    compact = [
+        {
+            "id": p["id"],
+            "slug": p["slug"],
+            "title": p["title"],
+            "title_en": p.get("title_en", ""),
+            "meta_description": p.get("meta_description", ""),
+            "show_in_footer": p.get("show_in_footer", 1),
+            "sort_order": p.get("sort_order", 0),
+            "updated_at": p.get("updated_at")
+        }
+        for p in pages
+    ]
+    return {"status": "ok", "pages": compact}
+
+@app.get("/api/pages/{slug}")
+async def api_get_public_page_detail(slug: str):
+    page = db.get_custom_page_by_slug(slug.strip().lower())
+    if not page or page.get("is_published") == 0:
+        raise HTTPException(status_code=404, detail="الصفحة المطلوبة غير موجودة")
+    return {"status": "ok", "page": page}
+
+@app.get("/p/{slug}", response_class=HTMLResponse)
+@app.get("/page/{slug}", response_class=HTMLResponse)
+async def public_custom_page(request: Request, slug: str):
+    page = db.get_custom_page_by_slug(slug.strip().lower())
+    if not page or page.get("is_published") == 0:
+        raise HTTPException(status_code=404, detail="الصفحة المطلوبة غير موجودة أو قيد المراجعة")
+
+    footer_pages = db.get_all_custom_pages(published_only=True, footer_only=True)
+    html_ar = markdown.markdown(page.get("content", ""), extensions=['extra', 'nl2br'])
+    html_en = markdown.markdown(page.get("content_en", "") or page.get("content", ""), extensions=['extra', 'nl2br'])
+
+    return templates.TemplateResponse(
+        "custom_page.html",
+        {
+            "request": request,
+            "page": page,
+            "footer_pages": footer_pages,
+            "html_content_ar": html_ar,
+            "html_content_en": html_en
+        }
+    )
 
 # ─────────────────────────────────────────────────────────────
 # CUSTOMER PAGER PAGE & MOBILE CLIENT APIS

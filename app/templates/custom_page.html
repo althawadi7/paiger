@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ page.title }} | Paiger SaaS</title>
+  <meta name="description" content="{{ page.meta_description or page.title }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined">
+  <link rel="icon" href="/static/img/brand-logo.png">
+  <style>
+    :root {
+      --bg: #f6f3ed;
+      --card: #ffffff;
+      --border: rgba(58, 38, 28, 0.12);
+      --ink: #23150d;
+      --ink-secondary: #5a463a;
+      --muted: #7a6656;
+      --primary: #3e2415;
+      --primary-hover: #2b190e;
+      --accent: #c05621;
+      --accent-soft: rgba(192, 86, 33, 0.09);
+      --radius: 20px;
+      --shadow: 0 18px 45px rgba(45, 30, 20, 0.06), 0 2px 10px rgba(45, 30, 20, 0.03);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      background:
+        radial-gradient(1200px 700px at 50% -10%, rgba(192, 86, 33, 0.12), transparent 75%),
+        radial-gradient(900px 500px at 10% 30%, rgba(62, 36, 21, 0.04), transparent 75%),
+        var(--bg);
+      color: var(--ink);
+      font-family: "Readex Pro", system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.75;
+    }
+    a { color: inherit; text-decoration: none; }
+
+    /* Top Nav */
+    .top-nav {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .nav-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-logo-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(62, 36, 21, 0.2);
+    }
+    .brand-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .lang-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .lang-toggle-btn:hover {
+      background: #ffffff;
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .home-link-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 10px;
+      background: var(--primary);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .home-link-btn:hover {
+      background: var(--primary-hover);
+    }
+
+    /* Page Container */
+    .page-container {
+      width: 100%;
+      max-width: 960px;
+      margin: 36px auto 60px;
+      padding: 0 20px;
+      flex: 1;
+    }
+    .content-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 44px 40px;
+      box-shadow: var(--shadow);
+    }
+    .page-header {
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .page-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 4px 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .page-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+    .page-meta {
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    /* Markdown Article Content */
+    .article-body {
+      color: var(--ink-secondary);
+      font-size: 15px;
+      line-height: 1.85;
+    }
+    .article-body h1, .article-body h2, .article-body h3, .article-body h4 {
+      color: var(--ink);
+      font-weight: 800;
+      margin-top: 32px;
+      margin-bottom: 14px;
+      line-height: 1.35;
+    }
+    .article-body h1 { font-size: 22px; }
+    .article-body h2 { font-size: 19px; border-bottom: 1px solid rgba(58, 38, 28, 0.08); padding-bottom: 8px; }
+    .article-body h3 { font-size: 16.5px; }
+    .article-body p { margin-bottom: 16px; }
+    .article-body ul, .article-body ol {
+      margin-bottom: 18px;
+      padding-right: 24px;
+    }
+    .article-body li { margin-bottom: 8px; }
+    .article-body hr {
+      border: 0;
+      height: 1px;
+      background: var(--border);
+      margin: 28px 0;
+    }
+    .article-body strong { color: var(--ink); font-weight: 700; }
+    .article-body code {
+      font-family: monospace;
+      background: var(--bg);
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 13.5px;
+      border: 1px solid rgba(58, 38, 28, 0.1);
+    }
+    .article-body a {
+      color: var(--accent);
+      font-weight: 600;
+      text-decoration: underline;
+    }
+
+    /* Footer */
+    .site-footer {
+      width: 100%;
+      background: #ffffff;
+      border-top: 1px solid var(--border);
+      padding: 30px 20px;
+      text-align: center;
+    }
+    .footer-inner {
+      max-width: 960px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .footer-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--ink-secondary);
+    }
+    .footer-nav a:hover {
+      color: var(--accent);
+    }
+    .footer-copy {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .content-card { padding: 28px 20px; }
+      .page-title { font-size: 23px; }
+      .nav-inner { padding: 12px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header class="top-nav">
+    <div class="nav-inner">
+      <a href="/" class="brand-wrap">
+        <div class="brand-logo-icon">
+          <span class="material-icons-outlined" style="font-size: 22px;">notifications_active</span>
+        </div>
+        <span class="brand-title">Paiger SaaS</span>
+      </a>
+
+      <div class="nav-actions">
+        <button onclick="toggleLanguage()" class="lang-toggle-btn" id="langBtn">
+          <span class="material-icons-outlined" style="font-size: 17px;">translate</span>
+          <span id="langBtnText">English</span>
+        </button>
+        <a href="/login" class="home-link-btn">
+          <span>دخول المتاجر</span>
+          <span class="material-icons-outlined" style="font-size: 16px;">arrow_back</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page Body -->
+  <main class="page-container">
+    <div class="content-card">
+      <div class="page-header">
+        <div class="page-badge">
+          <span class="material-icons-outlined" style="font-size: 14px;">verified</span>
+          <span id="badgeText">وثيقة معتمدة وموثقة لمتجر أبل</span>
+        </div>
+        <h1 class="page-title" id="pageTitle">{{ page.title }}</h1>
+        <div class="page-meta" id="pageMeta">آخر تحديث: {{ page.updated_at or page.created_at }}</div>
+      </div>
+
+      <!-- Arabic Content Container -->
+      <article class="article-body" id="contentAr">
+        {{ html_content_ar|safe }}
+      </article>
+
+      <!-- English Content Container -->
+      <article class="article-body" id="contentEn" style="display: none; direction: ltr; text-align: left; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        {{ html_content_en|safe }}
+      </article>
+    </div>
+  </main>
+
+  <!-- Global Footer -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <nav class="footer-nav">
+        {% for f in footer_pages %}
+        <a href="/p/{{ f.slug }}" class="{{ 'active' if f.slug == page.slug else '' }}">{{ f.title }}</a>
+        {% if not loop.last %}<span>•</span>{% endif %}
+        {% endfor %}
+      </nav>
+      <div class="footer-copy">
+        © 2026 جميع الحقوق محفوظة لمنصة بيجر الذكية (Paiger SaaS) • متوافق مع Apple App Clip و Dynamic Island
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    let currentLang = 'ar';
+    function toggleLanguage() {
+      const arEl = document.getElementById('contentAr');
+      const enEl = document.getElementById('contentEn');
+      const titleEl = document.getElementById('pageTitle');
+      const langBtnText = document.getElementById('langBtnText');
+      const badgeText = document.getElementById('badgeText');
+
+      if (currentLang === 'ar') {
+        currentLang = 'en';
+        document.documentElement.dir = 'ltr';
+        document.documentElement.lang = 'en';
+        arEl.style.display = 'none';
+        enEl.style.display = 'block';
+        titleEl.innerText = "{{ page.title_en or page.title }}";
+        langBtnText.innerText = "عربي (Arabic)";
+        badgeText.innerText = "Apple App Store Verified Document";
+      } else {
+        currentLang = 'ar';
+        document.documentElement.dir = 'rtl';
+        document.documentElement.lang = 'ar';
+        enEl.style.display = 'none';
+        arEl.style.display = 'block';
+        titleEl.innerText = "{{ page.title }}";
+        langBtnText.innerText = "English";
+        badgeText.innerText = "وثيقة معتمدة وموثقة لمتجر أبل";
+      }
+    }
+  </script>
+</body>
+</html>

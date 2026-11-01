@@ -1043,6 +1043,11 @@
         <span class="material-icons-outlined icon">point_of_sale</span>
         <span>شاشات الكاشير السريعة</span>
       </a>
+      <a href="#pagesSection" class="nav-item" data-tab="pagesSection">
+        <span class="material-icons-outlined icon">article</span>
+        <span>الصفحات القانونية (CRUD)</span>
+        <span class="nav-badge" id="sidePagesCount" style="background: #0284c7;">{{ custom_pages|length }}</span>
+      </a>
 
       <div class="nav-label" style="margin-top: 10px;">إعدادات النظام</div>
       <a href="#settingsSection" class="nav-item" data-tab="settingsSection">
@@ -1660,6 +1665,108 @@
         </div>
       </section>
 
+      <!-- ═════════════════════════════════════════════════════════════════ -->
+      <!-- TAB 6: CUSTOM PAGES CRUD SECTION (#pagesSection) -->
+      <!-- ═════════════════════════════════════════════════════════════════ -->
+      <section id="pagesSection" class="view-section">
+        <div class="card-panel">
+          <div class="panel-header">
+            <div class="panel-heading">
+              <div class="panel-heading-icon" style="background: #e0f2fe; color: #0284c7;">
+                <span class="material-icons-outlined">article</span>
+              </div>
+              <div>
+                <div class="panel-title">إدارة الصفحات التعريفية والقانونية (Custom Pages CRUD)</div>
+                <div class="panel-desc">إدارة سياسة الخصوصية وشروط الاستخدام وصفحات الدعم الفني المطلوبة لاعتماد متجر Apple App Store</div>
+              </div>
+            </div>
+            <button onclick="openAddPageModal()" class="btn btn-primary">
+              <span class="material-icons-outlined">note_add</span>
+              <span>+ إضافة صفحة جديدة</span>
+            </button>
+          </div>
+
+          <!-- Controls Toolbar -->
+          <div class="controls-toolbar">
+            <div class="search-input-wrap">
+              <span class="material-icons-outlined">search</span>
+              <input type="text" id="pagesSearchInput" placeholder="بحث بعنوان الصفحة أو المعرف (slug)..." oninput="filterPages()">
+            </div>
+          </div>
+
+          <!-- Pages Table -->
+          <div class="table-container">
+            <table id="pagesTable">
+              <thead>
+                <tr>
+                  <th>عنوان الصفحة (عربي / English)</th>
+                  <th>المعرف والرابط المعتمد</th>
+                  <th>ترتيب العرض</th>
+                  <th>حالة النشر</th>
+                  <th>الظهور في الفوتر</th>
+                  <th>آخر تحديث</th>
+                  <th style="text-align: left;">التحكم والإجراءات</th>
+                </tr>
+              </thead>
+              <tbody id="pagesTbody">
+                {% for p in custom_pages %}
+                <tr id="page-row-{{ p.id }}" data-search="{{ p.title|lower }} {{ (p.title_en or '')|lower }} {{ p.slug|lower }}">
+                  <td>
+                    <div style="display: flex; flex-direction: column;">
+                      <a href="/p/{{ p.slug }}" target="_blank" style="font-weight: 700; color: var(--ink); font-size: 14.5px;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--ink)'">
+                        {{ p.title }}
+                        <span class="material-icons-outlined" style="font-size: 13px; vertical-align: middle;">open_in_new</span>
+                      </a>
+                      {% if p.title_en %}
+                      <span style="font-size: 12px; color: var(--muted); font-family: sans-serif;">{{ p.title_en }}</span>
+                      {% endif %}
+                    </div>
+                  </td>
+                  <td>
+                    <span style="font-family: monospace; font-size: 12.5px; background: var(--bg); padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); direction: ltr; display: inline-block;">
+                      /p/{{ p.slug }}
+                    </span>
+                  </td>
+                  <td><strong>{{ p.sort_order or 0 }}</strong></td>
+                  <td>
+                    <label class="switch-label" title="تفعيل أو إيقاف النشر فورياً">
+                      <input type="checkbox" onchange="togglePagePublished({{ p.id }})" {{ 'checked' if p.is_published else '' }}>
+                      <span class="switch-slider"></span>
+                    </label>
+                  </td>
+                  <td>
+                    <label class="switch-label" title="عرض في فوتر الموقع وصفحات الدخول">
+                      <input type="checkbox" onchange="togglePageFooter({{ p.id }})" {{ 'checked' if p.show_in_footer else '' }}>
+                      <span class="switch-slider"></span>
+                    </label>
+                  </td>
+                  <td><span class="time-ticker">{{ p.updated_at or p.created_at }}</span></td>
+                  <td>
+                    <div class="action-group">
+                      <a href="/p/{{ p.slug }}" target="_blank" class="action-btn" title="معاينة الصفحة الحية ↗">
+                        <span class="material-icons-outlined">visibility</span>
+                      </a>
+                      <button onclick='openEditPageModal({{ p|tojson }})' class="action-btn" title="تعديل المحتوى ✏️">
+                        <span class="material-icons-outlined">edit</span>
+                      </button>
+                      <button onclick="copyToClipboard('https://pager.rahapp.com/p/{{ p.slug }}', 'رابط الصفحة لمتجر آبل')" class="action-btn" title="نسخ الرابط الرسمي لمتجر آبل 📋">
+                        <span class="material-icons-outlined">content_copy</span>
+                      </button>
+                      {% if p.slug not in ('privacy-policy', 'terms-of-service') %}
+                      <button onclick="deletePage({{ p.id }}, '{{ p.title }}')" class="action-btn danger-btn" title="حذف الصفحة 🗑️">
+                        <span class="material-icons-outlined">delete_outline</span>
+                      </button>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 </div>
@@ -1853,6 +1960,170 @@
   </div>
 </div>
 
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: ADD CUSTOM PAGE -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="addPageModal">
+  <div class="modal-box" style="max-width: 680px;">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="material-icons-outlined" style="font-size: 26px; color: var(--accent);">note_add</span>
+        <h3 class="modal-title">إضافة صفحة تعريفية / قانونية جديدة</h3>
+      </div>
+      <button class="modal-close-btn" onclick="closeAddPageModal()">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+
+    <form id="addPageForm" onsubmit="submitAddPage(event)">
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">عنوان الصفحة (عربي) *</label>
+          <input type="text" name="title" id="addPageTitle" class="form-input" placeholder="مثال: سياسة الخصوصية" required oninput="autoPageSlug()">
+        </div>
+        <div class="form-group">
+          <label class="form-label">العنوان بالإنجليزية (English Title)</label>
+          <input type="text" name="title_en" id="addPageTitleEn" class="form-input" placeholder="e.g. Privacy Policy" style="direction: ltr;">
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">المعرف اللاتيني (Slug) *</label>
+          <input type="text" name="slug" id="addPageSlug" class="form-input" placeholder="privacy-policy" required style="font-family: monospace; direction: ltr;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ترتيب الظهور</label>
+          <input type="number" name="sort_order" id="addPageSort" class="form-input" value="1" min="0" max="99">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">وصف الميتا (SEO Meta Description)</label>
+        <input type="text" name="meta_description" id="addPageMeta" class="form-input" placeholder="وصف موجز يظهر في محركات البحث">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">المحتوى بالعربية (Markdown أو HTML) *</label>
+        <textarea name="content" id="addPageContent" class="form-input" rows="8" placeholder="اكتب محتوى الصفحة هنا بتنسيق Markdown أو HTML..." required style="resize: vertical; font-family: inherit; line-height: 1.6;"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">المحتوى بالإنجليزية (English Content)</label>
+        <textarea name="content_en" id="addPageContentEn" class="form-input" rows="8" placeholder="Write English markdown/HTML content here..." style="resize: vertical; font-family: monospace; direction: ltr; line-height: 1.6;"></textarea>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">حالة النشر</label>
+          <select name="is_published" id="addPagePublished" class="form-input">
+            <option value="1">🟢 منشورة ومتاحة للعامة (Published)</option>
+            <option value="0">⚪ مسودة غير منشورة (Draft)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">الظهور في الفوتر</label>
+          <select name="show_in_footer" id="addPageFooter" class="form-input">
+            <option value="1">✅ نعم، اعرضها في فوتر الموقع</option>
+            <option value="0">❌ لا، صفحة مستقلة فقط</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button type="submit" class="btn btn-primary" style="flex: 1;">
+          <span class="material-icons-outlined">save</span>
+          <span>حفظ وإنشاء الصفحة</span>
+        </button>
+        <button type="button" onclick="closeAddPageModal()" class="btn btn-outline">إلغاء</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<!-- MODAL: EDIT CUSTOM PAGE -->
+<!-- ═════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="editPageModal">
+  <div class="modal-box" style="max-width: 680px;">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span class="material-icons-outlined" style="font-size: 26px; color: var(--primary);">edit_note</span>
+        <h3 class="modal-title">تعديل الصفحة التعريفية / القانونية</h3>
+      </div>
+      <button class="modal-close-btn" onclick="closeEditPageModal()">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+
+    <form id="editPageForm" onsubmit="submitEditPage(event)">
+      <input type="hidden" name="id" id="editPageId">
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">عنوان الصفحة (عربي) *</label>
+          <input type="text" name="title" id="editPageTitle" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">العنوان بالإنجليزية (English Title)</label>
+          <input type="text" name="title_en" id="editPageTitleEn" class="form-input" style="direction: ltr;">
+        </div>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">المعرف اللاتيني (Slug) *</label>
+          <input type="text" name="slug" id="editPageSlug" class="form-input" required style="font-family: monospace; direction: ltr;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ترتيب الظهور</label>
+          <input type="number" name="sort_order" id="editPageSort" class="form-input" min="0" max="99">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">وصف الميتا (SEO Meta Description)</label>
+        <input type="text" name="meta_description" id="editPageMeta" class="form-input">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">المحتوى بالعربية (Markdown أو HTML) *</label>
+        <textarea name="content" id="editPageContent" class="form-input" rows="8" required style="resize: vertical; font-family: inherit; line-height: 1.6;"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">المحتوى بالإنجليزية (English Content)</label>
+        <textarea name="content_en" id="editPageContentEn" class="form-input" rows="8" style="resize: vertical; font-family: monospace; direction: ltr; line-height: 1.6;"></textarea>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label class="form-label">حالة النشر</label>
+          <select name="is_published" id="editPagePublished" class="form-input">
+            <option value="1">🟢 منشورة ومتاحة للعامة (Published)</option>
+            <option value="0">⚪ مسودة غير منشورة (Draft)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">الظهور في الفوتر</label>
+          <select name="show_in_footer" id="editPageFooter" class="form-input">
+            <option value="1">✅ نعم، اعرضها في فوتر الموقع</option>
+            <option value="0">❌ لا، صفحة مستقلة فقط</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button type="submit" class="btn btn-primary" style="flex: 1;">
+          <span class="material-icons-outlined">update</span>
+          <span>حفظ التعديلات</span>
+        </button>
+        <button type="button" onclick="closeEditPageModal()" class="btn btn-outline">إلغاء</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- Toast Notifications Container -->
 <div class="toast-container" id="toastContainer"></div>
 
@@ -1881,7 +2152,8 @@
       'restaurantsSection': { title: 'إدارة المطاعم والفروع (Restaurants CRUD)', sub: 'إضافة وتعديل وحذف المطاعم وضبط الإعدادات والهوية' },
       'ordersSection': { title: 'سجل الطلبات المركزي (Central Orders Hub)', sub: 'مراقبة وتحديث واستدعاء كافة الطلبات اللحظية لكافة المطاعم' },
       'terminalsSection': { title: 'دليل شاشات الكاشير السريعة (Terminals)', sub: 'روابط وصول فورية لشاشات الكاشير ولوحات QR كود الستاند' },
-      'settingsSection': { title: 'إعدادات المنصة ومنظومة Apple', sub: 'جاهزية App Clip و Live Activities والربط السحابي' }
+      'settingsSection': { title: 'إعدادات المنصة ومنظومة Apple', sub: 'جاهزية App Clip و Live Activities والربط السحابي' },
+      'pagesSection': { title: 'إدارة الصفحات التعريفية والقانونية (Custom Pages)', sub: 'إدارة وتحديث سياسة الخصوصية والشروط وصفحات الاعتماد لمتجر آبل' }
     };
     if (titles[sectionId]) {
       document.getElementById('topbarTitle').innerText = titles[sectionId].title;
@@ -2249,6 +2521,147 @@
     }).join('');
 
     filterOrders();
+  }
+
+  // ── Custom Pages Modals & Logic ──
+  function openAddPageModal() {
+    document.getElementById('addPageModal').classList.add('show');
+  }
+  function closeAddPageModal() {
+    document.getElementById('addPageModal').classList.remove('show');
+  }
+  function openEditPageModal(p) {
+    document.getElementById('editPageId').value = p.id;
+    document.getElementById('editPageTitle').value = p.title || '';
+    document.getElementById('editPageTitleEn').value = p.title_en || '';
+    document.getElementById('editPageSlug').value = p.slug || '';
+    document.getElementById('editPageSort').value = p.sort_order || 0;
+    document.getElementById('editPageMeta').value = p.meta_description || '';
+    document.getElementById('editPageContent').value = p.content || '';
+    document.getElementById('editPageContentEn').value = p.content_en || '';
+    document.getElementById('editPagePublished').value = p.is_published ? '1' : '0';
+    document.getElementById('editPageFooter').value = p.show_in_footer ? '1' : '0';
+    document.getElementById('editPageModal').classList.add('show');
+  }
+  function closeEditPageModal() {
+    document.getElementById('editPageModal').classList.remove('show');
+  }
+
+  function autoPageSlug() {
+    const title = document.getElementById('addPageTitle').value;
+    const slugInput = document.getElementById('addPageSlug');
+    if (!slugInput.dataset.manual) {
+      slugInput.value = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    }
+  }
+  const addSlugEl = document.getElementById('addPageSlug');
+  if (addSlugEl) {
+    addSlugEl.addEventListener('input', function() {
+      this.dataset.manual = '1';
+    });
+  }
+
+  async function submitAddPage(e) {
+    e.preventDefault();
+    const form = document.getElementById('addPageForm');
+    const data = Object.fromEntries(new FormData(form).entries());
+
+    try {
+      const res = await fetch('/api/admin/pages', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      if (res.ok) {
+        showToast('✅ تم إنشاء الصفحة بنجاح!', 'success');
+        closeAddPageModal();
+        setTimeout(() => location.reload(), 800);
+      } else {
+        showToast('❌ خطأ: ' + (result.detail || 'تعذر إنشاء الصفحة'), 'error');
+      }
+    } catch (err) {
+      showToast('❌ خطأ اتصال: ' + err.message, 'error');
+    }
+  }
+
+  async function submitEditPage(e) {
+    e.preventDefault();
+    const form = document.getElementById('editPageForm');
+    const data = Object.fromEntries(new FormData(form).entries());
+    const id = data.id;
+
+    try {
+      const res = await fetch(`/api/admin/pages/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      if (res.ok) {
+        showToast('✅ تم تحديث بيانات الصفحة بنجاح!', 'success');
+        closeEditPageModal();
+        setTimeout(() => location.reload(), 800);
+      } else {
+        showToast('❌ خطأ: ' + (result.detail || 'تعذر التحديث'), 'error');
+      }
+    } catch (err) {
+      showToast('❌ خطأ اتصال: ' + err.message, 'error');
+    }
+  }
+
+  async function togglePagePublished(id) {
+    try {
+      const res = await fetch(`/api/admin/pages/${id}/toggle-published`, { method: 'POST' });
+      const result = await res.json();
+      if (res.ok) {
+        showToast(result.is_published ? '🟢 تم نشر الصفحة للعامة' : '⚪ تم تحويل الصفحة لمسودة', 'success');
+      } else {
+        showToast('❌ تعذر تغيير حالة النشر', 'error');
+      }
+    } catch (err) {
+      showToast('❌ خطأ: ' + err.message, 'error');
+    }
+  }
+
+  async function togglePageFooter(id) {
+    try {
+      const res = await fetch(`/api/admin/pages/${id}/toggle-footer`, { method: 'POST' });
+      const result = await res.json();
+      if (res.ok) {
+        showToast(result.show_in_footer ? '✅ ستظهر الصفحة في فوتر الموقع' : '❌ تم إخفاء الصفحة من الفوتر', 'info');
+      } else {
+        showToast('❌ تعذر تغيير إعداد الفوتر', 'error');
+      }
+    } catch (err) {
+      showToast('❌ خطأ: ' + err.message, 'error');
+    }
+  }
+
+  async function deletePage(id, title) {
+    if (!confirm(`هل أنت متأكد من حذف صفحة "${title}" نهائياً؟`)) return;
+    try {
+      const res = await fetch(`/api/admin/pages/${id}`, { method: 'DELETE' });
+      const result = await res.json();
+      if (res.ok) {
+        showToast('✅ تم حذف الصفحة بنجاح', 'success');
+        const row = document.getElementById(`page-row-${id}`);
+        if (row) row.remove();
+      } else {
+        showToast('❌ خطأ: ' + (result.detail || 'تعذر الحذف'), 'error');
+      }
+    } catch (err) {
+      showToast('❌ خطأ: ' + err.message, 'error');
+    }
+  }
+
+  function filterPages() {
+    const q = (document.getElementById('pagesSearchInput').value || '').toLowerCase().trim();
+    const rows = document.querySelectorAll('#pagesTbody tr');
+    rows.forEach(r => {
+      const text = (r.dataset.search || '').toLowerCase();
+      r.style.display = (!q || text.includes(q)) ? '' : 'none';
+    });
   }
 
   // ── Realtime WebSocket ──

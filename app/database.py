@@ -149,6 +149,26 @@ def init_db():
                     INDEX idx_order_token (order_token)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             """)
+
+            # Custom Pages (Privacy Policy, Terms of Service, About, etc.)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS custom_pages (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    slug VARCHAR(100) UNIQUE NOT NULL,
+                    title VARCHAR(200) NOT NULL,
+                    title_en VARCHAR(200) DEFAULT '',
+                    content MEDIUMTEXT NOT NULL,
+                    content_en MEDIUMTEXT DEFAULT '',
+                    meta_description VARCHAR(300) DEFAULT '',
+                    is_published TINYINT(1) DEFAULT 1,
+                    show_in_footer TINYINT(1) DEFAULT 1,
+                    sort_order INT DEFAULT 0,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_page_slug (slug),
+                    INDEX idx_page_published (is_published)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            """)
             conn.commit()
     finally:
         conn.close()
@@ -801,5 +821,135 @@ def get_live_activity_tokens_by_token(order_token: str) -> List[Dict[str, Any]]:
             cur.execute("SELECT * FROM live_activity_tokens WHERE order_token = %s", (order_token,))
             rows = cur.fetchall()
             return [_serialize_row(r) for r in rows]
+    finally:
+        conn.close()
+
+# ─────────────────────────────────────────────────────────────
+# CUSTOM PAGES (PRIVACY, TERMS, ABOUT, ETC.)
+# ─────────────────────────────────────────────────────────────
+
+def get_all_custom_pages(published_only: bool = False, footer_only: bool = False) -> List[Dict[str, Any]]:
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            conditions = []
+            if published_only:
+                conditions.append("is_published = 1")
+            if footer_only:
+                conditions.append("show_in_footer = 1")
+            
+            where_sql = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+            cur.execute(f"SELECT * FROM custom_pages {where_sql} ORDER BY sort_order ASC, id ASC")
+            rows = cur.fetchall()
+            return [_serialize_row(r) for r in rows]
+    finally:
+        conn.close()
+
+def get_custom_page_by_slug(slug: str) -> Optional[Dict[str, Any]]:
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM custom_pages WHERE slug = %s", (slug,))
+            row = cur.fetchone()
+            return _serialize_row(row)
+    finally:
+        conn.close()
+
+def get_custom_page_by_id(page_id: int) -> Optional[Dict[str, Any]]:
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM custom_pages WHERE id = %s", (page_id,))
+            row = cur.fetchone()
+            return _serialize_row(row)
+    finally:
+        conn.close()
+
+def create_custom_page(
+    slug: str,
+    title: str,
+    content: str,
+    title_en: str = "",
+    content_en: str = "",
+    meta_description: str = "",
+    is_published: int = 1,
+    show_in_footer: int = 1,
+    sort_order: int = 0
+) -> Dict[str, Any]:
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO custom_pages 
+                (slug, title, title_en, content, content_en, meta_description, is_published, show_in_footer, sort_order)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (slug, title, title_en, content, content_en, meta_description, is_published, show_in_footer, sort_order)
+            )
+            page_id = cur.lastrowid
+            conn.commit()
+            return get_custom_page_by_id(page_id)
+    finally:
+        conn.close()
+
+def update_custom_page(
+    page_id: int,
+    title: Optional[str] = None,
+    slug: Optional[str] = None,
+    content: Optional[str] = None,
+    title_en: Optional[str] = None,
+    content_en: Optional[str] = None,
+    meta_description: Optional[str] = None,
+    is_published: Optional[int] = None,
+    show_in_footer: Optional[int] = None,
+    sort_order: Optional[int] = None
+) -> Optional[Dict[str, Any]]:
+    current = get_custom_page_by_id(page_id)
+    if not current:
+        return None
+
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE custom_pages SET
+                    title = %s,
+                    slug = %s,
+                    content = %s,
+                    title_en = %s,
+                    content_en = %s,
+                    meta_description = %s,
+                    is_published = %s,
+                    show_in_footer = %s,
+                    sort_order = %s,
+                    updated_at = NOW()
+                WHERE id = %s
+                """,
+                (
+                    title if title is not None else current["title"],
+                    slug if slug is not None else current["slug"],
+                    content if content is not None else current["content"],
+                    title_en if title_en is not None else current.get("title_en", ""),
+                    content_en if content_en is not None else current.get("content_en", ""),
+                    meta_description if meta_description is not None else current.get("meta_description", ""),
+                    is_published if is_published is not None else current["is_published"],
+                    show_in_footer if show_in_footer is not None else current["show_in_footer"],
+                    sort_order if sort_order is not None else current["sort_order"],
+                    page_id
+                )
+            )
+            conn.commit()
+            return get_custom_page_by_id(page_id)
+    finally:
+        conn.close()
+
+def delete_custom_page(page_id: int):
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM custom_pages WHERE id = %s", (page_id,))
+            conn.commit()
     finally:
         conn.close()
