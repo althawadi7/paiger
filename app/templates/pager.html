@@ -13,7 +13,7 @@
 <link rel="manifest" href="/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="بيجر المطعم">
-<meta name="apple-itunes-app" content="app-clip-bundle-id=com.dawrak.app.Clip, app-id=6829547522">
+<meta name="apple-itunes-app" content="app-clip-bundle-id=com.dawrak.app.Clip">
 <style>
 :root{
   --wait:#ffb547;--ring:#ff4d6d;--go:#8b7bff;--done:#36d9a0;
@@ -837,6 +837,10 @@ body.ring .widget-box{
       <button class="permission-accept-btn" id="permissionAcceptBtn">
         السماح بالتنبيهات وتفعيل البيجر 🚀
       </button>
+
+      <a href="dawrak://pager/{{ order.token }}" class="open-app-pill" style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:10px; padding:13px 16px; background:#24160F; color:#FAF7F2; border-radius:14px; text-decoration:none; font-weight:700; font-size:14px; box-shadow:0 4px 14px rgba(36,22,15,0.18);">
+        <span>📱 فتح في تطبيق البيجر وشاشة القفل</span>
+      </a>
     </div>
   </div>
 
@@ -1316,6 +1320,11 @@ if (permissionAcceptBtn) {
   permissionAcceptBtn.onclick = function(e){
     e.stopPropagation();
     activateArming();
+    if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+      setTimeout(function(){
+        window.location.href = "dawrak://pager/" + order.token;
+      }, 400);
+    }
   };
 }
 
