@@ -23,6 +23,8 @@ self.addEventListener('push', function(event) {
   var title = data.title || "طلبك جاهز للاستلام! 🔔";
   var options = {
     body: data.body || "تفضل إلى الكاونتر للاستلام الآن.",
+    icon: data.icon || "/static/img/brand-logo.png",
+    badge: data.badge || "/static/img/brand-logo.png",
     vibrate: [600, 150, 600, 150, 900, 200, 600, 150, 900],
     tag: "paiger-order-" + (data.order_id || Date.now()),
     renotify: true,
@@ -72,6 +74,8 @@ self.addEventListener('message', function(event) {
     var title = p.title || "طلبك جاهز للاستلام! 🔔";
     var options = {
       body: p.body || "تفضل إلى الكاونتر للاستلام الآن.",
+      icon: "/static/img/brand-logo.png",
+      badge: "/static/img/brand-logo.png",
       vibrate: [600, 150, 600, 150, 900, 200, 600, 150, 900],
       tag: "pager-local-" + Date.now(),
       renotify: true,

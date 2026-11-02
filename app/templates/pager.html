@@ -880,9 +880,10 @@ body.ring .widget-box{
     <!-- The Actual Pager Widget Box -->
     <div class="widget-box">
     
-    <!-- Clean Minimal Header Without Dummy Logos/Names -->
-    <div class="widget-header-brand" style="justify-content: flex-end; margin-bottom: 8px;">
-      <div class="live-time-chip" id="wt">05:11 م</div>
+    <!-- Header with Official App Icon & Live Time -->
+    <div class="widget-header-brand" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px;">
+      <img src="/static/img/brand-logo.png" alt="دَورك" style="width:38px; height:38px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+      <div class="live-time-chip" id="wt">--:--</div>
     </div>
 
     <!-- Customer Name & Order details (if entered by cashier) -->
@@ -1142,6 +1143,8 @@ async function showStickyOrderNotification(status){
 
     var notifOpts = {
       body: body,
+      icon: "/static/img/brand-logo.png",
+      badge: "/static/img/brand-logo.png",
       vibrate: isRing ? [600, 150, 600, 150, 900, 200, 600, 150, 900] : undefined,
       tag: "dawrak-order",
       renotify: isRing,
