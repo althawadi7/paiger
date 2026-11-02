@@ -845,16 +845,13 @@ body.ring .widget-box{
   <div class=floating-push-banner id=pushBanner>
     <div class=banner-top-row>
       <div class=banner-app-info>
-        <img src=/static/img/brand-ready.png alt=Icon class=banner-app-icon>
-        <span class=banner-app-name>{{ order.restaurant_name or 'بيجر الطلبات الذكي' }}</span>
+        <span class=banner-app-name>🔔 تنبيه الطلب</span>
       </div>
       <span class=banner-time>الآن</span>
     </div>
     <div class=banner-content-row>
-      <div class=banner-title id=bannerTitle>🚨 طلبك #{{ order.order_number }} جاهز للاستلام!</div>
+      <div class=banner-title id=bannerTitle>طلب رقم #{{ order.order_number }} جاهز للاستلام!</div>
       <div class=banner-body id=bannerBody>
-        {% if order.customer_name %}{{ order.customer_name }}، {% endif %}
-        {% if order.notes %}{{ order.notes }} - {% endif %}
         تفضل إلى الكاونتر للاستلام الآن.
       </div>
     </div>
@@ -879,15 +876,8 @@ body.ring .widget-box{
     <!-- The Actual Pager Widget Box -->
     <div class="widget-box">
     
-    <!-- Restaurant Branding Header with Real Logo & Restaurant Name -->
-    <div class="widget-header-brand">
-      <div class="brand-left-info">
-        <img id="pageLogoImg" src="/static/img/brand-logo.png" alt="شعار المطعم" class="brand-logo-img">
-        <div class="brand-text-col">
-          <h3>مطعم البرجر الذهبي</h3>
-          <span>بيجر الطلبات الذكي</span>
-        </div>
-      </div>
+    <!-- Clean Minimal Header Without Dummy Logos/Names -->
+    <div class="widget-header-brand" style="justify-content: flex-end; margin-bottom: 8px;">
       <div class="live-time-chip" id="wt">05:11 م</div>
     </div>
 
@@ -964,12 +954,8 @@ body.ring .widget-box{
   <!-- Single Continuous Audio Stream for Lock Screen & Loud Buzzer -->
   
 
-  <!-- Embedded High-Resolution Base64 Logos for Instant Lock Screen Artwork -->
-  <script>
-
-
-
-  </script>
+  <!-- Continuous Audio Alarm for Android & Background Ringing -->
+  <audio id="ringAlarmAudio" loop preload="auto" src="/static/audio/chime.wav"></audio>
 
 <script>
 (function(){
@@ -1175,25 +1161,26 @@ function startRingingAlarm(){
   // Show Floating Push Notification Banner
   if (pushBanner) pushBanner.classList.add("show");
 
-  // Update on-screen logo to flashing red ready logo
-  if(pageLogoImg) pageLogoImg.src = "/static/img/brand-ready.png";
+  // Play continuous audio alarm in loop (works when locked & background on Android)
+  var ringAudio = document.getElementById("ringAlarmAudio");
+  if(ringAudio){
+    ringAudio.currentTime = 0;
+    ringAudio.play().catch(function(e){ console.log("Audio alarm play:", e); });
+  }
 
-  // B. Update Lock Screen MediaSession with red artwork & loud notification title
-  
-
-  // Show System Sticky Notification Widget
+  // Show System Sticky Notification
   showStickyOrderNotification('ringing');
 
-  // C. Audio prompt status
+  // Audio prompt status
   hideTapToAudioPrompt();
 
-  // D. Synthesizer & iPhone speaker haptic vibration loop
+  // Synthesizer & speaker haptic vibration loop
   if(!beepTimer){
     beepSynth();
     beepTimer = setInterval(beepSynth, 1200);
   }
 
-  // E. Physical Motor Vibration (Android & Chrome) - High Intensity Loop
+  // Physical Motor Vibration (Android & Chrome) - High Intensity Loop
   try {
     clearInterval(vibrateInterval);
     if(navigator.vibrate){
@@ -1212,7 +1199,13 @@ function stopRingingAlarm(){
   pageBody.classList.remove("ring");
   if (pushBanner) pushBanner.classList.remove("show");
   hideTapToAudioPrompt();
-  if(pageLogoImg) pageLogoImg.src = "/static/img/brand-logo.png";
+
+  // Stop continuous audio alarm
+  var ringAudio = document.getElementById("ringAlarmAudio");
+  if(ringAudio){
+    ringAudio.pause();
+    ringAudio.currentTime = 0;
+  }
 
   // Stop synthesizer
   clearInterval(beepTimer);
@@ -1224,9 +1217,6 @@ function stopRingingAlarm(){
   try {
     if(navigator.vibrate) navigator.vibrate(0);
   } catch(e){}
-
-  // Return audio stream to silence if order is still active
-  // Stop ringing alarm cleanup complete
 }
 
 // 7. iOS & Android Lock Screen Media Session Widget
@@ -1290,11 +1280,11 @@ async function activateArming(){
   // C. Update Lock Screen Notification Widget
   
 
-  // D. Play pleasant chime sound confirming audio is active (only if not ringing)
-  if(order.status !== 'ringing'){
+  // Preload and prepare alarm audio
+  var ringAudio = document.getElementById("ringAlarmAudio");
+  if(ringAudio){
     try {
-      var chime = new Audio("/static/audio/chime.wav");
-      chime.play().catch(function(){});
+      ringAudio.load();
     } catch(e){}
   }
 
