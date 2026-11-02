@@ -1,7 +1,8 @@
 {
   "appclips": {
     "apps": [
-      "KRVGAD732T.com.dawrak.app.Clip"
+      "KRVGAD732T.com.dawrak.app.Clip",
+      "TPYCH8628Q.com.dawrak.app.Clip"
     ]
   },
   "applinks": {
@@ -10,20 +11,22 @@
       {
         "appIDs": [
           "KRVGAD732T.com.dawrak.app",
-          "KRVGAD732T.com.dawrak.app.Clip"
+          "KRVGAD732T.com.dawrak.app.Clip",
+          "TPYCH8628Q.com.dawrak.app",
+          "TPYCH8628Q.com.dawrak.app.Clip"
         ],
         "components": [
           {
-            "/": "/pager/*",
-            "comment": "Matches customer order pager token URL"
+            "/": "/pager/*"
           },
           {
-            "/": "/order/*",
-            "comment": "Matches order status URL"
+            "/": "/order/*"
           },
           {
-            "/": "/r/*",
-            "comment": "Matches restaurant customer track URL"
+            "/": "/r/*"
+          },
+          {
+            "/": "*"
           }
         ]
       }
@@ -31,7 +34,8 @@
   },
   "webcredentials": {
     "apps": [
-      "KRVGAD732T.com.dawrak.app"
+      "KRVGAD732T.com.dawrak.app",
+      "TPYCH8628Q.com.dawrak.app"
     ]
   }
 }

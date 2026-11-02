@@ -133,7 +133,8 @@ class ThemeSettingRequest(BaseModel):
     theme: str
 
 class LiveActivityTokenRequest(BaseModel):
-    push_token: str
+    push_token: Optional[str] = None
+    pushToken: Optional[str] = None
     device_type: Optional[str] = "ios_live_activity"
 
 class CreateRestaurantDto(BaseModel):
@@ -871,9 +872,10 @@ async def register_live_activity_token(token: str, req: LiveActivityTokenRequest
     order = db.get_order_by_token(token)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    actual_tok = req.push_token or req.pushToken or ""
     db.save_live_activity_token(
         order_token=token,
-        push_token=req.push_token,
+        push_token=actual_tok,
         device_type=req.device_type or "ios_live_activity"
     )
     return {"status": "ok", "message": "Live Activity token registered successfully"}
@@ -918,6 +920,12 @@ async def ring_order(order_id: int):
         asyncio.create_task(push_service.notify_order_push(order))
     except Exception as e:
         print("WebPush trigger error:", e)
+
+    try:
+        from . import apns_service
+        asyncio.create_task(apns_service.notify_order_live_activity(order, is_ringing=True, phase="calling"))
+    except Exception as e:
+        print("APNs trigger error:", e)
 
     return order
 
