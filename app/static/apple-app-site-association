@@ -1,7 +1,7 @@
 {
   "appclips": {
     "apps": [
-      "7V3J58823K.com.rahapp.pager.clip"
+      "KRVGAD732T.com.dawrak.app.Clip"
     ]
   },
   "applinks": {
@@ -9,17 +9,21 @@
     "details": [
       {
         "appIDs": [
-          "7V3J58823K.com.rahapp.pager.clip",
-          "7V3J58823K.com.rahapp.pager"
+          "KRVGAD732T.com.dawrak.app",
+          "KRVGAD732T.com.dawrak.app.Clip"
         ],
         "components": [
           {
             "/": "/pager/*",
-            "comment": "Customer Order Pager URL"
+            "comment": "Matches customer order pager token URL"
           },
           {
             "/": "/order/*",
-            "comment": "Customer Order Pager URL"
+            "comment": "Matches order status URL"
+          },
+          {
+            "/": "/r/*",
+            "comment": "Matches restaurant customer track URL"
           }
         ]
       }
@@ -27,7 +31,7 @@
   },
   "webcredentials": {
     "apps": [
-      "7V3J58823K.com.rahapp.pager"
+      "KRVGAD732T.com.dawrak.app"
     ]
   }
 }
