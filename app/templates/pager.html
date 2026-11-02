@@ -1190,20 +1190,8 @@ function startRingingAlarm(){
   // Show System Sticky Notification Widget
   showStickyOrderNotification('ringing');
 
-  // C. Switch main continuous audio element to buzzer sound!
-  try {
-    }
-    if(p && p.catch) {
-      p.catch(function(e){
-        console.warn("Autoplay blocked, showing tap prompt", e);
-        showTapToAudioPrompt();
-      });
-    } else {
-      hideTapToAudioPrompt();
-    }
-  } catch(e){
-    showTapToAudioPrompt();
-  }
+  // C. Audio prompt status
+  hideTapToAudioPrompt();
 
   // D. Synthesizer & iPhone speaker haptic vibration loop
   if(!beepTimer){
