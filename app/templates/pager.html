@@ -1232,15 +1232,7 @@ function stopRingingAlarm(){
   } catch(e){}
 
   // Return audio stream to silence if order is still active
-  if(order.status !== 'done'){
-    try {
-      }
-    } catch(e){}
-    
-  } else {
-    try {
-    } catch(e){}
-  }
+  // Stop ringing alarm cleanup complete
 }
 
 // 7. iOS & Android Lock Screen Media Session Widget
@@ -1299,12 +1291,7 @@ async function activateArming(){
     if(ctx.state === "suspended") await ctx.resume();
   } catch(e){}
 
-  // B. Start background audio to establish permanent Android & iOS Lock Screen MediaSession
-  try {
-    if(order.status === 'ringing'){
-    } else {
-    }
-  } catch(e){}
+  // B. Native Live Activity handles lock screen
 
   // C. Update Lock Screen Notification Widget
   
