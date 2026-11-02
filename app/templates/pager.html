@@ -1135,34 +1135,28 @@ function hideTapToAudioPrompt(){
   if(el) el.classList.remove("show");
 }
 
-// 4. Android & System Sticky Notification Widget (Foreground / Lock Screen)
+// 4. Android & System Sticky Notification (Foreground / Lock Screen)
 async function showStickyOrderNotification(status){
   if(!('Notification' in window) || Notification.permission !== 'granted') return;
   try {
     var isRing = status === 'ringing';
     var isDone = status === 'done';
-    var custPart = order.name ? (" (" + order.name + ")") : "";
-    var restName = "{{ order.restaurant_name or 'بيجر الطلبات الذكي' }}";
 
     var title = isRing 
-      ? ("🚨 طلبك #" + order.num + custPart + " جاهز للاستلام! 🎉") 
-      : (isDone ? ("✅ تم استلام طلبك #" + order.num) : ("⏳ طلبك #" + order.num + custPart + " • قيد التحضير"));
+      ? ("طلبك جاهز للاستلام! 🔔") 
+      : (isDone ? ("تم استلام طلبك #" + order.num + " ✓") : ("طلب رقم #" + order.num));
 
     var body = isRing 
-      ? (restName + " • تفضل إلى الكاونتر للاستلام الآن 🏃‍♂️") 
-      : (isDone ? "بالعافية! شكراً لزيارتك." : (restName + " • سنهتز ونرن فور أن يجهز طلبك"));
+      ? ("طلب رقم #" + order.num + " • تفضل إلى الكاونتر الآن") 
+      : (isDone ? "شكراً لزيارتك." : "طلبك قيد التحضير...");
 
     var notifOpts = {
       body: body,
-      icon: isRing ? "/static/img/brand-ready.png" : "/static/img/brand-logo.png",
-      badge: "/static/img/brand-logo.png",
       vibrate: isRing ? [600, 150, 600, 150, 900, 200, 600, 150, 900] : undefined,
-      tag: "paiger-order-" + order.num,
+      tag: "dawrak-order",
       renotify: isRing,
-      requireInteraction: isRing,
-      silent: !isRing,
-      data: { url: window.location.href, order_id: order.id },
-      actions: isRing ? [{ action: "onway", title: "🏃‍♂️ أنا في طريقي للاستلام" }] : []
+      requireInteraction: true,
+      data: { url: window.location.href, order_id: order.id }
     };
 
     if(swReg && swReg.showNotification){

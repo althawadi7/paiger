@@ -16,26 +16,21 @@ self.addEventListener('push', function(event) {
     try {
       data = event.data.json();
     } catch(e) {
-      data = { title: "🚨 طلبك جاهز للاستلام!", body: event.data.text() };
+      data = { title: "طلبك جاهز للاستلام! 🔔", body: event.data.text() };
     }
   }
 
-  var title = data.title || "🚨 طلبك جاهز للاستلام! 🎉";
+  var title = data.title || "طلبك جاهز للاستلام! 🔔";
   var options = {
-    body: data.body || "مطعم البرجر الذهبي - وجبتك جاهزة، تفضل إلى الكاونتر الآن.",
-    icon: "/static/img/brand-ready.png",
-    badge: "/static/img/brand-logo.png",
+    body: data.body || "تفضل إلى الكاونتر للاستلام الآن.",
     vibrate: [600, 150, 600, 150, 900, 200, 600, 150, 900],
-    tag: "paiger-alarm-" + (data.order_id || Date.now()),
+    tag: "paiger-order-" + (data.order_id || Date.now()),
     renotify: true,
     requireInteraction: true,
     data: {
       url: data.url || "/",
       order_id: data.order_id
-    },
-    actions: [
-      { action: "onway", title: "🏃‍♂️ أنا في طريقي للاستلام" }
-    ]
+    }
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
@@ -74,11 +69,9 @@ self.addEventListener('notificationclick', function(event) {
 self.addEventListener('message', function(event) {
   if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
     var p = event.data.payload || {};
-    var title = p.title || "🚨 طلبك جاهز للاستلام!";
+    var title = p.title || "طلبك جاهز للاستلام! 🔔";
     var options = {
       body: p.body || "تفضل إلى الكاونتر للاستلام الآن.",
-      icon: "/static/img/brand-ready.png",
-      badge: "/static/img/brand-logo.png",
       vibrate: [600, 150, 600, 150, 900, 200, 600, 150, 900],
       tag: "pager-local-" + Date.now(),
       renotify: true,

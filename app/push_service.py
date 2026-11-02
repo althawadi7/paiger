@@ -56,7 +56,8 @@ def send_push_to_subscription(sub, payload):
             subscription_info=sub_info,
             data=json.dumps(payload),
             vapid_private_key=KEYS["private_key"],
-            vapid_claims={"sub": "mailto:support@paiger.local"}
+            vapid_claims={"sub": "mailto:support@dawrak.app"},
+            headers={"Urgency": "high", "TTL": "60"}
         )
         return True
     except WebPushException as ex:
@@ -80,11 +81,10 @@ async def notify_order_push(order: dict):
     order_num = order.get("order_number", "")
     cust_name = order.get("customer_name") or ""
     cust_text = f" ({cust_name})" if cust_name else ""
-    notes = order.get("notes") or "وجبتك جاهزة الآن"
 
     payload = {
-        "title": f"🚨 طلبك #{order_num}{cust_text} جاهز للاستلام!",
-        "body": f"مطعم البرجر الذهبي 🍔 - {notes}، تفضل إلى الكاونتر الآن.",
+        "title": f"طلبك جاهز للاستلام! 🔔",
+        "body": f"طلب رقم #{order_num}{cust_text} - تفضل للاستلام الآن",
         "url": f"/pager/{token}",
         "order_id": order.get("id"),
         "order_number": order_num,
