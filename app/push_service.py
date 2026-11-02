@@ -85,8 +85,8 @@ async def notify_order_push(order: dict):
     payload = {
         "title": f"طلبك جاهز للاستلام! 🔔",
         "body": f"طلب رقم #{order_num}{cust_text} - تفضل للاستلام الآن",
-        "icon": "/static/img/brand-logo.png",
-        "badge": "/static/img/brand-logo.png",
+        "icon": "/static/img/brand-logo.png?v=dawrak",
+        "badge": "/static/img/brand-logo.png?v=dawrak",
         "url": f"/pager/{token}",
         "order_id": order.get("id"),
         "order_number": order_num,

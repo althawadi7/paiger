@@ -9,7 +9,7 @@
 <title>بيجر #{{ order.order_number }}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="icon" href="/static/img/brand-logo.png">
+<link rel="icon" href="/static/img/brand-logo.png?v=dawrak">
 <link rel="manifest" href="/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="بيجر المطعم">
@@ -882,7 +882,7 @@ body.ring .widget-box{
     
     <!-- Header with Official App Icon & Live Time -->
     <div class="widget-header-brand" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px;">
-      <img src="/static/img/brand-logo.png" alt="دَورك" style="width:38px; height:38px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+      <img src="/static/img/brand-logo.png?v=dawrak" alt="دَورك" style="width:38px; height:38px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
       <div class="live-time-chip" id="wt">--:--</div>
     </div>
 
@@ -1143,8 +1143,8 @@ async function showStickyOrderNotification(status){
 
     var notifOpts = {
       body: body,
-      icon: "/static/img/brand-logo.png",
-      badge: "/static/img/brand-logo.png",
+      icon: "/static/img/brand-logo.png?v=dawrak",
+      badge: "/static/img/brand-logo.png?v=dawrak",
       vibrate: isRing ? [600, 150, 600, 150, 900, 200, 600, 150, 900] : undefined,
       tag: "dawrak-order",
       renotify: isRing,
