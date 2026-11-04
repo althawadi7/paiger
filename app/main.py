@@ -1081,3 +1081,166 @@ async def websocket_cashier(websocket: WebSocket):
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect_cashier(websocket)
+
+# ========================================================
+# 💳 MYFATOORAH EMBEDDED & IN-APP PAYMENT ROUTERS
+# ========================================================
+from . import myfatoorah_service as mf
+
+class ProcessPaymentDto(BaseModel):
+    order_id: str
+    amount: float
+    session_id: Optional[str] = None
+    payment_method_id: Optional[int] = None
+    save_card: bool = False
+    customer_name: Optional[str] = "Customer"
+    customer_phone: Optional[str] = "97333000000"
+    customer_email: Optional[str] = "billing@pager.rahapp.com"
+
+class ChargeTokenDto(BaseModel):
+    order_id: str
+    amount: float
+    token: str
+    security_code: Optional[str] = None
+    customer_name: Optional[str] = "Customer"
+    customer_phone: Optional[str] = "97333000000"
+
+@app.get("/api/payment/myfatoorah/config")
+async def api_myfatoorah_config():
+    """Returns configuration for website / app checkout."""
+    return mf.get_payment_config()
+
+@app.post("/api/payment/myfatoorah/session")
+async def api_myfatoorah_session(amount: float = 1.0, customer_identifier: Optional[str] = None):
+    """Initiates an embedded session for in-page payment without external redirect."""
+    try:
+        session_data = await mf.initiate_session(amount=amount, customer_identifier=customer_identifier)
+        return {"ok": True, "session": session_data}
+    except Exception as ex:
+        raise HTTPException(status_code=400, detail=str(ex))
+
+@app.post("/api/payment/myfatoorah/process")
+async def api_myfatoorah_process(req: ProcessPaymentDto, request: Request):
+    """Processes payment after client-side session submission."""
+    base_url = get_public_base_url(request)
+    callback_url = f"{base_url}/payment/myfatoorah/return"
+    error_url = f"{base_url}/payment/myfatoorah/return"
+
+    try:
+        data = await mf.execute_payment(
+            amount=req.amount,
+            customer_name=req.customer_name or "Customer",
+            customer_email=req.customer_email or "billing@pager.rahapp.com",
+            customer_phone=req.customer_phone or "97333000000",
+            order_id=req.order_id,
+            session_id=req.session_id,
+            payment_method_id=req.payment_method_id,
+            callback_url=callback_url,
+            error_url=error_url,
+            save_token=req.save_card
+        )
+        return {
+            "ok": True,
+            "invoice_id": data.get("InvoiceId"),
+            "redirect_url": data.get("PaymentURL"),
+            "data": data
+        }
+    except Exception as ex:
+        return {"ok": False, "error": str(ex)}
+
+@app.post("/api/payment/myfatoorah/charge-token")
+async def api_myfatoorah_charge_token(req: ChargeTokenDto, request: Request):
+    """Charges saved card token directly with zero redirection."""
+    base_url = get_public_base_url(request)
+    callback_url = f"{base_url}/payment/myfatoorah/return"
+    error_url = f"{base_url}/payment/myfatoorah/return"
+
+    try:
+        data = await mf.direct_charge_saved_card(
+            amount=req.amount,
+            token=req.token,
+            order_id=req.order_id,
+            customer_name=req.customer_name or "Customer",
+            customer_phone=req.customer_phone or "97333000000",
+            callback_url=callback_url,
+            error_url=error_url,
+            security_code=req.security_code
+        )
+        return {"ok": True, "data": data}
+    except Exception as ex:
+        return {"ok": False, "error": str(ex)}
+
+@app.get("/checkout/{order_id}", response_class=HTMLResponse)
+async def page_embedded_checkout(order_id: str, amount: float = 5.0, request: Request = None):
+    """In-page embedded payment demo without redirect."""
+    cfg = mf.get_payment_config()
+    session_data = await mf.initiate_session(amount=amount, customer_identifier=f"ORDER_{order_id}")
+    return templates.TemplateResponse(
+        "payment_checkout.html",
+        {
+            "request": request,
+            "order_id": order_id,
+            "amount": amount,
+            "payment_config": cfg,
+            "session_data": session_data
+        }
+    )
+
+@app.api_route("/payment/myfatoorah/return", methods=["GET", "POST"], response_class=HTMLResponse)
+async def page_myfatoorah_return(request: Request, paymentId: Optional[str] = None):
+    """Handles return verification from 3DS / OTP hop."""
+    pid = paymentId or request.query_params.get("paymentId")
+    is_success = False
+    details = {}
+
+    if pid:
+        try:
+            status_data = await mf.get_payment_status(pid)
+            inv_status = (status_data.get("InvoiceStatus") or "").lower()
+            if inv_status in ("paid", "success"):
+                is_success = True
+                details = status_data
+        except Exception:
+            pass
+
+    return HTMLResponse(content=f"""
+    <!DOCTYPE html>
+    <html lang="ar" dir="rtl">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{'تم الدفع بنجاح' if is_success else 'فشلت عملية الدفع'}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@600;800&display=swap" rel="stylesheet">
+        <style>
+            body {{ background: #0f172a; color: #f8fafc; font-family: 'Readex Pro', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }}
+            .card {{ background: #1e293b; border-radius: 20px; padding: 40px; text-align: center; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }}
+            .icon {{ font-size: 50px; margin-bottom: 16px; }}
+            .btn {{ display: inline-block; margin-top: 24px; padding: 12px 24px; background: #C05621; color: #fff; text-decoration: none; border-radius: 12px; font-weight: 700; }}
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <div class="icon">{'✅' if is_success else '❌'}</div>
+            <h2>{'تمت عملية الدفع بنجاح!' if is_success else 'فشلت عملية الدفع'}</h2>
+            <p style="color: #94a3b8; font-size: 14px; margin-top: 8px;">معرف العملية: {pid or 'غير متوفر'}</p>
+            <a href="/" class="btn">العودة للرئيسية</a>
+        </div>
+    </body>
+    </html>
+    """)
+
+@app.post("/api/payment/myfatoorah/webhook")
+async def webhook_myfatoorah(request: Request):
+    """MyFatoorah V2 Webhook Verification with HMAC-SHA256 signature."""
+    raw_body = await request.body()
+    signature = request.headers.get("myfatoorah-signature") or request.headers.get("X-MyFatoorah-Signature") or ""
+
+    if not mf.verify_webhook_signature(raw_body, signature):
+        raise HTTPException(status_code=400, detail="Invalid webhook signature")
+
+    payload = await request.json()
+    event = payload.get("Event")
+    data = payload.get("Data", {})
+
+    logger.info("MyFatoorah Webhook received: %s, Data: %s", event, data)
+    return {"status": "success", "event": event}
