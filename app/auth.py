@@ -10,7 +10,15 @@ from dotenv import load_dotenv
 ENV_FILE = Path(__file__).parent.parent / ".env"
 load_dotenv(ENV_FILE)
 
-SECRET_KEY = os.getenv("JWT_SECRET", "super-secret-pager-jwt-key-2026-secure-random")
+# Rejected on purpose. This used to be the in-code fallback, so any deploy still
+# using it must set a new JWT_SECRET before the process will start.
+_REJECTED_JWT_SECRET = "super-secret-pager-jwt-key-2026-secure-random"
+SECRET_KEY = (os.getenv("JWT_SECRET") or "").strip()
+if not SECRET_KEY or SECRET_KEY == _REJECTED_JWT_SECRET:
+    raise RuntimeError(
+        "JWT_SECRET is missing or still the old hardcoded value. "
+        "Generate a new one and put it in the environment before starting."
+    )
 ALGORITHM = "HS256"
 SUPER_ADMIN_COOKIE = "sa_pager_session"
 RESTAURANT_COOKIE = "rest_pager_session"

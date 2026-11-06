@@ -30,8 +30,10 @@ lib64/
 *.key
 *.crt
 *.p12
+*.p8
 *.cer
 certbot/
+app/vapid_keys.json
 
 # OS and IDE generated files
 .DS_Store
