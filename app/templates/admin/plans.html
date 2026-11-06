@@ -1,0 +1,427 @@
+{% include "admin/top.html" %}
+<section>
+  <div class="ph"><div><h1>{{ t('admin.nPlans') }}</h1><p>{{ t('admin.plansSub') }}</p></div><button class="btn btn-ink" type="button" id="addPlan">{{ t('admin.addPlan') }}</button></div>
+  <div class="plans-grid">
+    {% for plan in plans %}
+    <article class="card plan{% if not plan.active %} off{% endif %}">
+      <header><h3>{{ plan.name_ar if lang == 'ar' else plan.name_en }}</h3><p>{{ plan.subscribers }} {{ t('admin.onPlan') }}</p></header>
+      <p class="price"><span>BHD</span> <b class="num">{{ plan.price_label }}</b> <span>{{ t('admin.per.' + plan.type) }}</span></p>
+      <p class="muted">{{ (plan.blurb_ar if lang == 'ar' else plan.blurb_en) or '' }}</p>
+      {% set badge = (plan.badge_ar if lang == 'ar' else plan.badge_en) if plan.featured else '' %}
+      {% if badge %}<span class="plan-badge">{{ badge }}</span>{% endif %}
+      {% set lines = plan.features.ar if lang == 'ar' else plan.features.en %}
+      {% if lines %}<ul class="mini">{% for line in lines[:3] %}<li>{{ line }}</li>{% endfor %}</ul>{% endif %}
+      <div class="row">
+        <form method="post" action="/admin/plans/{{ plan.code }}/visible">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="hidden" name="active" value="{{ 0 if plan.active else 1 }}">
+          <button class="switch" type="submit" aria-checked="{{ 'true' if plan.active else 'false' }}" title="{{ t('admin.showPlan') }}" aria-label="{{ t('admin.showPlan') }}"></button>
+        </form>
+        <span class="state">{{ t('admin.visible') if plan.active else t('admin.hidden') }}</span>
+        <span class="acts">
+          <button class="btn btn-line btn-sm edit-plan" type="button" data-plan="{{ {'code': plan.code, 'type': plan.type, 'name_en': plan.name_en, 'name_ar': plan.name_ar, 'price': plan.price_label, 'blurb_en': plan.blurb_en or '', 'blurb_ar': plan.blurb_ar or '', 'subscribers': plan.subscribers, 'active': plan.active, 'features': plan.features, 'featured': plan.featured, 'badge_en': plan.badge_en or '', 'badge_ar': plan.badge_ar or ''}|tojson|forceescape }}">{{ t('admin.edit') }}</button>
+          {% if plan.deletable %}
+          <form method="post" action="/admin/plans/{{ plan.code }}/delete" data-ask="plan" data-name="{{ plan.name_ar if lang == 'ar' else plan.name_en }}">
+            <input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn btn-quiet btn-sm" type="submit">{{ t('admin.delete') }}</button>
+          </form>
+          {% else %}
+          <span class="tip" title="{{ t('admin.inUse') }}"><button class="btn btn-quiet btn-sm" type="button" disabled>{{ t('admin.delete') }}</button></span>
+          {% endif %}
+        </span>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  <h2 class="h3">{{ t('admin.packsTitle') }} <button class="btn btn-line btn-sm" type="button" id="addPack">{{ t('admin.addPack') }}</button></h2>
+  <div class="card">
+    <div class="table-scroll">
+      <table class="t">
+        <thead><tr><th>{{ t('admin.cPoints') }}</th><th>{{ t('admin.cPrice') }}</th><th>{{ t('admin.cPerPoint') }}</th><th>{{ t('admin.cSold') }}</th><th>{{ t('admin.cVisible') }}</th><th></th></tr></thead>
+        <tbody>
+          {% for pack in packs %}
+          <tr>
+            <td class="num">{{ pack.points }}</td>
+            <td>BHD {{ pack.price_label }}</td>
+            <td>BHD {{ pack.per_point }}</td>
+            <td>{{ pack.sold }}</td>
+            <td>
+              <form method="post" action="/admin/packs/save">
+                <input type="hidden" name="csrf" value="{{ csrf }}">
+                <input type="hidden" name="pack_id" value="{{ pack.id }}">
+                <input type="hidden" name="points" value="{{ pack.points }}">
+                <input type="hidden" name="price" value="{{ pack.price_label }}">
+                <input type="hidden" name="active" value="{{ 0 if pack.active else 1 }}">
+                <button class="switch" type="submit" aria-checked="{{ 'true' if pack.active else 'false' }}"></button>
+              </form>
+            </td>
+            <td>
+              <button class="btn btn-quiet btn-sm edit-pack" type="button" data-pack='{{ {"id": pack.id, "points": pack.points, "price": pack.price_label, "active": pack.active}|tojson }}'>{{ t('admin.edit') }}</button>
+              {% if pack.sold == 0 %}
+              <form method="post" action="/admin/packs/{{ pack.id }}/delete" style="display:inline" data-ask="pack" data-name="{{ pack.points }}">
+                <input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn btn-quiet btn-sm" type="submit">{{ t('admin.delete') }}</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% set gone = deleted if deleted is defined else [] %}
+  <p class="recent-del"><button type="button" id="recentBtn" aria-expanded="false" aria-controls="recentList">{{ t('admin.recentDeleted').replace('{n}', (gone|length)|string) }}</button></p>
+  <div id="recentList" hidden>
+    {% for item in gone %}
+    <form method="post" action="{{ item.restore }}">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <span>{% if item.kind == 'plan' %}{{ item.name_ar if lang == 'ar' else item.name_en }}{% else %}{{ t('admin.packPoints').replace('{n}', item.points|string) }}{% endif %}</span>
+      <button class="btn btn-quiet btn-sm" type="submit">{{ t('admin.restore') }}</button>
+    </form>
+    {% else %}
+    <p class="muted">{{ t('admin.recentEmpty') }}</p>
+    {% endfor %}
+  </div>
+</section>
+<div class="modal" id="planModal" hidden role="dialog" aria-modal="true" aria-labelledby="pmTitle">
+  <div class="backdrop" data-close></div>
+  <form class="box" method="post" action="/admin/plans/save" data-price="{{ t('admin.err.price') }}" data-format="{{ t('admin.err.codeFormat') }}" data-taken="{{ t('admin.err.codeTaken') }}" data-deleted="{{ t('admin.err.codeDeleted') }}" data-invalid="{{ t('admin.err.invalid') }}">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="active" id="pmActive" value="1">
+    <input type="hidden" name="editing" id="pmEditing" value="">
+    <h3 id="pmTitle" data-add="{{ t('admin.addPlan') }}" data-edit="{{ t('admin.editPlan') }}">{{ t('admin.editPlan') }}</h3>
+    <div class="f-row">
+      <div class="f"><label>{{ t('admin.nameEn') }}</label><input class="in" name="name_en" id="pmNameEn" dir="ltr" required></div>
+      <div class="f"><label>{{ t('admin.nameAr') }}</label><input class="in" name="name_ar" id="pmNameAr" dir="rtl" required></div>
+    </div>
+    <button class="btn btn-quiet btn-sm adv" type="button" id="pmAdvanced" aria-expanded="false" aria-controls="pmCodeBox">{{ t('admin.advanced') }}</button>
+    <div class="f" id="pmCodeBox" hidden>
+      <label for="pmCode">{{ t('admin.pCode') }}</label>
+      <input class="in" name="code" id="pmCode" maxlength="40" autocomplete="off" spellcheck="false" dir="ltr">
+      <p class="help" id="pmCodeErr" hidden></p>
+    </div>
+    <div class="f"><label>{{ t('admin.pType') }}</label>
+      <select class="in" name="type" id="pmType"><option value="monthly">{{ t('admin.tMonthly') }}</option><option value="yearly">{{ t('admin.tYearly') }}</option><option value="points">{{ t('admin.tPoints') }}</option></select>
+    </div>
+    <div class="f"><label>{{ t('admin.priceLbl') }}</label><input class="in" name="price" id="pmPrice" inputmode="decimal" required placeholder="15.000"></div>
+    <div class="f"><label>{{ t('admin.descLbl') }}</label><input class="in" name="blurb_en" id="pmBlurbEn"></div>
+    <div class="f"><label>{{ t('admin.descAr') }}</label><input class="in" name="blurb_ar" id="pmBlurbAr" dir="rtl"></div>
+    <div class="f" id="featBox" data-up="{{ t('admin.moveUp') }}" data-down="{{ t('admin.moveDown') }}" data-remove="{{ t('admin.removeFeat') }}">
+      <label>{{ t('admin.features') }}</label>
+      <div class="feat-tabs" role="tablist">
+        <button type="button" class="on" data-ftab="en">{{ t('admin.langEn') }}</button>
+        <button type="button" data-ftab="ar">{{ t('admin.langAr') }}</button>
+      </div>
+      <div class="feat-list" id="featEn" data-lang="en"></div>
+      <div class="feat-list" id="featAr" data-lang="ar" hidden></div>
+      <button class="btn btn-line btn-sm" type="button" id="addFeat">{{ t('admin.addFeature') }}</button>
+    </div>
+    <label class="hl"><input type="checkbox" name="featured" id="pmFeatured" value="1"> {{ t('admin.highlight') }}</label>
+    <div class="f-row" id="badgeFields" hidden>
+      <div class="f"><label>{{ t('admin.badgeEn') }}</label><input class="in" name="badge_en" id="pmBadgeEn" maxlength="80"></div>
+      <div class="f"><label>{{ t('admin.badgeAr') }}</label><input class="in" name="badge_ar" id="pmBadgeAr" maxlength="80" dir="rtl"></div>
+    </div>
+    <div class="foot"><button class="btn btn-quiet" type="button" data-close>{{ t('admin.cancel') }}</button><button class="btn btn-ink" type="submit">{{ t('admin.savePlan') }}</button></div>
+  </form>
+</div>
+<div class="modal" id="packModal" hidden role="dialog" aria-modal="true">
+  <div class="backdrop" data-close></div>
+  <form class="box" method="post" action="/admin/packs/save">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="pack_id" id="pkId" value="">
+    <input type="hidden" name="active" id="pkActive" value="1">
+    <h3 id="pkTitle" data-add="{{ t('admin.addPack') }}" data-edit="{{ t('admin.edit') }}">{{ t('admin.addPack') }}</h3>
+    <div class="f"><label>{{ t('admin.cPoints') }}</label><input class="in" name="points" id="pkPoints" type="number" min="1" required></div>
+    <div class="f"><label>{{ t('admin.cPrice') }}</label><input class="in" name="price" id="pkPrice" inputmode="decimal" required placeholder="50.000"></div>
+    <div class="foot"><button class="btn btn-quiet" type="button" data-close>{{ t('admin.cancel') }}</button><button class="btn btn-ink" type="submit">{{ t('admin.savePlan') }}</button></div>
+  </form>
+</div>
+{% include "admin/foot.html" %}
+<script type="application/json" id="planCodes">{{ (reserved if reserved is defined else [])|tojson }}</script>
+<script>
+(function () {
+  var recentBtn = document.getElementById("recentBtn");
+  var recentList = document.getElementById("recentList");
+  if (recentBtn && recentList) {
+    recentBtn.addEventListener("click", function () {
+      recentList.hidden = !recentList.hidden;
+      recentBtn.setAttribute("aria-expanded", recentList.hidden ? "false" : "true");
+    });
+  }
+  var planModal = document.getElementById("planModal");
+  var packModal = document.getElementById("packModal");
+  var featBox = document.getElementById("featBox");
+  var featLang = "en";
+  function show(modal, from) { window.paigerDialog.open(modal, from); }
+  function listFor(lang) { return document.getElementById(lang === "ar" ? "featAr" : "featEn"); }
+  function syncAdd() {
+    document.getElementById("addFeat").disabled = listFor(featLang).children.length >= 8;
+  }
+  function addRow(lang, value) {
+    var list = listFor(lang);
+    if (list.children.length >= 8) return;
+    var row = document.createElement("div");
+    row.className = "feat-row";
+    var up = document.createElement("button");
+    up.type = "button";
+    up.textContent = "↑";
+    up.setAttribute("aria-label", featBox.getAttribute("data-up"));
+    var down = document.createElement("button");
+    down.type = "button";
+    down.textContent = "↓";
+    down.setAttribute("aria-label", featBox.getAttribute("data-down"));
+    var input = document.createElement("input");
+    input.className = "in";
+    input.name = lang === "ar" ? "feat_ar" : "feat_en";
+    input.maxLength = 80;
+    input.value = value || "";
+    if (lang === "ar") input.dir = "rtl";
+    var remove = document.createElement("button");
+    remove.type = "button";
+    remove.textContent = "×";
+    remove.setAttribute("aria-label", featBox.getAttribute("data-remove"));
+    up.addEventListener("click", function () {
+      var prev = row.previousElementSibling;
+      if (prev) list.insertBefore(row, prev);
+    });
+    down.addEventListener("click", function () {
+      var next = row.nextElementSibling;
+      if (next) list.insertBefore(next, row);
+    });
+    remove.addEventListener("click", function () {
+      row.remove();
+      syncAdd();
+    });
+    row.append(up, down, input, remove);
+    list.appendChild(row);
+    syncAdd();
+  }
+  function fillFeatures(features) {
+    listFor("en").replaceChildren();
+    listFor("ar").replaceChildren();
+    var data = features || {};
+    (data.en || []).forEach(function (line) { addRow("en", line); });
+    (data.ar || []).forEach(function (line) { addRow("ar", line); });
+    if (!listFor("en").children.length) addRow("en", "");
+    if (!listFor("ar").children.length) addRow("ar", "");
+    syncAdd();
+  }
+  function showLang(lang) {
+    featLang = lang;
+    document.getElementById("featEn").hidden = lang !== "en";
+    document.getElementById("featAr").hidden = lang !== "ar";
+    featBox.querySelectorAll("[data-ftab]").forEach(function (tab) {
+      tab.classList.toggle("on", tab.getAttribute("data-ftab") === lang);
+    });
+    syncAdd();
+  }
+  featBox.querySelectorAll("[data-ftab]").forEach(function (tab) {
+    tab.addEventListener("click", function () { showLang(tab.getAttribute("data-ftab")); });
+  });
+  document.getElementById("addFeat").onclick = function () { addRow(featLang, ""); };
+  var featuredBox = document.getElementById("pmFeatured");
+  function syncBadge() { document.getElementById("badgeFields").hidden = !featuredBox.checked; }
+  featuredBox.addEventListener("change", syncBadge);
+  var codeInput = document.getElementById("pmCode");
+  var codeBox = document.getElementById("pmCodeBox");
+  var codeErr = document.getElementById("pmCodeErr");
+  var codeToggle = document.getElementById("pmAdvanced");
+  var codeTouched = false;
+  var reserved = {};
+  try {
+    JSON.parse(document.getElementById("planCodes").textContent || "[]").forEach(function (row) {
+      reserved[row.code] = row.deleted ? "deleted" : "live";
+    });
+  } catch (err) { reserved = {}; }
+  function setAdvanced(open) {
+    codeBox.hidden = !open;
+    codeToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  function clearCodeErr() {
+    codeErr.hidden = true;
+    codeErr.textContent = "";
+    codeInput.setCustomValidity("");
+  }
+  function slugCode(value) {
+    return String(value || "").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+  }
+  function nextCode(base) {
+    if (!base) return "";
+    if (!reserved[base]) return base;
+    var n = 2;
+    var candidate = base;
+    while (reserved[candidate] && n < 1000) {
+      var suffix = "-" + n;
+      candidate = base.slice(0, 40 - suffix.length) + suffix;
+      n += 1;
+    }
+    return candidate;
+  }
+  function fillCodeFromName() {
+    if (codeTouched || document.getElementById("pmEditing").value === "1") return;
+    codeInput.value = nextCode(slugCode(document.getElementById("pmNameEn").value));
+    clearCodeErr();
+  }
+  codeToggle.addEventListener("click", function () { setAdvanced(codeBox.hidden); });
+  codeInput.addEventListener("input", function () {
+    codeTouched = true;
+    clearCodeErr();
+  });
+  document.getElementById("pmNameEn").addEventListener("input", fillCodeFromName);
+  document.getElementById("addPlan").onclick = function (e) {
+    codeTouched = false;
+    codeInput.value = "";
+    codeInput.readOnly = false;
+    clearCodeErr();
+    setAdvanced(false);
+    document.getElementById("pmType").disabled = false;
+    document.getElementById("pmNameEn").value = "";
+    document.getElementById("pmNameAr").value = "";
+    document.getElementById("pmPrice").value = "";
+    document.getElementById("pmBlurbEn").value = "";
+    document.getElementById("pmBlurbAr").value = "";
+    document.getElementById("pmActive").value = "1";
+    document.getElementById("pmEditing").value = "";
+    featuredBox.checked = false;
+    document.getElementById("pmBadgeEn").value = "";
+    document.getElementById("pmBadgeAr").value = "";
+    syncBadge();
+    showLang("en");
+    fillFeatures({en: [], ar: []});
+    var title = document.getElementById("pmTitle");
+    title.textContent = title.getAttribute("data-add");
+    show(planModal, e.currentTarget);
+  };
+  document.querySelectorAll(".edit-plan").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var p = JSON.parse(btn.getAttribute("data-plan"));
+      codeTouched = true;
+      codeInput.value = p.code;
+      codeInput.readOnly = true;
+      clearCodeErr();
+      setAdvanced(true);
+      document.getElementById("pmType").value = p.type;
+      document.getElementById("pmType").disabled = p.subscribers > 0;
+      document.getElementById("pmNameEn").value = p.name_en;
+      document.getElementById("pmNameAr").value = p.name_ar;
+      document.getElementById("pmPrice").value = p.price;
+      document.getElementById("pmBlurbEn").value = p.blurb_en;
+      document.getElementById("pmBlurbAr").value = p.blurb_ar;
+      document.getElementById("pmActive").value = p.active ? "1" : "0";
+      document.getElementById("pmEditing").value = "1";
+      featuredBox.checked = !!p.featured;
+      document.getElementById("pmBadgeEn").value = p.badge_en || "";
+      document.getElementById("pmBadgeAr").value = p.badge_ar || "";
+      syncBadge();
+      showLang("en");
+      fillFeatures(p.features || {en: [], ar: []});
+      var title = document.getElementById("pmTitle");
+      title.textContent = title.getAttribute("data-edit");
+      show(planModal, btn);
+    });
+  });
+  document.getElementById("addPack").onclick = function (e) {
+    document.getElementById("pkId").value = "";
+    document.getElementById("pkPoints").value = "";
+    document.getElementById("pkPrice").value = "";
+    var title = document.getElementById("pkTitle");
+    title.textContent = title.getAttribute("data-add");
+    show(packModal, e.currentTarget);
+  };
+  document.querySelectorAll(".edit-pack").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var p = JSON.parse(btn.getAttribute("data-pack"));
+      document.getElementById("pkId").value = p.id;
+      document.getElementById("pkPoints").value = p.points;
+      document.getElementById("pkPrice").value = p.price;
+      document.getElementById("pkActive").value = p.active ? "1" : "0";
+      var title = document.getElementById("pkTitle");
+      title.textContent = title.getAttribute("data-edit");
+      show(packModal, btn);
+    });
+  });
+  var planForm = planModal.querySelector("form");
+  var saving = false;
+  function codeKind(value) {
+    var code = String(value || "").trim().toLowerCase();
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(code)) return "format";
+    if (document.getElementById("pmEditing").value === "1") return "";
+    var hit = reserved[code];
+    if (hit === "deleted") return "deleted";
+    if (hit) return "taken";
+    return "";
+  }
+  function showCode(kind) {
+    var key = kind === "taken" || kind === "deleted" || kind === "format" ? kind : "format";
+    var msg = planForm.getAttribute("data-" + key) || "";
+    setAdvanced(true);
+    codeErr.hidden = false;
+    codeErr.textContent = msg;
+    codeInput.setCustomValidity(msg);
+    codeInput.reportValidity();
+  }
+  planForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (saving) return;
+    var type = document.getElementById("pmType");
+    var wasDisabled = type.disabled;
+    type.disabled = false;
+    var price = document.getElementById("pmPrice");
+    price.setCustomValidity("");
+    clearCodeErr();
+    var kind = codeKind(codeInput.value);
+    if (kind) {
+      type.disabled = wasDisabled;
+      showCode(kind);
+      return;
+    }
+    var amount = Number(String(price.value).replace(/,/g, ""));
+    if (document.getElementById("pmActive").value === "1" && !(amount > 0)) {
+      type.disabled = wasDisabled;
+      price.setCustomValidity(planForm.getAttribute("data-price"));
+      price.reportValidity();
+      return;
+    }
+    saving = true;
+    var submitBtn = planForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    fetch(planForm.getAttribute("action"), {
+      method: "POST",
+      body: new FormData(planForm),
+      headers: {"X-Paiger": "1", "Accept": "application/json"},
+      credentials: "same-origin"
+    }).then(function (res) {
+      var ctype = res.headers.get("content-type") || "";
+      if (ctype.indexOf("json") === -1) {
+        var url = new URL(res.url, location.origin);
+        var err = url.searchParams.get("error");
+        if (err) return {ok: false, error: err};
+        return {ok: true, redirect: url.pathname + url.search};
+      }
+      return res.json();
+    }).then(function (data) {
+      if (data && data.ok) {
+        location.href = data.redirect || "/admin/plans?notice=saved";
+        return;
+      }
+      saving = false;
+      submitBtn.disabled = false;
+      type.disabled = wasDisabled;
+      var err = (data && data.error) || "format";
+      if (err === "price") {
+        price.setCustomValidity(planForm.getAttribute("data-price"));
+        price.reportValidity();
+        return;
+      }
+      if (err === "taken" || err === "deleted" || err === "format" || err === "code") showCode(err === "code" ? "format" : err);
+      else codeErr.hidden = false, codeErr.textContent = planForm.getAttribute("data-invalid") || "";
+    }).catch(function () {
+      saving = false;
+      submitBtn.disabled = false;
+      type.disabled = wasDisabled;
+      setAdvanced(true);
+      codeErr.hidden = false;
+      codeErr.textContent = planForm.getAttribute("data-invalid") || "";
+    });
+  });
+})();
+</script>

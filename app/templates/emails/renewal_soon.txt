@@ -1,0 +1,14 @@
+Your plan renews on {{ renews_label }}
+Nothing to do. We’ll charge your saved card automatically and send the receipt right after.
+
+Plan: {{ plan_name }}
+Amount: {{ plan_amount }}
+Card: {{ card_label }}
+Renews on: {{ renews_label }}
+
+Manage subscription: {{ button_url }}
+
+{% if yearly_save %}Want to switch to yearly and save BHD {{ yearly_save }}, or change your card? You can do it from your dashboard before the renewal date.{% else %}You can change your card from your dashboard before the renewal date.{% endif %}
+
+Paiger account: {{ restaurant_name }}
+{{ support_email }}

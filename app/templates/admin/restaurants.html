@@ -1,0 +1,289 @@
+{% include "admin/top.html" %}
+<section>
+  <div class="ph"><div><h1>{{ t('admin.nRest') }}</h1><p>{{ t('admin.restSub') }}</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a class="btn btn-line" href="/admin/restaurants.csv?status={{ status_key }}&q={{ query|urlencode }}"><svg><use href="#i-dl"/></svg><span>{{ t('admin.export') }}</span></a>
+      <button class="btn btn-ink" type="button" id="addRest">{{ t('admin.addRest') }}</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="filters">
+      <div class="seg" role="group">
+        {% for key in statuses %}
+        <a href="/admin/restaurants?status={{ key }}&q={{ query|urlencode }}" aria-pressed="{{ 'true' if key == status_key else 'false' }}">{{ t('admin.st.' + key) }} <span class="c">{{ counts[key] }}</span></a>
+        {% endfor %}
+      </div>
+      <form class="search" method="get" action="/admin/restaurants"><input type="hidden" name="status" value="{{ status_key }}"><input type="search" name="q" value="{{ query }}" placeholder="{{ t('admin.searchRest') }}"></form>
+    </div>
+    <div class="table-scroll">
+      <table class="t">
+        <thead><tr><th>{{ t('admin.cRest') }}</th><th>{{ t('admin.cStatus') }}</th><th>{{ t('admin.cPlan') }}</th><th>{{ t('admin.cRenew') }}</th><th class="r">{{ t('admin.cOrders30') }}</th><th>{{ t('admin.cJoined') }}</th></tr></thead>
+        <tbody>
+          {% for row in rows %}
+          <tr class="click" data-open="{{ row.id }}" tabindex="-1">
+            <td><div class="rcell"><span class="rlogo">{{ row.initial }}</span><div><b>{{ row.name }}</b><span>/r/{{ row.slug }}</span></div></div></td>
+            <td><span class="pill {{ row.status }}">{{ t('admin.st.' + row.status) }}</span></td>
+            <td>{% if row.plan_code %}{{ t('admin.pl.' + row.plan_code) if row.plan_code in ['monthly','yearly','points'] else row.plan_code }}{% if row.points is not none %} · {{ row.points }}{% endif %}{% else %}—{% endif %}</td>
+            <td class="sub">{{ row.renew }}</td>
+            <td class="r"><span class="num">{{ row.orders_30d }}</span></td>
+            <td class="sub">{{ row.joined }}</td>
+          </tr>
+          {% else %}<tr><td colspan="6">{{ t('admin.none') }}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="tfoot"><span>{{ t('admin.showing').replace('{a}', rows|length|string).replace('{b}', total|string) }}</span>
+      <span>
+        {% if page_no > 1 %}<a href="?status={{ status_key }}&q={{ query|urlencode }}&page={{ page_no - 1 }}">{{ t('admin.prev') }}</a>{% endif %}
+        {% if page_no < pages %}<a href="?status={{ status_key }}&q={{ query|urlencode }}&page={{ page_no + 1 }}">{{ t('admin.next') }}</a>{% endif %}
+      </span>
+    </div>
+  </div>
+</section>
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="drName">
+  <div class="dr-h"><div class="rlogo" id="drLogo"></div><div><h3 id="drName"></h3><p id="drSlug"></p></div><button class="x" type="button" id="drClose" aria-label="{{ t('admin.close') }}"><svg width="20" height="20"><use href="#i-x"/></svg></button></div>
+  <div class="dr-b" id="drBody"></div>
+</aside>
+<div class="modal" id="addRestModal" hidden role="dialog" aria-modal="true" aria-labelledby="addRestTitle">
+  <div class="backdrop" data-close></div>
+  <form class="box wide" method="post" action="/admin/restaurants/create" id="addRestForm">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="brand_color" id="addColor" value="">
+    <h3 id="addRestTitle">{{ t('admin.addRestTitle') }}</h3>
+    <div class="f"><label for="addName">{{ t('admin.restName') }}</label><input class="in" id="addName" name="name" required maxlength="120"></div>
+    <div class="f"><label for="addSlug">{{ t('admin.slug') }}</label><input class="in" id="addSlug" name="slug" required maxlength="40" dir="ltr" autocomplete="off"><p class="help" id="slugHelp"></p></div>
+    <div class="f"><label for="addEmail">{{ t('admin.ownerEmail') }}</label><input class="in" id="addEmail" name="email" type="email" required dir="ltr" autocomplete="off"></div>
+    <div class="f"><label for="addPhone">{{ t('admin.mobile') }}</label><div class="phone-row"><span dir="ltr">+973</span><input class="in" id="addPhone" name="phone" inputmode="numeric" maxlength="8" pattern="[0-9]{8}" required dir="ltr" autocomplete="off"></div></div>
+    <div class="f"><label>{{ t('admin.passMode') }}</label>
+      <div class="radio-cards">
+        <label><input type="radio" name="password_mode" value="link" checked><span><b>{{ t('admin.passLink') }}</b></span></label>
+        <label><input type="radio" name="password_mode" value="now"><span><b>{{ t('admin.passNow') }}</b></span></label>
+      </div>
+    </div>
+    <div class="f"><label>{{ t('admin.planChoice') }}</label>
+      <div class="radio-cards">
+        <label><input type="radio" name="plan" value="trial" checked><span><b>{{ t('admin.planTrial') }}</b></span></label>
+        <label><input type="radio" name="plan" value="monthly"><span><b>{{ t('admin.pl.monthly') }}</b></span></label>
+        <label><input type="radio" name="plan" value="yearly"><span><b>{{ t('admin.pl.yearly') }}</b></span></label>
+        <label><input type="radio" name="plan" value="points"><span><b>{{ t('admin.planPoints') }}</b></span></label>
+        <label><input type="radio" name="plan" value="legacy"><span><b>{{ t('admin.planLegacy') }}</b></span></label>
+      </div>
+    </div>
+    <div class="f" id="trialDays"><label for="addDays">{{ t('admin.trialDays') }}</label><input class="in" id="addDays" name="days" type="number" min="1" max="60" value="{{ trial_days if trial_days is defined else 3 }}"></div>
+    <div class="f" id="planUntil" hidden><label for="addUntil">{{ t('admin.untilDate') }}</label><input class="in" id="addUntil" name="until" type="date"></div>
+    <div class="f"><label>{{ t('admin.brandColor') }}</label>
+      <div class="swatches" id="addSwatches">
+        {% for color in ['#111111','#7a4b2a','#b91c1c','#c2410c','#166534','#1d4ed8','#6d28d9'] %}
+        <button class="swatch" type="button" style="--c:{{ color }}" data-c="{{ color }}" aria-checked="false"></button>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="foot"><button class="btn btn-quiet" type="button" data-close>{{ t('admin.cancel') }}</button><button class="btn btn-ink" type="submit">{{ t('admin.addRest') }}</button></div>
+  </form>
+</div>
+{% include "admin/foot.html" %}
+<script>
+(function () {
+  var csrf = document.querySelector('meta[name="csrf"]').content;
+  var openId = {{ open_id|tojson }};
+  var scrim = document.getElementById("scrim");
+  var drawer = document.getElementById("drawer");
+  var labels = {
+    plan: {{ t('admin.dPlan')|tojson }}, status: {{ t('admin.dStatus')|tojson }}, renew: {{ t('admin.dRenew')|tojson }},
+    owner: {{ t('admin.dOwner')|tojson }}, phone: {{ t('admin.dPhone')|tojson }}, card: {{ t('admin.dCard')|tojson }},
+    orders: {{ t('admin.dOrders')|tojson }}, balance: {{ t('admin.dBalance')|tojson }}, none: {{ t('admin.noneCard')|tojson }},
+    manage: {{ t('admin.manage')|tojson }}, extend: {{ t('admin.extend')|tojson }}, extendSub: {{ t('admin.extendSub')|tojson }},
+    days: {{ t('admin.days')|tojson }}, apply: {{ t('admin.apply')|tojson }}, setPlan: {{ t('admin.setPlan')|tojson }},
+    setPlanSub: {{ t('admin.setPlanSub')|tojson }}, until: {{ t('admin.until')|tojson }}, adjust: {{ t('admin.adjust')|tojson }},
+    adjustSub: {{ t('admin.adjustSub')|tojson }}, reason: {{ t('admin.reason')|tojson }}, suspend: {{ t('admin.suspend')|tojson }},
+    suspendSub: {{ t('admin.suspendSub')|tojson }}, suspendBtn: {{ t('admin.suspendBtn')|tojson }}, unsuspend: {{ t('admin.unsuspend')|tojson }},
+    openOwner: {{ t('admin.openOwner')|tojson }}, openOwnerSub: {{ t('admin.openOwnerSub')|tojson }}, history: {{ t('admin.history')|tojson }},
+    monthly: {{ t('admin.pl.monthly')|tojson }}, yearly: {{ t('admin.pl.yearly')|tojson }},
+    handTitle: {{ t('admin.handoff')|tojson }}, pin: {{ t('admin.cashierPin')|tojson }},
+    link: {{ t('admin.customerLink')|tojson }}, loginEmail: {{ t('admin.loginEmail')|tojson }},
+    onePass: {{ t('admin.oneTimePass')|tojson }}, copy: {{ t('admin.copy')|tojson }}, copied: {{ t('admin.copied')|tojson }}
+  };
+  var handoff = {{ handoff|tojson if handoff is defined and handoff else 'null' }};
+  function el(tag, attrs, text) {
+    var node = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) { if (k === "class") node.className = attrs[k]; else node.setAttribute(k, attrs[k]); });
+    if (text != null) node.textContent = text;
+    return node;
+  }
+  function field(label, value) {
+    var box = el("div");
+    box.appendChild(el("span", {}, label));
+    var b = el("b", {}, value || "—");
+    if (label === labels.owner || label === labels.phone) b.dir = "ltr";
+    box.appendChild(b);
+    return box;
+  }
+  function form(action, ask, name) {
+    var f = el("form", { method: "post", action: action });
+    if (ask) f.setAttribute("data-ask", ask);
+    if (name) f.setAttribute("data-name", name);
+    f.appendChild(el("input", { type: "hidden", name: "csrf", value: csrf }));
+    return f;
+  }
+  function close() { window.paigerDialog.close(drawer); }
+  document.getElementById("drClose").onclick = close;
+  async function open(id, from) {
+    var res = await fetch("/admin/restaurants/" + id + ".json", { credentials: "same-origin", headers: { "Accept": "application/json" } });
+    if (!res.ok) return;
+    var d = await res.json();
+    document.getElementById("drLogo").textContent = d.initial || "";
+    document.getElementById("drName").textContent = d.name || "";
+    document.getElementById("drSlug").textContent = "/r/" + (d.slug || "");
+    var body = document.getElementById("drBody");
+    body.replaceChildren();
+    var pill = el("span", { class: "pill " + d.status }, d.status);
+    body.appendChild(el("div")).appendChild(pill);
+    var facts = el("div", { class: "facts" });
+    facts.appendChild(field(labels.plan, d.plan_code || "—"));
+    facts.appendChild(field(labels.renew, d.renew));
+    facts.appendChild(field(labels.owner, d.email));
+    facts.appendChild(field(labels.phone, d.phone));
+    facts.appendChild(field(labels.card, labels.none));
+    facts.appendChild(field(d.points == null ? labels.orders : labels.balance, d.points == null ? String(d.orders_30d) : String(d.points)));
+    body.appendChild(facts);
+    var h = el("h4", {}, labels.manage); body.appendChild(h);
+    var ext = form("/admin/restaurants/" + d.id + "/trial", "trial", d.name);
+    ext.appendChild(el("b", {}, labels.extend));
+    ext.appendChild(el("p", {}, labels.extendSub));
+    var days = el("input", { class: "in", name: "days", type: "number", min: "1", max: "60", value: "7", required: "required" });
+    ext.appendChild(days);
+    ext.appendChild(el("button", { class: "btn btn-ink btn-sm", type: "submit" }, labels.apply));
+    body.appendChild(ext);
+    var plan = form("/admin/restaurants/" + d.id + "/plan", "setplan", d.name);
+    plan.appendChild(el("b", {}, labels.setPlan));
+    plan.appendChild(el("p", {}, labels.setPlanSub));
+    var sel = el("select", { class: "in", name: "code" });
+    sel.appendChild(el("option", { value: "monthly" }, labels.monthly));
+    sel.appendChild(el("option", { value: "yearly" }, labels.yearly));
+    plan.appendChild(sel);
+    plan.appendChild(el("input", { class: "in", type: "date", name: "until", required: "required" }));
+    plan.appendChild(el("button", { class: "btn btn-line btn-sm", type: "submit" }, labels.apply));
+    body.appendChild(plan);
+    if (d.plan_code === "points") {
+      var adj = form("/admin/restaurants/" + d.id + "/points", "points", d.name);
+      adj.appendChild(el("b", {}, labels.adjust));
+      adj.appendChild(el("p", {}, labels.adjustSub));
+      adj.appendChild(el("input", { class: "in", name: "delta", type: "number", required: "required", placeholder: "+100" }));
+      adj.appendChild(el("input", { class: "in", name: "reason", required: "required", placeholder: labels.reason }));
+      adj.appendChild(el("button", { class: "btn btn-line btn-sm", type: "submit" }, labels.apply));
+      body.appendChild(adj);
+    }
+    var view = form("/admin/restaurants/" + d.id + "/impersonate", "view", d.name);
+    view.appendChild(el("b", {}, labels.openOwner));
+    view.appendChild(el("p", {}, labels.openOwnerSub));
+    view.appendChild(el("button", { class: "btn btn-ink btn-sm", type: "submit" }, labels.openOwner));
+    body.appendChild(view);
+    var sus = form("/admin/restaurants/" + d.id + "/suspend", d.suspended ? "reactivate" : "suspend", d.name);
+    sus.appendChild(el("b", {}, labels.suspend));
+    sus.appendChild(el("p", {}, labels.suspendSub));
+    sus.appendChild(el("input", { type: "hidden", name: "suspended", value: d.suspended ? "0" : "1" }));
+    sus.appendChild(el("button", { class: "btn btn-line btn-sm", type: "submit" }, d.suspended ? labels.unsuspend : labels.suspendBtn));
+    body.appendChild(sus);
+    body.appendChild(el("h4", {}, labels.history));
+    var list = el("ul", { class: "hist" });
+    (d.history || []).forEach(function (item) {
+      var li = el("li");
+      li.appendChild(el("span", {}, item.when || ""));
+      li.appendChild(document.createTextNode(" " + (item.text || "")));
+      list.appendChild(li);
+    });
+    body.appendChild(list);
+    if (handoff && String(handoff.id) === String(d.id)) {
+      var card = el("div", { class: "handoff" });
+      card.appendChild(el("b", {}, labels.handTitle));
+      function row(key, label, value) {
+        var line = el("div", { class: "line" });
+        line.setAttribute("data-hand", key);
+        line.appendChild(el("span", {}, label));
+        var val = el("b", { class: "mono" }, value);
+        var btn = el("button", { type: "button", class: "btn btn-quiet btn-sm" }, labels.copy);
+        btn.addEventListener("click", function () {
+          navigator.clipboard.writeText(value).then(function () { btn.textContent = labels.copied; });
+        });
+        line.appendChild(val);
+        line.appendChild(btn);
+        card.appendChild(line);
+      }
+      row("pin", labels.pin, handoff.pin || "");
+      row("link", labels.link, handoff.link || "");
+      row("email", labels.loginEmail, handoff.email || "");
+      if (handoff.password) row("password", labels.onePass, handoff.password);
+      body.insertBefore(card, body.firstChild);
+    }
+    window.paigerDialog.open(drawer, from);
+  }
+  document.querySelectorAll("[data-open]").forEach(function (row) {
+    row.addEventListener("click", function () { open(row.getAttribute("data-open"), row); });
+  });
+  if (openId) open(openId);
+  var addModal = document.getElementById("addRestModal");
+  document.getElementById("addRest").addEventListener("click", function (e) {
+    window.paigerDialog.open(addModal, e.currentTarget);
+  });
+  if ({{ error|tojson }} && ["rest", "slug", "email", "phone", "date", "plan"].indexOf({{ error|tojson }}) >= 0) {
+    window.paigerDialog.open(addModal);
+  }
+  var slugTouched = false;
+  var slugTimer = null;
+  var slugHelp = document.getElementById("slugHelp");
+  var slugMsgs = { invalid: {{ t('auth.eSlug')|tojson }}, taken: {{ t('auth.slugTaken')|tojson }}, ok: {{ t('auth.slugOk')|tojson }} };
+  function slugify(value) {
+    return value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+  }
+  function slugCheck() {
+    var input = document.getElementById("addSlug");
+    var value = input.value.trim();
+    if (!value || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(value) || value.length < 3) {
+      slugHelp.textContent = value ? slugMsgs.invalid : "";
+      slugHelp.style.color = "var(--error)";
+      return;
+    }
+    fetch("/api/signup/slug-available?slug=" + encodeURIComponent(value)).then(function (res) { return res.json(); }).then(function (data) {
+      if (input.value.trim() !== value) return;
+      slugHelp.textContent = data.available ? slugMsgs.ok : (data.reason === "invalid" ? slugMsgs.invalid : slugMsgs.taken);
+      slugHelp.style.color = data.available ? "var(--ready-deep)" : "var(--error)";
+    }).catch(function () {});
+  }
+  document.getElementById("addName").addEventListener("input", function () {
+    if (slugTouched) return;
+    document.getElementById("addSlug").value = slugify(document.getElementById("addName").value);
+    clearTimeout(slugTimer);
+    slugTimer = setTimeout(slugCheck, 250);
+  });
+  document.getElementById("addSlug").addEventListener("input", function () {
+    slugTouched = true;
+    clearTimeout(slugTimer);
+    slugTimer = setTimeout(slugCheck, 250);
+  });
+  function planFields() {
+    var plan = document.querySelector("#addRestForm input[name=plan]:checked").value;
+    document.getElementById("trialDays").hidden = plan !== "trial";
+    document.getElementById("planUntil").hidden = ["monthly", "yearly", "points"].indexOf(plan) < 0;
+    document.getElementById("addDays").required = plan === "trial";
+    document.getElementById("addUntil").required = ["monthly", "yearly", "points"].indexOf(plan) >= 0;
+  }
+  document.querySelectorAll("#addRestForm input[name=plan]").forEach(function (input) {
+    input.addEventListener("change", planFields);
+  });
+  planFields();
+  document.getElementById("addSwatches").addEventListener("click", function (e) {
+    var swatch = e.target.closest(".swatch");
+    if (!swatch) return;
+    var on = swatch.getAttribute("aria-checked") !== "true";
+    document.querySelectorAll("#addSwatches .swatch").forEach(function (item) { item.setAttribute("aria-checked", "false"); });
+    swatch.setAttribute("aria-checked", on ? "true" : "false");
+    document.getElementById("addColor").value = on ? swatch.getAttribute("data-c") : "";
+  });
+  document.getElementById("addRestForm").addEventListener("submit", function () {
+    var btn = document.querySelector("#addRestForm button[type=submit]");
+    btn.disabled = true;
+    btn.classList.add("busy");
+  });
+})();
+</script>

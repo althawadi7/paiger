@@ -1,0 +1,14 @@
+Your invoice is ready
+Here’s your invoice for {{ item_label }}. You can pay it online in a minute by card or BenefitPay.
+
+Invoice: {{ number }}
+Amount due: BHD {{ amount }}
+Due date: {{ due_label }}
+{% if attachment_name %}Attached: {{ attachment_name }}{% endif %}
+
+Pay: {{ button_url }}
+
+Paid already by bank transfer? Reply with the transfer reference and we’ll mark it as paid.
+
+Paiger account: {{ restaurant_name }}
+{{ support_email }}

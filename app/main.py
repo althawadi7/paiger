@@ -13,7 +13,6 @@ import time
 from collections import defaultdict
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
-from decimal import Decimal
 from urllib.parse import quote
 from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect, HTTPException, Request, Form, Depends, status
@@ -32,6 +31,8 @@ from . import i18n
 from . import mailer
 from . import cashier_gate
 from . import owner_board
+from . import billing
+from . import viewing
 
 logger = logging.getLogger("pager")
 
@@ -48,6 +49,7 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 i18n.install(templates)
+templates.env.globals["viewing_as"] = viewing.name
 
 
 def _hex_luminance(color: str) -> float:
@@ -87,7 +89,16 @@ def restaurant_brand(restaurant: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     }
 
 
+def static_version(name: str) -> str:
+    path = BASE_DIR / "static" / name
+    try:
+        return str(path.stat().st_mtime_ns)
+    except OSError:
+        return "0"
+
+
 templates.env.globals["restaurant_brand"] = restaurant_brand
+templates.env.globals["static_version"] = static_version
 
 
 @app.middleware("http")
@@ -107,7 +118,7 @@ async def language_middleware(request: Request, call_next):
 async def admin_robots_header(request: Request, call_next):
     response = await call_next(request)
     path = request.url.path
-    if path == "/admin" or path.startswith("/admin/"):
+    if path == "/admin" or path.startswith("/admin/") or path.startswith("/pay/"):
         response.headers["X-Robots-Tag"] = "noindex"
     return response
 
@@ -127,6 +138,19 @@ async def refresh_cashier_devices(request: Request, call_next):
         if cashier_gate.valid_device(restaurant_id, value):
             _stamp_cashier_cookie(response, request, restaurant_id, value)
     return response
+
+
+@app.middleware("http")
+async def block_impersonated_writes(request: Request, call_next):
+    payload = auth.decode_token(request.cookies.get(auth.RESTAURANT_COOKIE) or "")
+    viewing_as = payload if payload and payload.get("role") == "restaurant" and payload.get("readonly") else None
+    if viewing_as and request.method not in ("GET", "HEAD", "OPTIONS"):
+        return JSONResponse({"detail": "Read only"}, status_code=403)
+    token = viewing.current.set(viewing_as)
+    try:
+        return await call_next(request)
+    finally:
+        viewing.current.reset(token)
 
 
 def _cookie_secure() -> bool:
@@ -157,58 +181,54 @@ def _client_ip(request: Request) -> str:
     return ""
 
 
-def _format_money(value: str) -> str:
-    amount = Decimal(value)
-    if amount == amount.to_integral_value():
-        return str(int(amount))
-    return f"{amount:.3f}"
+_PLAN_UNIT = {
+    "monthly": ("price.mFor", "price.perMonth"),
+    "yearly": ("price.yFor", "price.perYear"),
+    "points": ("price.pFor", "price.perOrder"),
+}
+
+
+def _bhd3(fils: int) -> str:
+    return f"{int(fils) / 1000:.3f}"
 
 
 def _landing_plans() -> List[Dict[str, Any]]:
-    catalog = {
-        "monthly": {
-            "code": "monthly",
-            "name_key": "price.m",
-            "for_key": "price.mFor",
-            "per_key": "price.perMonth",
-            "features": ["price.unl", "price.f1", "price.f2", "price.f3"],
-            "featured": False,
-            "fils_key": "price_fils",
-        },
-        "yearly": {
-            "code": "yearly",
-            "name_key": "price.y",
-            "for_key": "price.yFor",
-            "per_key": "price.perYear",
-            "save_key": "price.ySave",
-            "tag_key": "price.best",
-            "features": ["price.unl", "price.allM", "price.f4"],
-            "featured": True,
-            "fils_key": "price_fils",
-        },
-        "points": {
-            "code": "points",
-            "name_key": "price.p",
-            "for_key": "price.pFor",
-            "per_key": "price.perOrder",
-            "save_key": "price.pNote",
-            "features": ["price.p1", "price.p2", "price.allM"],
-            "featured": False,
-            "fils_key": "point_price_fils",
-        },
-    }
-    stored = {}
-    try:
-        stored = {row["code"]: row for row in owner_board.plans()}
-    except Exception:
-        stored = {}
-    plans = []
-    for code, item in catalog.items():
-        row = stored.get(code) or {}
-        fils = row.get(item.pop("fils_key"))
-        item["amount"] = _format_money(owner_board.fils_label(fils) if fils is not None else {"monthly": "15", "yearly": "150", "points": "0.100"}[code])
-        plans.append(item)
-    return plans
+    source = owner_board.landing_source()
+    rows = list(source["rows"] or [])
+    packs = list(source["packs"] or [])
+    arabic = i18n.current_lang() == "ar"
+    monthly = next((row for row in rows if row.get("type") == "monthly"), None)
+    cheapest = min(packs, key=lambda pack: (int(pack.get("price_fils") or 0), int(pack.get("sort") or 0))) if packs else None
+    cards = []
+    for row in rows:
+        kind = row.get("type") or "monthly"
+        for_key, per_key = _PLAN_UNIT.get(kind, _PLAN_UNIT["monthly"])
+        fils = int(row.get("price_fils") or 0)
+        name = (row.get("name_ar") if arabic else row.get("name_en")) or row.get("name_en") or ""
+        line = (row.get("blurb_ar") if arabic else row.get("blurb_en")) or ""
+        if not str(line).strip():
+            line = i18n.t(for_key)
+        note = ""
+        if kind == "yearly" and monthly is not None:
+            saved = int(monthly.get("price_fils") or 0) * 12 - int(row.get("price_fils") or 0)
+            if saved > 0:
+                note = i18n.t("price.ySave").replace("{amount}", _bhd3(saved))
+        elif kind == "points" and cheapest is not None:
+            note = i18n.t("price.pNote").replace("{amount}", _bhd3(int(cheapest.get("price_fils") or 0)))
+        feats = billing.parse_features(row.get("features"))
+        featured = bool(row.get("featured"))
+        cards.append({
+            "code": row.get("code") or "",
+            "name": name,
+            "line": line,
+            "amount": _bhd3(fils),
+            "per_key": per_key,
+            "note": note,
+            "features": feats["ar" if arabic else "en"],
+            "featured": featured,
+            "badge": ((row.get("badge_ar") if arabic else row.get("badge_en")) or "") if featured else "",
+        })
+    return cards
 
 def get_local_ip() -> str:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -489,30 +509,7 @@ async def super_admin_logout():
     redirect.delete_cookie(auth.SUPER_ADMIN_COOKIE)
     return redirect
 
-@app.get("/admin", response_class=HTMLResponse)
-@app.get("/admin/dashboard", response_class=HTMLResponse)
-async def super_admin_dashboard(request: Request):
-    user = auth.get_current_super_admin(request)
-    if not user:
-        return RedirectResponse(url="/admin/login", status_code=status.HTTP_302_FOUND)
-
-    admin_record = db.get_super_admin_by_id(int(user["sub"])) or {"full_name": "مدير النظام العام"}
-    stats = db.get_platform_stats()
-    restaurants = db.get_all_restaurants(limit=200)
-    all_orders = db.get_all_orders(limit=300)
-    custom_pages = db.get_all_custom_pages()
-
-    return templates.TemplateResponse(
-        "super_admin_dashboard.html",
-        {
-            "request": request,
-            "admin_user": admin_record,
-            "stats": stats,
-            "restaurants": restaurants,
-            "all_orders": all_orders,
-            "custom_pages": custom_pages
-        }
-    )
+# Platform admin pages are registered by admin_panel.install at the bottom of this file.
 
 # Super Admin Restaurant Management APIs
 @app.post("/api/admin/restaurants")
@@ -832,11 +829,12 @@ async def _send_welcome(email: str, name: str, slug: str, trial_ends: Any, base:
             "print_url": f"{host}/r/{slug}/print",
             "customer_link": f"{host}/r/{slug}",
             "support_email": _support_email(),
+            "trial_days": owner_board.trial_length(),
         }
         html = templates.env.get_template("emails/welcome.html").render(**context)
         text = (
             f"{name} is ready to page its first order.\n"
-            f"Your free trial runs until {context['trial_ends_label']}. No card needed until then.\n\n"
+            f"Your {context['trial_days']}-day free trial runs until {context['trial_ends_label']}. No card needed until then.\n\n"
             f"Open the cashier: {context['cashier_url']}\n"
             f"Dashboard: {context['dashboard_url']}\n"
             f"Customer link: {context['customer_link']}\n"
@@ -1051,9 +1049,13 @@ def _subscription_view(rest: Dict[str, Any]) -> Dict[str, Any]:
         code = "monthly"
     catalog = owner_board.plans()
     by_code = {row["code"]: row for row in catalog}
+    if code not in by_code:
+        by_code[code] = billing.plan_row(code) or {}
+    lang_key = "ar" if i18n.current_lang() == "ar" else "en"
     for plan in catalog:
-        fils = plan.get("point_price_fils") if plan["code"] == "points" else plan.get("price_fils")
-        plan["price_label"] = owner_board.fils_label(fils)
+        plan["price_label"] = owner_board.fils_label(plan.get("price_fils"))
+        plan["feature_lines"] = billing.parse_features(plan.get("features"))[lang_key][:8]
+        plan["badge"] = ((plan.get("badge_ar") if lang_key == "ar" else plan.get("badge_en")) or "") if plan.get("featured") else ""
     current = by_code.get(code) or {}
     name_key = "name_ar" if i18n.current_lang() == "ar" else "name_en"
     if state == "trialing":
@@ -1068,28 +1070,19 @@ def _subscription_view(rest: Dict[str, Any]) -> Dict[str, Any]:
     if state in ("trialing", "expired"):
         facts.append({"label": i18n.t("dash.trialEnds"), "value": ends_label})
     elif code == "points":
-        facts.append({"label": i18n.t("dash.amount"), "value": "BHD " + owner_board.fils_label(current.get("point_price_fils"))})
+        facts.append({"label": i18n.t("dash.amount"), "value": "BHD " + owner_board.fils_label(current.get("price_fils"))})
     else:
         facts.append({"label": i18n.t("dash.amount"), "value": "BHD " + owner_board.fils_label(current.get("price_fils"))})
         facts.append({"label": i18n.t("dash.nextCharge"), "value": "—"})
-    if state == "active" and code == "points":
-        selected = owner_board.fils_label(current.get("point_price_fils"))
-    elif state == "active":
+    if state == "active":
         selected = owner_board.fils_label(current.get("price_fils"))
     else:
         selected = owner_board.fils_label((by_code.get("monthly") or {}).get("price_fils"))
     packs = owner_board.point_packs()
     for pack in packs:
         pack["price_label"] = owner_board.fils_label(pack.get("price_fils"))
-    invoices = []
-    for inv in owner_board.invoices(int(rest["id"])):
-        created = owner_board._as_bahrain(inv.get("created_at"))
-        invoices.append({
-            "created_at": created.strftime("%d %b %Y") if created else "",
-            "description": inv.get("description") or "",
-            "amount_label": owner_board.fils_label(inv.get("amount_fils")),
-            "status": inv.get("status") or "",
-        })
+    invoices = billing.owner_documents(int(rest["id"]))
+    wallet = billing.wallet(int(rest["id"])) if code == "points" else {"balance": 0}
     return {
         "plans": catalog,
         "packs": packs,
@@ -1100,8 +1093,9 @@ def _subscription_view(rest: Dict[str, Any]) -> Dict[str, Any]:
         "plan_facts": facts,
         "plan_code": code,
         "sub_state": state,
-        "point_price": owner_board.fils_label((by_code.get("points") or {}).get("point_price_fils")),
+        "point_price": owner_board.fils_label((by_code.get("points") or {}).get("price_fils")),
         "selected_price": selected,
+        "points_balance": int(wallet["balance"]),
     }
 
 
@@ -1458,6 +1452,8 @@ async def restaurant_dedicated_cashier(request: Request, slug: str):
     rest = db.get_restaurant_by_slug(slug)
     if not rest:
         raise HTTPException(status_code=404, detail="Restaurant not found")
+    if rest.get("suspended_at"):
+        return templates.TemplateResponse("paused.html", {"request": request})
     if _can_open_restaurant(request, rest["id"]) or cashier_gate.device_from_cookies(request.cookies, rest["id"]):
         local_ip = get_local_ip()
         base_url = get_public_base_url(request)
@@ -1483,6 +1479,8 @@ async def restaurant_cashier_pin(request: Request, slug: str):
     rest = db.get_restaurant_by_slug(slug)
     if not rest:
         raise HTTPException(status_code=404, detail="Restaurant not found")
+    if rest.get("suspended_at"):
+        raise HTTPException(status_code=403, detail="This service is paused")
     try:
         body = await request.json()
     except Exception:
@@ -1700,6 +1698,7 @@ async def index_route(request: Request):
             "request": request,
             "footer_pages": footer_pages,
             "plans": _landing_plans(),
+            "trial_days": owner_board.landing_source()["trial_days"],
         }
     )
 
@@ -1778,6 +1777,8 @@ async def pager_page(request: Request, token: str):
             """,
             status_code=404,
         )
+    if order.get("restaurant_id") and billing.restaurant_suspended(int(order["restaurant_id"])):
+        return templates.TemplateResponse("paused.html", {"request": request})
     await _note_customer_view(request, order)
     queue_info = db.get_order_queue_info(order["id"])
     theme = db.get_setting("theme", "light")
@@ -1927,6 +1928,11 @@ def _order_for_actor(order_id: int, actor: Dict[str, Any]) -> Dict[str, Any]:
     return order
 
 
+def _reject_if_paused(restaurant_id: int) -> None:
+    if restaurant_id and billing.restaurant_suspended(int(restaurant_id)):
+        raise HTTPException(status_code=403, detail="This service is paused")
+
+
 def _safe_next(value: Optional[str]) -> Optional[str]:
     if not value or not value.startswith("/") or value.startswith("//") or "\\" in value:
         return None
@@ -2004,6 +2010,10 @@ async def create_new_order(order_data: CreateOrderRequest, request: Request):
         restaurant_id = actor["restaurant_id"]
     else:
         restaurant_id = _restaurant_id_for_create(actor, order_data.restaurant_id)
+    _reject_if_paused(restaurant_id)
+    blocked = billing.points_block_reason(restaurant_id)
+    if blocked:
+        raise HTTPException(status_code=402, detail=blocked)
     if db.find_active_order_number(restaurant_id, order_data.order_number):
         raise HTTPException(status_code=409, detail="An active order with this number already exists")
     order = db.create_order(
@@ -2016,6 +2026,7 @@ async def create_new_order(order_data: CreateOrderRequest, request: Request):
         brand_icon=order_data.brand_icon or "",
         cashier_device_id=actor.get("device_id"),
     )
+    billing.charge_order_point(restaurant_id)
     await manager.notify_cashiers({"event": "order_created", "order": order})
     return order
 
@@ -2023,7 +2034,8 @@ async def create_new_order(order_data: CreateOrderRequest, request: Request):
 @app.post("/api/orders/{order_id}/call")
 async def ring_order(order_id: int, request: Request):
     actor = _order_actor(request)
-    _order_for_actor(order_id, actor)
+    order = _order_for_actor(order_id, actor)
+    _reject_if_paused(int(order.get("restaurant_id") or 0))
     order = db.update_order_status(order_id, "ringing")
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -2051,7 +2063,8 @@ async def ring_order(order_id: int, request: Request):
 @app.post("/api/orders/{order_id}/onway")
 async def onway_order(order_id: int, request: Request):
     actor = _order_actor(request)
-    _order_for_actor(order_id, actor)
+    order = _order_for_actor(order_id, actor)
+    _reject_if_paused(int(order.get("restaurant_id") or 0))
     order = db.update_order_status(order_id, "onway")
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -2071,7 +2084,8 @@ async def onway_order(order_id: int, request: Request):
 @app.post("/api/orders/{order_id}/complete")
 async def complete_order(order_id: int, request: Request):
     actor = _order_actor(request)
-    _order_for_actor(order_id, actor)
+    order = _order_for_actor(order_id, actor)
+    _reject_if_paused(int(order.get("restaurant_id") or 0))
     order = db.update_order_status(order_id, "done")
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -2088,7 +2102,8 @@ async def complete_order(order_id: int, request: Request):
 @app.post("/api/orders/{order_id}/reset")
 async def reset_order(order_id: int, request: Request):
     actor = _order_actor(request)
-    _order_for_actor(order_id, actor)
+    order = _order_for_actor(order_id, actor)
+    _reject_if_paused(int(order.get("restaurant_id") or 0))
     order = db.update_order_status(order_id, "waiting")
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -2105,6 +2120,7 @@ async def reset_order(order_id: int, request: Request):
 async def delete_order(order_id: int, request: Request):
     actor = _order_actor(request)
     order = _order_for_actor(order_id, actor)
+    _reject_if_paused(int(order.get("restaurant_id") or 0))
     if order:
         db.delete_order(order_id)
         await manager.notify_pager(order["token"], {"event": "order_deleted"})
@@ -2407,3 +2423,7 @@ async def webhook_myfatoorah(request: Request):
 
     logger.info("MyFatoorah Webhook received: %s, Data: %s", event, data)
     return {"status": "success", "event": event}
+
+
+from . import admin_panel
+admin_panel.install(app, templates)

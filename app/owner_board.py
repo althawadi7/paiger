@@ -1,4 +1,5 @@
 """Owner dashboard numbers. Every clock is Asia/Bahrain."""
+import time
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 from zoneinfo import ZoneInfo
@@ -135,17 +136,48 @@ def plans() -> List[Dict[str, Any]]:
     conn = db.get_db_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT * FROM plans WHERE active=1 ORDER BY sort, id")
+            cur.execute("SELECT * FROM plans WHERE active=1 AND deleted_at IS NULL ORDER BY sort, id")
             return list(cur.fetchall())
     finally:
         conn.close()
+
+
+_public_cache: Dict[str, Any] = {"at": 0.0, "rows": None, "packs": None, "trial_days": 0}
+
+
+def clear_public_cache() -> None:
+    _public_cache["at"] = 0.0
+    _public_cache["rows"] = None
+
+
+def trial_length() -> int:
+    raw = db.get_platform_setting("trial_days", "")
+    if raw == "":
+        raw = "3"
+    try:
+        days = int(raw)
+    except (TypeError, ValueError):
+        days = 3
+    return max(0, min(days, 60))
+
+
+def landing_source() -> Dict[str, Any]:
+    """Visible plans, packs and trial length. Fresh for at most 60 seconds."""
+    now = time.monotonic()
+    if _public_cache["rows"] is not None and now - float(_public_cache["at"]) < 60:
+        return _public_cache
+    _public_cache["rows"] = plans()
+    _public_cache["packs"] = point_packs()
+    _public_cache["trial_days"] = trial_length()
+    _public_cache["at"] = now
+    return _public_cache
 
 
 def point_packs() -> List[Dict[str, Any]]:
     conn = db.get_db_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT * FROM point_packs WHERE active=1 ORDER BY sort, id")
+            cur.execute("SELECT * FROM point_packs WHERE active=1 AND deleted_at IS NULL ORDER BY sort, id")
             return list(cur.fetchall())
     finally:
         conn.close()

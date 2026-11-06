@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ title }} {{ invoice.number }} · Paiger</title>
+{% if not for_pdf %}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+{% endif %}
+<style>
+:root { --ink: #111111; --grey: #5f6368; --grey-2: #8e8e93; --line: #e6e6e8; --paper-2: #f6f6f7; --ready-deep: #15803d; --ready-soft: #e7f8ee; --warn: #b45309; --warn-soft: #fdf2e3; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: #ececee; }
+body { font-family: {% if for_pdf %}"DejaVu Sans", "Liberation Sans", sans-serif{% else %}"IBM Plex Sans", "DejaVu Sans", sans-serif{% endif %}; color: var(--ink); font-size: 13.5px; line-height: 1.55; }
+.num { font-variant-numeric: lining-nums tabular-nums; }
+.mono { font-family: {% if for_pdf %}"DejaVu Sans Mono", "Liberation Mono", monospace{% else %}"IBM Plex Mono", monospace{% endif %}; font-size: 12px; }
+.sheet { width: 210mm; min-height: 297mm; margin: 24px auto; background: #fff; padding: 22mm 20mm 18mm; display: flex; flex-direction: column; }
+.top { display: flex; justify-content: space-between; align-items: flex-start; }
+.wm { font-weight: 600; font-size: 22px; }
+.from { margin-top: 6px; font-size: 12px; color: var(--grey); line-height: 1.6; }
+.kind { text-align: right; }
+.kind h1 { font-weight: 500; font-size: 34px; line-height: 1; }
+.kind p { margin-top: 8px; color: var(--grey); }
+.status { margin-top: 34px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; border-radius: 14px; }
+.status.paid { background: var(--ready-soft); color: var(--ready-deep); }
+.status.due { background: var(--warn-soft); color: var(--warn); }
+.status.credit { background: var(--paper-2); color: var(--ink); }
+.status b { font-size: 15px; font-weight: 600; }
+.status span { display: block; font-size: 12.5px; }
+.status .amt { font-size: 26px; font-weight: 500; }
+.meta { margin-top: 30px; display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 24px; }
+.meta h4 { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--grey-2); margin-bottom: 6px; }
+.meta p { font-size: 13.5px; line-height: 1.6; }
+table { margin-top: 34px; width: 100%; border-collapse: collapse; }
+th { text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--grey-2); padding: 0 0 10px; border-bottom: 1px solid var(--ink); }
+td { padding: 14px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+td small { display: block; color: var(--grey); font-size: 12.5px; margin-top: 2px; }
+.r { text-align: right; }
+th.r, td.r { padding-left: 16px; }
+.totals { margin-top: 18px; margin-left: auto; width: 46%; }
+.totals div { display: flex; justify-content: space-between; color: var(--grey); margin-bottom: 8px; }
+.totals .grand { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--ink); color: var(--ink); font-weight: 600; font-size: 15px; }
+.totals .grand .num { font-size: 24px; font-weight: 500; }
+.pay { margin-top: 30px; display: flex; align-items: center; gap: 16px; padding: 16px 18px; border-radius: 14px; background: var(--paper-2); }
+.pay div { flex: 1; }
+.pay b { font-weight: 600; }
+.pay span { display: block; color: var(--grey); font-size: 12.5px; }
+.pay a { display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 11px; background: var(--ink); color: #fff; text-decoration: none; font-weight: 600; }
+.foot { margin-top: auto; padding-top: 28px; display: flex; justify-content: space-between; gap: 20px; font-size: 11.5px; color: var(--grey-2); border-top: 1px solid var(--line); }
+@page { size: A4; margin: 0; }
+@media print { html { background: #fff; } .sheet { margin: 0; box-shadow: none; } }
+</style>
+</head>
+<body>
+<main class="sheet">
+  <header class="top">
+    <div>
+      <div class="wm">Paiger</div>
+      <p class="from">{{ seller.name }} · CR {{ seller.cr }}<br>{{ seller.address }}<br>{{ seller.billing_email }}</p>
+    </div>
+    <div class="kind">
+      <h1>{{ title }}</h1>
+      <p class="mono">{{ invoice.number }}</p>
+      {% if related %}<p>For {{ related }}</p>{% endif %}
+    </div>
+  </header>
+  {% if invoice.status == 'paid' %}
+  <div class="status paid"><div><b>Paid</b><span>{{ paid_on }} · {{ method }}</span></div><span class="amt">BHD {{ amount }}</span></div>
+  {% elif invoice.status == 'refunded' %}
+  <div class="status credit"><div><b>Credit note</b><span>{% if related %}For {{ related }}{% endif %}</span></div><span class="amt">BHD {{ amount }}</span></div>
+  {% else %}
+  <div class="status due"><div><b>Due {{ due }}</b><span>Pay online any time before the due date</span></div><span class="amt">BHD {{ amount }}</span></div>
+  {% endif %}
+  <section class="meta">
+    <div><h4>Billed to</h4><p><b>{{ invoice.restaurant_name }}</b><br>{{ invoice.restaurant_email }}<br>{{ invoice.restaurant_phone }}</p></div>
+    <div><h4>Issued</h4><p>{{ issued }}</p><h4 style="margin-top:14px">{{ second_label }}</h4><p>{{ second_value }}</p></div>
+    <div><h4>Reference</h4><p class="mono">{{ reference }}</p><h4 style="margin-top:14px">Account</h4><p>/r/{{ invoice.restaurant_slug }}</p></div>
+  </section>
+  <table>
+    <thead><tr><th>Description</th><th class="r">Qty</th><th class="r">Amount</th></tr></thead>
+    <tbody>
+      {% for line in lines %}
+      <tr><td>{{ line.description }}{% if line.detail %}<small>{{ line.detail }}</small>{% endif %}</td><td class="r">{{ line.qty }}</td><td class="r">BHD {{ line.amount }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="totals">
+    <div><span>Subtotal</span><span>BHD {{ subtotal }}</span></div>
+    <div><span>VAT</span><span>Not applicable</span></div>
+    <div class="grand"><span>{{ total_label }}</span><span class="num">BHD {{ amount }}</span></div>
+  </div>
+  {% if invoice.status == 'unpaid' %}
+  <div class="pay">
+    <div><b>Pay this invoice online</b><span>{{ pay_host }}/pay/{{ invoice.number }}</span></div>
+    <a href="{{ pay_url }}">Pay BHD {{ amount }}</a>
+  </div>
+  {% endif %}
+  <footer class="foot">
+    <span>Thank you for using Paiger.</span>
+    <span>Questions? {{ seller.support_email }}</span>
+  </footer>
+</main>
+</body>
+</html>

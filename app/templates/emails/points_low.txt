@@ -1,0 +1,13 @@
+You have {{ points_left }} points left
+{% if days_left_label %}At today’s pace that’s about {{ days_left_label }} of orders. {% endif %}Top up now so the cashier never stops in the middle of a rush.
+
+Points left: {{ points_left }}
+Used this month: {{ used_month }}
+1 point: {{ point_value }}
+
+Top up points: {{ button_url }}
+
+Prefer not to think about it? Switch to Pay at the end of the month in your dashboard and we’ll bill only what you use.
+
+Paiger account: {{ restaurant_name }}
+{{ support_email }}

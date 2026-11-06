@@ -1,0 +1,15 @@
+Thank you, payment received
+We’ve received your payment for {{ restaurant_name }}. Your receipt is attached to this email and saved in your dashboard.
+
+Receipt: {{ number }}
+Amount paid: BHD {{ amount }}
+Paid with: {{ paid_with }}
+Active until: {{ active_until }}
+{% if attachment_name %}Attached: {{ attachment_name }}{% endif %}
+
+Open your dashboard: {{ button_url }}
+
+Paying for points? They’re already in your balance and ready for the next order.
+
+Paiger account: {{ restaurant_name }}
+{{ support_email }}

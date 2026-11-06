@@ -1,4 +1,5 @@
 import hashlib
+import json
 import os
 import re
 import uuid
@@ -217,6 +218,7 @@ def init_db():
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         """,
     )
+    _ensure_billing()
 
 
 _IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -234,7 +236,7 @@ def _ensure_owner_tables() -> None:
                     name_en VARCHAR(120) NOT NULL,
                     name_ar VARCHAR(120) NOT NULL,
                     price_fils INT NOT NULL,
-                    point_price_fils INT NULL,
+                    point_price_fils INT NULL, -- deprecated, unused: every plan price is price_fils (points = price of 1 order)
                     active TINYINT(1) NOT NULL DEFAULT 1,
                     sort INT NOT NULL DEFAULT 0,
                     UNIQUE KEY uq_plan_code (code)
@@ -301,13 +303,13 @@ def _ensure_owner_tables() -> None:
             if int((cur.fetchone() or {}).get("n") or 0) == 0:
                 cur.executemany(
                     """
-                    INSERT INTO plans (code, type, name_en, name_ar, price_fils, point_price_fils, active, sort)
-                    VALUES (%s, %s, %s, %s, %s, %s, 1, %s)
+                    INSERT INTO plans (code, type, name_en, name_ar, price_fils, active, sort)
+                    VALUES (%s, %s, %s, %s, %s, 1, %s)
                     """,
                     [
-                        ("monthly", "monthly", "Monthly", "شهري", 15000, None, 1),
-                        ("yearly", "yearly", "Yearly", "سنوي", 150000, None, 2),
-                        ("points", "points", "Pay per order", "الدفع لكل طلب", 0, 100, 3),
+                        ("monthly", "monthly", "Monthly", "شهري", 15000, 1),
+                        ("yearly", "yearly", "Yearly", "سنوي", 150000, 2),
+                        ("points", "points", "Pay per order", "الدفع لكل طلب", 100, 3),
                     ],
                 )
             cur.execute("SELECT COUNT(*) AS n FROM point_packs")
@@ -383,8 +385,14 @@ def slug_problem(slug: str) -> Optional[str]:
     return None
 
 
-def start_restaurant_trial(restaurant_id: int, plan_code: str) -> None:
-    ends = datetime.now() + timedelta(days=3)
+def start_restaurant_trial(restaurant_id: int, plan_code: str, days: Optional[int] = None) -> None:
+    if days is None:
+        try:
+            days = int(get_platform_setting("trial_days") or "3")
+        except ValueError:
+            days = 3
+    days = max(0, min(int(days), 60))
+    ends = datetime.now() + timedelta(days=days)
     chosen = plan_code if plan_code in ("monthly", "yearly", "points") else "monthly"
     conn = get_db_connection()
     try:
@@ -575,6 +583,228 @@ def ensure_column(table: str, column: str, definition: str) -> None:
             if int(count or 0):
                 return
             cur.execute(f"ALTER TABLE `{table}` ADD COLUMN `{column}` {definition}")
+            conn.commit()
+    finally:
+        conn.close()
+
+
+def ensure_index(table: str, name: str, ddl: str) -> None:
+    if not _IDENT.match(table) or not _IDENT.match(name):
+        raise ValueError("invalid SQL identifier")
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT COUNT(*) AS n
+                FROM information_schema.STATISTICS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND INDEX_NAME = %s
+                """,
+                (table, name),
+            )
+            row = cur.fetchone() or {}
+            count = row.get("n", 0) if isinstance(row, dict) else row[0]
+            if int(count or 0):
+                return
+            cur.execute(ddl)
+            conn.commit()
+    finally:
+        conn.close()
+
+
+def get_platform_setting(key: str, default: str = "") -> str:
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT svalue FROM platform_settings WHERE skey=%s", (key,))
+            row = cur.fetchone()
+            if not row:
+                return default
+            return str(row.get("svalue") if isinstance(row, dict) else row[0])
+    except Exception:
+        return default
+    finally:
+        conn.close()
+
+
+def _copy_deprecated_point_price() -> None:
+    """One-time fill: points plans stored the order price in point_price_fils."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE plans
+                SET price_fils = point_price_fils
+                WHERE (price_fils IS NULL OR price_fils = 0)
+                  AND point_price_fils IS NOT NULL AND point_price_fils > 0
+                  AND deleted_at IS NULL
+                """
+            )
+            conn.commit()
+    finally:
+        conn.close()
+
+
+def _ensure_billing() -> None:
+    ensure_column("restaurants", "suspended_at", "DATETIME NULL")
+    ensure_column("restaurants", "manual_plan_until", "DATE NULL")
+    ensure_column("plans", "blurb_en", "VARCHAR(180) NULL")
+    ensure_column("plans", "blurb_ar", "VARCHAR(180) NULL")
+    ensure_column("plans", "features", "JSON NULL")
+    ensure_column("plans", "featured", "TINYINT(1) NOT NULL DEFAULT 0")
+    ensure_column("plans", "badge_en", "VARCHAR(80) NULL")
+    ensure_column("plans", "badge_ar", "VARCHAR(80) NULL")
+    ensure_column("plans", "deleted_at", "DATETIME NULL")
+    ensure_column("point_packs", "deleted_at", "DATETIME NULL")
+    _copy_deprecated_point_price()
+    ensure_column("invoices", "number", "VARCHAR(32) NULL")
+    ensure_column("invoices", "lines", "LONGTEXT NULL")
+    ensure_column("invoices", "subtotal_fils", "INT NOT NULL DEFAULT 0")
+    ensure_column("invoices", "total_fils", "INT NOT NULL DEFAULT 0")
+    ensure_column("invoices", "currency", "VARCHAR(8) NOT NULL DEFAULT 'BHD'")
+    ensure_column("invoices", "issued_at", "DATETIME NULL")
+    ensure_column("invoices", "due_at", "DATETIME NULL")
+    ensure_column("invoices", "paid_at", "DATETIME NULL")
+    ensure_column("invoices", "paid_method", "VARCHAR(32) NULL")
+    ensure_column("invoices", "card_last4", "VARCHAR(4) NULL")
+    ensure_column("invoices", "kind", "VARCHAR(24) NULL")
+    ensure_column("invoices", "related_invoice_id", "INT NULL")
+    ensure_column("invoices", "pay_token", "VARCHAR(80) NULL")
+    ensure_column("invoices", "period_end", "DATE NULL")
+    ensure_column("invoices", "pack_id", "INT NULL")
+    ensure_column("invoices", "points", "INT NULL")
+    ensure_index("invoices", "uq_invoice_number", "ALTER TABLE invoices ADD UNIQUE KEY uq_invoice_number (number)")
+    ensure_table(
+        "point_wallets",
+        """
+        CREATE TABLE point_wallets (
+            restaurant_id INT PRIMARY KEY,
+            balance INT NOT NULL DEFAULT 0,
+            mode ENUM('prepaid','postpaid') NOT NULL DEFAULT 'prepaid',
+            updated_at DATETIME NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """,
+    )
+    ensure_table(
+        "point_ledger",
+        """
+        CREATE TABLE point_ledger (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            restaurant_id INT NOT NULL,
+            delta INT NOT NULL,
+            reason VARCHAR(255) NOT NULL,
+            kind ENUM('topup','order','adjust','refund') NOT NULL,
+            ref_invoice_id INT NULL,
+            admin_id INT NULL,
+            created_at DATETIME NOT NULL,
+            INDEX idx_ledger_rest (restaurant_id, id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """,
+    )
+    ensure_table(
+        "platform_settings",
+        """
+        CREATE TABLE platform_settings (
+            skey VARCHAR(64) PRIMARY KEY,
+            svalue TEXT NOT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """,
+    )
+    ensure_table(
+        "admin_audit_log",
+        """
+        CREATE TABLE admin_audit_log (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            admin_id INT NOT NULL,
+            restaurant_id INT NULL,
+            action VARCHAR(80) NOT NULL,
+            details TEXT NULL,
+            ip VARCHAR(64) NULL,
+            created_at DATETIME NOT NULL,
+            INDEX idx_audit_rest (restaurant_id, id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """,
+    )
+    ensure_table(
+        "invoice_counters",
+        """
+        CREATE TABLE invoice_counters (
+            year INT PRIMARY KEY,
+            last_n INT NOT NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """,
+    )
+    ensure_table(
+        "email_log",
+        """
+        CREATE TABLE email_log (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            restaurant_id INT NULL,
+            kind VARCHAR(40) NOT NULL,
+            ref_key VARCHAR(120) NOT NULL,
+            to_email VARCHAR(190) NOT NULL,
+            status ENUM('sent','failed','skipped') NOT NULL,
+            error TEXT NULL,
+            created_at DATETIME NOT NULL,
+            UNIQUE KEY uq_email_kind_ref (kind, ref_key),
+            INDEX idx_email_rest (restaurant_id, id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """,
+    )
+    support = (os.getenv("SUPPORT_EMAIL") or os.getenv("SUPER_ADMIN_EMAIL") or "support@paiger.app").strip()
+    billing = (os.getenv("SUPER_ADMIN_EMAIL") or support).strip()
+    defaults = {
+        "trial_days": "3",
+        "points_empty_rule": "block",
+        "low_points_at": "100",
+        "renewal_retry_days": "3",
+        "seller_name": "Code Crafter",
+        "seller_cr": "169261-1",
+        "seller_address": "Manama, Kingdom of Bahrain",
+        "billing_email": billing,
+        "support_email": support,
+    }
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            for key, value in defaults.items():
+                cur.execute(
+                    "INSERT INTO platform_settings (skey, svalue) VALUES (%s, %s) ON DUPLICATE KEY UPDATE skey=skey",
+                    (key, value),
+                )
+            seeds = {
+                "monthly": {
+                    "en": ["Unlimited orders", "iPad cashier and order board", "Your branding on every page", "Reports and prep times"],
+                    "ar": ["طلبات بلا حدود", "كاشير الآيباد ولوحة الطلبات", "علامتك على كل صفحة", "تقارير وأوقات التحضير"],
+                },
+                "yearly": {
+                    "en": ["Unlimited orders", "Everything in Monthly", "Priority support"],
+                    "ar": ["طلبات بلا حدود", "كل مزايا الشهري", "دعم بأولوية"],
+                },
+                "points": {
+                    "en": ["Top up points in advance, or pay at the end of the month", "Alert before your balance runs out", "Everything in Monthly"],
+                    "ar": ["اشحن نقاط مقدماً، أو ادفع نهاية الشهر", "تنبيه قبل ما يخلص رصيدك", "كل مزايا الشهري"],
+                },
+            }
+            cur.execute(
+                "SELECT code, features FROM plans WHERE code IN ('monthly','yearly','points') AND deleted_at IS NULL"
+            )
+            for row in cur.fetchall():
+                if row.get("features"):
+                    continue
+                cur.execute(
+                    "UPDATE plans SET features=%s WHERE code=%s AND features IS NULL",
+                    (json.dumps(seeds[row["code"]], ensure_ascii=False), row["code"]),
+                )
+                if row["code"] == "yearly":
+                    cur.execute(
+                        "UPDATE plans SET featured=1, badge_en=%s, badge_ar=%s WHERE code='yearly' AND featured=0 AND badge_en IS NULL",
+                        ("Best value", "الأوفر"),
+                    )
+                    cur.execute(
+                        "UPDATE plans SET featured=0 WHERE code<>'yearly' AND featured=1 AND badge_en IS NULL AND deleted_at IS NULL"
+                    )
             conn.commit()
     finally:
         conn.close()

@@ -1,0 +1,33 @@
+{% include "admin/top.html" %}
+<section>
+  <div class="ph"><div><h1>{{ t('admin.nOverview') }}</h1><p>{{ t('admin.ovSub') }}</p></div></div>
+  <div class="kpis">
+    <div class="card kpi"><p class="k">{{ t('admin.kMrr') }}</p><p class="v"><small>BHD</small><span class="num">{{ overview.mrr }}</span></p></div>
+    <div class="card kpi"><p class="k">{{ t('admin.kActive') }}</p><p class="v num">{{ overview.paying }}</p><p class="d">{{ overview.paying_monthly }} {{ t('admin.plMonthly') }} · {{ overview.paying_yearly }} {{ t('admin.plYearly') }} · {{ overview.paying_points }} {{ t('admin.plPoints') }}</p></div>
+    <div class="card kpi"><p class="k">{{ t('admin.kTrial') }}</p><p class="v num">{{ overview.trialing }}</p><p class="d">{{ t('admin.kTrialD').replace('{n}', overview.ending|string) }}</p></div>
+    <div class="card kpi"><p class="k">{{ t('admin.kOrders') }}</p><p class="v num">{{ overview.orders_today }}</p><p class="d">{{ t('admin.kOrdersD').replace('{n}', overview.restaurants_today|string) }}</p></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-h"><h2>{{ t('admin.revTitle') }}</h2><span class="muted">{{ t('admin.revSub') }}</span></div>
+      <div class="chart-wrap" id="chartWrap">{{ chart|safe }}<div class="tip" id="tip" hidden></div></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><h2>{{ t('admin.attn') }}</h2></div>
+      <ul class="attn">
+        {% for item in overview.attention %}
+        <li><span class="ic {{ item.tone }}"><svg><use href="#i-alert"/></svg></span><div><b>{{ item.title }}</b><span>{{ item.text }}</span></div><a class="btn btn-quiet btn-sm" href="{{ item.href }}">{{ t('admin.view') }}</a></li>
+        {% else %}<li><div><b>{{ t('admin.attnEmpty') }}</b></div></li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-h"><h2>{{ t('admin.mixTitle') }}</h2><span class="muted">{{ overview.counts.all }} {{ t('admin.total') }}</span></div>
+    <div class="mix">
+      {% for key in ['active', 'trialing', 'past_due', 'expired', 'suspended', 'legacy'] %}
+      <div class="mix-row"><span>{{ t('admin.st.' + key) }}</span><b class="num">{{ overview.counts[key] }}</b><div class="bar2"><i style="width:{{ (overview.counts[key] * 100 / overview.counts.all) if overview.counts.all else 0 }}%"></i></div></div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% include "admin/foot.html" %}

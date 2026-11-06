@@ -1,0 +1,122 @@
+{% include "admin/top.html" %}
+<section>
+  <div class="ph"><div><h1>{{ t('admin.nPay') }}</h1><p>{{ t('admin.paySub') }}</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a class="btn btn-line" href="/admin/payments.csv?status={{ status_key }}&q={{ query|urlencode }}"><svg><use href="#i-dl"/></svg><span>{{ t('admin.export') }}</span></a>
+      <button class="btn btn-ink" type="button" id="newInv">{{ t('admin.newInv') }}</button>
+    </div>
+  </div>
+  <div class="kpis" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+    <div class="card kpi"><p class="k">{{ t('admin.pMonth') }}</p><p class="v"><small>BHD</small><span class="num">{{ kpis.collected }}</span></p></div>
+    <div class="card kpi"><p class="k">{{ t('admin.pFailed') }}</p><p class="v"><small>BHD</small><span class="num">{{ kpis.unpaid }}</span></p><p class="d">{{ kpis.unpaid_count }} {{ t('admin.waiting') }}</p></div>
+    <div class="card kpi"><p class="k">{{ t('admin.pPost') }} {{ kpis.postpaid_month }}</p><p class="v"><small>BHD</small><span class="num">{{ kpis.postpaid }}</span></p><p class="d">{{ kpis.postpaid_orders }} / {{ kpis.postpaid_restaurants }}</p></div>
+  </div>
+  <div class="card">
+    <div class="filters">
+      <div class="seg">
+        {% for key in pay_filters %}
+        <a href="/admin/payments?status={{ key }}&q={{ query|urlencode }}" aria-pressed="{{ 'true' if key == status_key else 'false' }}">{{ t('admin.pf.' + key) }}</a>
+        {% endfor %}
+      </div>
+      <form class="search" method="get"><input type="hidden" name="status" value="{{ status_key }}"><input type="search" name="q" value="{{ query }}" placeholder="{{ t('admin.searchPay') }}"></form>
+    </div>
+    <div class="table-scroll">
+      <table class="t">
+        <thead><tr><th>{{ t('admin.cDate') }}</th><th>{{ t('admin.cRest') }}</th><th>{{ t('admin.cDesc') }}</th><th class="r">{{ t('admin.cAmount') }}</th><th>{{ t('admin.cStatus') }}</th><th>{{ t('admin.cRef') }}</th><th></th></tr></thead>
+        <tbody>
+          {% for inv in invoices %}
+          <tr>
+            <td class="sub">{{ inv.created_at }}</td>
+            <td>{{ inv.restaurant_name }}</td>
+            <td>{{ inv.description }}<br><span class="mono">{{ inv.number }}</span></td>
+            <td class="r num">{{ '%.3f'|format((inv.total_fils or 0) / 1000) }}</td>
+            <td><span class="pill {{ inv.status }}">{{ t('admin.pf.' + inv.status) }}</span></td>
+            <td class="mono">{{ inv.provider_ref or '—' }}</td>
+            <td>
+              <a class="btn btn-quiet btn-sm" href="/admin/invoices/{{ inv.number }}.pdf">{% if inv.status == 'paid' %}{{ t('admin.dReceipt') }}{% elif inv.status == 'refunded' %}{{ t('admin.dCredit') }}{% else %}{{ t('admin.dInvoice') }}{% endif %}</a>
+              {% if inv.status == 'unpaid' %}
+              <button class="btn btn-quiet btn-sm" type="button" data-mark="{{ inv.number }}" data-amount="{{ '%.3f'|format((inv.total_fils or 0) / 1000) }}">{{ t('admin.markPaid') }}</button>
+              {% endif %}
+              {% if email_enabled is defined and email_enabled and inv.status in ('unpaid', 'paid') %}
+              <form method="post" action="/admin/invoices/{{ inv.number }}/email" data-ask="email" data-number="{{ inv.number }}" style="display:inline">
+                <input type="hidden" name="csrf" value="{{ csrf }}">
+                <input type="hidden" name="confirm" value="1">
+                <button class="btn btn-quiet btn-sm" type="submit">{{ t('admin.emailAgain') }}</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}<tr><td colspan="7">{{ t('admin.none') }}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+<div class="modal" id="paidModal" hidden role="dialog" aria-modal="true">
+  <div class="backdrop" data-close></div>
+  <form class="box" id="paidForm" method="post" action="" data-ask="paid">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <input type="hidden" name="confirm" value="1">
+    <h3>{{ t('admin.markPaid') }}</h3>
+    <div class="f"><label>{{ t('admin.mCash') }}</label>
+      <select class="in" name="method" required>
+        <option value="cash">{{ t('admin.mCash') }}</option>
+        <option value="bank_transfer">{{ t('admin.mBank') }}</option>
+        <option value="other">{{ t('admin.mOther') }}</option>
+      </select>
+    </div>
+    <div class="f"><label>{{ t('admin.cRef') }}</label><input class="in" name="reference" placeholder="{{ t('admin.cRef') }}"></div>
+    <div class="foot"><button class="btn btn-quiet" type="button" data-close>{{ t('admin.cancel') }}</button><button class="btn btn-ink" type="submit">{{ t('admin.markPaid') }}</button></div>
+  </form>
+</div>
+<div class="modal" id="invModal" hidden role="dialog" aria-modal="true">
+  <div class="backdrop" data-close></div>
+  <form class="box" method="post" action="/admin/invoices">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <h3>{{ t('admin.newInv') }}</h3>
+    <div class="f"><label>{{ t('admin.cRest') }}</label>
+      <select class="in" name="restaurant_id" required>{% for rest in restaurants %}<option value="{{ rest.id }}">{{ rest.name }}</option>{% endfor %}</select>
+    </div>
+    <div class="f"><label>{{ t('admin.kind') }}</label>
+      <select class="in" name="kind" id="invKind"><option value="manual">{{ t('admin.kManual') }}</option><option value="topup">{{ t('admin.kTopup') }}</option></select>
+    </div>
+    <div class="f" id="pointsField" hidden><label>{{ t('admin.cPoints') }}</label><input class="in" name="points" type="number" min="1" value=""></div>
+    <div id="lines">
+      <div class="f-row line">
+        <div class="f"><label>{{ t('admin.cDesc') }}</label><input class="in" name="desc" required></div>
+        <div class="f"><label>{{ t('admin.qty') }}</label><input class="in" name="qty" type="number" min="1" value="1" required></div>
+        <div class="f"><label>{{ t('admin.cAmount') }}</label><input class="in" name="amount" inputmode="decimal" required placeholder="15.000"></div>
+      </div>
+    </div>
+    <button class="btn btn-quiet btn-sm" type="button" id="addLine">{{ t('admin.addLine') }}</button>
+    <div class="f"><label>{{ t('admin.due') }}</label><input class="in" type="date" name="due" required value="{{ today }}"></div>
+    <div class="foot"><button class="btn btn-quiet" type="button" data-close>{{ t('admin.cancel') }}</button><button class="btn btn-ink" type="submit">{{ t('admin.savePlan') }}</button></div>
+  </form>
+</div>
+{% include "admin/foot.html" %}
+<script>
+(function () {
+  var modal = document.getElementById("invModal");
+  document.getElementById("newInv").onclick = function (e) { window.paigerDialog.open(modal, e.currentTarget); };
+  document.querySelectorAll("[data-mark]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var form = document.getElementById("paidForm");
+      form.action = "/admin/invoices/" + btn.getAttribute("data-mark") + "/paid";
+      form.setAttribute("data-number", btn.getAttribute("data-mark") || "");
+      form.setAttribute("data-amount", btn.getAttribute("data-amount") || "");
+      form.removeAttribute("data-asked");
+      form.querySelector("[name=reference]").value = "";
+      window.paigerDialog.open(document.getElementById("paidModal"), btn);
+    });
+  });
+  document.getElementById("invKind").addEventListener("change", function (e) {
+    document.getElementById("pointsField").hidden = e.target.value !== "topup";
+  });
+  document.getElementById("addLine").onclick = function () {
+    var row = document.querySelector("#lines .line");
+    var copy = row.cloneNode(true);
+    copy.querySelectorAll("input").forEach(function (input) { if (input.name !== "qty") input.value = ""; });
+    document.getElementById("lines").appendChild(copy);
+  };
+})();
+</script>

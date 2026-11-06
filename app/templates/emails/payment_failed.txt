@@ -1,0 +1,14 @@
+We couldn’t charge your card
+Your bank declined the renewal for {{ restaurant_name }}. We’ll try again tomorrow, but updating your card now avoids any pause.
+
+Amount: BHD {{ amount }}
+Card: {{ card_label }}
+Next try: {{ next_try }}
+Cashier pauses on: {{ pauses_on }}
+
+Update card: {{ button_url }}
+
+Common reasons are an expired card, low balance or online payments turned off. Your bank can tell you which one.
+
+Paiger account: {{ restaurant_name }}
+{{ support_email }}

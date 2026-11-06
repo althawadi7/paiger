@@ -1,0 +1,14 @@
+{% extends "emails/billing_base.html" %}
+{% from "emails/_bits.html" import pair %}
+{% block preheader %}We’ll charge your saved card on {{ renews_label }}.{% endblock %}
+{% block eyebrow %}Renews in 3 days{% endblock %}
+{% block headline %}Your plan renews on {{ renews_label }}{% endblock %}
+{% block intro %}Nothing to do. We’ll charge your saved card automatically and send the receipt right after.{% endblock %}
+{% block rows %}
+{{ pair("Plan", plan_name) }}
+{{ pair("Amount", plan_amount) }}
+{{ pair("Card", card_label) }}
+{{ pair("Renews on", renews_label) }}
+{% endblock %}
+{% block button_label %}Manage subscription{% endblock %}
+{% block note %}{% if yearly_save %}Want to switch to yearly and save BHD {{ yearly_save }}, or change your card? You can do it from your dashboard before the renewal date.{% else %}You can change your card from your dashboard before the renewal date.{% endif %}{% endblock %}

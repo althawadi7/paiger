@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ t('dash.overview') if section == 'overview' else t('dash.orders') if section == 'orders' else t('dash.sub') if section == 'subscription' else t('dash.settings') }} · {{ restaurant.name }} · Paiger{% endblock %}
 {% block body_class %}dash{% endblock %}
-{% block head %}<link rel="stylesheet" href="/static/css/dashboard.css">{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/css/dashboard.css?v={{ static_version('css/dashboard.css') if static_version is defined else '1' }}">{% endblock %}
 {% block shell_nav %}{% endblock %}
 {% block shell_footer %}{% endblock %}
 {% block content %}
@@ -118,7 +118,7 @@
       </div>
       {% if plan_code == 'points' and sub_state == 'active' %}
       <div class="card wallet">
-        <div class="bal"><b>0</b><span>{{ t('dash.pointsLeft') }}</span></div>
+        <div class="bal"><b>{{ points_balance }}</b><span>{{ t('dash.pointsLeft') }}</span></div>
         <div><div class="meter"><i style="width:0%"></i></div><div class="meta"><span>{{ t('dash.pointRate').replace('{price}', point_price) }}</span></div></div>
         <button class="btn btn-ink" type="button" disabled title="{{ t('dash.soon') }}">{{ t('dash.topUp') }}</button>
       </div>
@@ -130,9 +130,11 @@
           {% if plan.code == plan_code and sub_state == 'active' %}<span class="cur-tag">{{ t('dash.current') }}</span>{% endif %}
           <span class="radio"></span>
           <h4>{{ plan.name_ar if lang == 'ar' else plan.name_en }}</h4>
-          <p class="for">{{ t('dash.for.' + plan.code) }}</p>
-          <p class="price"><span>BHD</span><b>{{ plan.price_label }}</b><span>{{ t('dash.per.' + plan.code) }}</span></p>
+          {% if plan.badge %}<span class="plan-badge">{{ plan.badge }}</span>{% endif %}
+          <p class="for">{{ (plan.blurb_ar if lang == 'ar' else plan.blurb_en) or t('dash.for.' + plan.type) }}</p>
+          <p class="price"><span>BHD</span><b>{{ plan.price_label }}</b><span>{{ t('dash.per.' + plan.type) }}</span></p>
           <p class="save">{% if plan.code == 'yearly' %}{{ t('dash.yearSave') }}{% endif %}</p>
+          {% if plan.feature_lines %}<ul class="feats">{% for line in plan.feature_lines %}<li>{{ line }}</li>{% endfor %}</ul>{% endif %}
         </div>
         {% endfor %}
       </div>
@@ -155,8 +157,8 @@
       </div>
       {% endif %}
       <h2 class="h3">{{ t('dash.invoices') }}</h2>
-      <div class="card"><div class="table-scroll"><table class="t"><thead><tr><th>{{ t('dash.iDate') }}</th><th>{{ t('dash.iDesc') }}</th><th>{{ t('dash.iAmount') }}</th><th>{{ t('dash.iStatus') }}</th></tr></thead><tbody>
-        {% for inv in invoices %}<tr><td>{{ inv.created_at }}</td><td>{{ inv.description }}</td><td class="num">{{ inv.amount_label }}</td><td>{{ inv.status }}</td></tr>{% else %}<tr><td colspan="4" class="sub">{{ t('dash.noInv') }}</td></tr>{% endfor %}
+      <div class="card"><div class="table-scroll"><table class="t"><thead><tr><th>{{ t('dash.iDate') }}</th><th>{{ t('dash.iDesc') }}</th><th>{{ t('dash.iAmount') }}</th><th>{{ t('dash.iStatus') }}</th><th></th></tr></thead><tbody>
+        {% for inv in invoices %}<tr><td>{{ inv.created_at }}{% if inv.status == 'unpaid' and inv.due %}<br><span class="sub">{{ t('dash.dueOn') }} {{ inv.due }}</span>{% endif %}</td><td>{{ inv.description }}</td><td class="num">{{ inv.amount_label }}</td><td>{{ inv.status }}</td><td>{% if inv.number %}<a class="btn btn-quiet btn-sm" href="/dashboard/invoices/{{ inv.number }}.pdf">{{ inv.doc }}</a>{% endif %}{% if inv.pay %} <a href="{{ inv.pay }}">{{ t('dash.pay') }}</a>{% endif %}</td></tr>{% else %}<tr><td colspan="5" class="sub">{{ t('dash.noInv') }}</td></tr>{% endfor %}
       </tbody></table></div></div>
     </section>
     {% else %}
@@ -226,7 +228,7 @@
               <div class="pinval"><span class="num" id="pinShown">••••••</span><button class="btn btn-quiet" type="button" id="pinEye">{{ t('dash.show') }}</button></div>
               <button class="btn btn-line" type="button" id="pinChange">{{ t('dash.changePin') }}</button>
             </div>
-            <form class="pinedit" id="pinEdit" method="post" action="/dashboard/settings/pin" {% if not errors.pin %}hidden{% endif %}>
+            <form class="pinedit" id="pinEdit" method="post" action="/dashboard/settings/pin" data-ask="pin" {% if not errors.pin %}hidden{% endif %}>
               <input type="hidden" name="csrf" value="{{ csrf }}">
               <div class="f"><label for="pinIn">{{ t('dash.newPin') }}</label>
                 <div style="display:flex;gap:8px"><input class="in num" id="pinIn" name="pin" inputmode="numeric" maxlength="6" autocomplete="off" dir="ltr" pattern="[0-9]{6}" style="letter-spacing:.3em;font-size:20px"><button class="btn btn-line" type="button" id="pinGen">{{ t('dash.generate') }}</button></div>
@@ -240,7 +242,7 @@
               <ul>
                 {% for dev in devices %}<li><b>{{ dev.label }}</b><span>{{ dev.when }}</span></li>{% else %}<li><span>{{ t('dash.noDevices') }}</span></li>{% endfor %}
               </ul>
-              <form method="post" action="/dashboard/settings/devices/sign-out"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn btn-danger" type="submit">{{ t('dash.signOutAll') }}</button></form>
+              <form method="post" action="/dashboard/settings/devices/sign-out" data-ask="devices"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn btn-danger" type="submit">{{ t('dash.signOutAll') }}</button></form>
             </div>
           </div>
         </div>
@@ -252,6 +254,8 @@
 <div class="toast" id="toast" {% if not notice %}hidden{% endif %} role="status">{{ notice }}</div>
 {% endblock %}
 {% block scripts %}
+{% include "partials/confirm.html" %}
+<script src="/static/js/confirm.js?v={{ static_version('js/confirm.js') if static_version is defined else '1' }}"></script>
 <script>
 (function () {
   var side = document.getElementById("side");

@@ -144,7 +144,7 @@ table.t { width: 100%; border-collapse: collapse; font-size: 14.5px; }
 .status-card .facts div span { display: block; font-size: 13px; color: var(--grey); }
 .status-card .facts div b { font-weight: 600; }
 .h3 { font-size: 17px; font-weight: 600; margin: 26px 0 12px; }
-.plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
 .plan { position: relative; text-align: start; padding: 20px; border-radius: 20px; background: var(--paper); box-shadow: 0 0 0 1px var(--line); display: flex; flex-direction: column; gap: 4px; transition: box-shadow .15s; }
 .plan:hover { box-shadow: 0 0 0 1.5px #b9b9be; }
 .plan[aria-checked="true"] { box-shadow: 0 0 0 2px var(--ink); }
@@ -157,6 +157,8 @@ html[dir="rtl"] .plan .price { justify-content: flex-end; }
 .plan .price b { font-family: "Fraunces", serif; font-size: 36px; font-weight: 500; line-height: 1; }
 .plan .price span { font-size: 13.5px; color: var(--grey); }
 .plan .save { font-size: 13px; font-weight: 600; color: var(--ready-deep); min-height: 1.4em; }
+.plan .feats { list-style: none; margin-top: 8px; display: grid; gap: 4px; font-size: 13px; color: var(--grey); }
+.plan .plan-badge { align-self: flex-start; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--ready-soft); color: var(--ready-deep); }
 .plan .cur-tag { position: absolute; top: -11px; inset-inline-start: 18px; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px; background: var(--ink); color: #fff; }
 
 .checkout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 12px; margin-top: 12px; align-items: start; }
@@ -241,6 +243,17 @@ html[dir="rtl"] .plan .price { justify-content: flex-end; }
 .save-bar .btn-white { background: #fff; color: var(--ink); }
 
 .toast { position: fixed; z-index: 60; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 12px; font-size: 14.5px; box-shadow: 0 16px 40px -12px rgba(0,0,0,.4); }
+.modal { position: fixed; inset: 0; z-index: 45; display: grid; place-items: center; padding: 16px; }
+.modal .backdrop { position: absolute; inset: 0; z-index: 0; background: rgba(17,17,17,.35); }
+.modal .box { position: relative; z-index: 1; width: min(460px, 100%); background: #fff; border-radius: 20px; padding: 22px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.4); }
+.modal h3 { font-size: 18px; font-weight: 600; margin-bottom: 14px; }
+.modal p { margin: 0 0 16px; }
+.modal .foot { display: flex; justify-content: flex-end; gap: 8px; }
+.btn-stop { background: #b42318; color: #fff; box-shadow: none; }
+.btn-stop:hover { background: #8e1b13; }
+.btn.busy { pointer-events: none; }
+.btn.busy::after { content: ""; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.45); border-top-color: #fff; border-radius: 50%; animation: paiger-spin .6s linear infinite; }
+@keyframes paiger-spin { to { transform: rotate(360deg); } }
 
 /* prototype switcher (remove in production) */
 .proto { position: fixed; z-index: 70; bottom: 10px; inset-inline-end: 10px; display: flex; gap: 4px; padding: 5px; border-radius: 12px; background: rgba(255,255,255,.96); box-shadow: 0 0 0 1px var(--line), 0 10px 30px -10px rgba(0,0,0,.25); font-size: 12px; }

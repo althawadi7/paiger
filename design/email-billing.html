@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>Paiger billing emails</title>
+<!--
+  PAIGER · Billing emails (English only). ONE layout, 7 messages.
+  Production: emails/billing_base.html (this table layout) + one small child per message
+  filling: preheader, eyebrow, eyebrow_tone (ink|ready|warn|error), headline, intro,
+  rows (label/value pairs), button_label, button_url, note, attachment_name (optional).
+  Table layout + inline styles only. The <style> block is progressive enhancement.
+  The prototype switcher + JS at the bottom is for preview only. Never ship JS in email.
+-->
+<!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+<style>
+  @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
+  body { margin: 0; padding: 0; }
+  a { text-decoration: none; }
+  @media (max-width: 620px) {
+    .wrap { width: 100% !important; }
+    .px { padding-left: 22px !important; padding-right: 22px !important; }
+    .h1 { font-size: 26px !important; line-height: 32px !important; }
+    .btn a { display: block !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background:#f6f6f7;-webkit-font-smoothing:antialiased;">
+  <div id="pre" style="display:none;max-height:0;overflow:hidden;opacity:0;color:#f6f6f7;font-size:1px;line-height:1px;">{{ preheader }}&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;&#8204;&nbsp;</div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f6f6f7;">
+    <tr><td align="center" style="padding:32px 12px 40px;">
+      <table role="presentation" class="wrap" width="560" cellpadding="0" cellspacing="0" border="0" style="width:560px;max-width:560px;">
+
+        <!-- wordmark -->
+        <tr><td style="padding:0 4px 18px;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:22px;font-weight:600;color:#111111;">Paiger</td></tr>
+
+        <!-- card -->
+        <tr><td style="background:#ffffff;border-radius:20px;border:1px solid #e6e6e8;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr><td class="px" style="padding:34px 36px 0;">
+              <!-- eyebrow -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                <td id="eyebrow" style="font-family:'IBM Plex Sans',Arial,sans-serif;font-size:12.5px;font-weight:600;padding:4px 11px;border-radius:999px;background:#f6f6f7;color:#5f6368;">{{ eyebrow }}</td>
+              </tr></table>
+              <h1 class="h1" id="headline" style="margin:16px 0 0;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:30px;line-height:36px;font-weight:500;color:#111111;letter-spacing:-0.01em;">{{ headline }}</h1>
+              <p id="intro" style="margin:12px 0 0;font-family:'IBM Plex Sans',Arial,sans-serif;font-size:15.5px;line-height:24px;color:#3c4043;">{{ intro }}</p>
+            </td></tr>
+
+            <!-- summary rows -->
+            <tr><td class="px" style="padding:24px 36px 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f6f6f7;border-radius:14px;">
+                <tbody id="rows"><!-- {% for label, value in rows %} -->
+                  <tr><td style="padding:12px 18px;font-family:'IBM Plex Sans',Arial,sans-serif;font-size:14px;color:#5f6368;">{{ label }}</td><td align="right" style="padding:12px 18px;font-family:'IBM Plex Sans',Arial,sans-serif;font-size:14px;font-weight:600;color:#111111;">{{ value }}</td></tr>
+                <!-- {% endfor %} --></tbody>
+              </table>
+            </td></tr>
+
+            <!-- button -->
+            <tr><td class="px" style="padding:24px 36px 0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="btn"><tr><td style="border-radius:12px;background:#111111;">
+                <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="{{ button_url }}" style="height:48px;v-text-anchor:middle;width:240px;" arcsize="25%" fillcolor="#111111" stroke="f"><center style="color:#ffffff;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;">{{ button_label }}</center></v:roundrect><![endif]-->
+                <!--[if !mso]><!--><a id="btn" href="{{ button_url }}" style="display:inline-block;padding:14px 26px;font-family:'IBM Plex Sans',Arial,sans-serif;font-size:15px;font-weight:600;color:#ffffff;border-radius:12px;">{{ button_label }}</a><!--<![endif]-->
+              </td></tr></table>
+            </td></tr>
+
+            <!-- attachment line (only when a PDF is attached) -->
+            <tr id="attRow"><td class="px" style="padding:20px 36px 0;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                <td style="width:34px;height:40px;border-radius:6px;background:#111111;color:#ffffff;font-family:'IBM Plex Sans',Arial,sans-serif;font-size:9.5px;font-weight:700;text-align:center;vertical-align:middle;letter-spacing:.05em;">PDF</td>
+                <td style="padding-left:12px;font-family:'IBM Plex Sans',Arial,sans-serif;font-size:13.5px;line-height:19px;color:#5f6368;"><span id="attName" style="color:#111111;font-weight:600;">{{ attachment_name }}</span><br>Attached to this email</td>
+              </tr></table>
+            </td></tr>
+
+            <!-- note -->
+            <tr><td class="px" style="padding:24px 36px 34px;">
+              <p id="note" style="margin:0;padding-top:20px;border-top:1px solid #e6e6e8;font-family:'IBM Plex Sans',Arial,sans-serif;font-size:13.5px;line-height:21px;color:#5f6368;">{{ note }}</p>
+            </td></tr>
+          </table>
+        </td></tr>
+
+        <!-- footer -->
+        <tr><td style="padding:22px 4px 0;font-family:'IBM Plex Sans',Arial,sans-serif;font-size:12px;line-height:19px;color:#8e8e93;">
+          You’re receiving this because you have a Paiger account for <span style="color:#5f6368;">Karak House</span>.<br>
+          Questions? Reply to this email or write to <a href="mailto:{{ support_email }}" style="color:#5f6368;text-decoration:underline;">support@paiger.app</a><br>
+          Paiger by Code Crafter · Manama, Bahrain
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+
+  <!-- PROTOTYPE ONLY: switcher -->
+  <div id="proto" style="position:fixed;left:50%;bottom:12px;transform:translateX(-50%);display:flex;flex-wrap:wrap;gap:4px;padding:5px;border-radius:12px;background:#fff;box-shadow:0 0 0 1px #e6e6e8,0 10px 30px -10px rgba(0,0,0,.25);font:12px 'IBM Plex Sans',Arial,sans-serif;max-width:calc(100% - 24px);justify-content:center;"></div>
+  <script>
+  (() => {
+    const TONE = { ink: ["#111111", "#ffffff"], ready: ["#e7f8ee", "#15803d"], warn: ["#fdf2e3", "#b45309"], error: ["#fdecea", "#b42318"], grey: ["#f6f6f7", "#5f6368"] };
+    const M = {
+      trial: { tab: "Trial ending", tone: "warn", eyebrow: "Trial ends tomorrow", pre: "Pick a plan to keep paging without a break.",
+        h: "Your free trial ends tomorrow", i: "Karak House has paged 64 orders on Paiger so far. Pick a plan before Monday so your cashier keeps working without a break. No card is needed until you choose.",
+        rows: [["Trial ends", "Mon 9 Nov 2026"], ["Orders paged", "64"], ["Plans from", "BHD 0.100 per order"]], btn: "Choose a plan", att: "",
+        note: "If you don’t pick a plan, the cashier pauses when the trial ends. Your settings and QR stand stay saved, so you can come back any time." },
+      renew: { tab: "Renewal soon", tone: "grey", eyebrow: "Renews in 3 days", pre: "We’ll charge your saved card on 6 December.",
+        h: "Your plan renews on 6 December", i: "Nothing to do. We’ll charge your saved card automatically and send the receipt right after.",
+        rows: [["Plan", "Monthly"], ["Amount", "BHD 15.000"], ["Card", "Visa ending 4242"], ["Renews on", "Sun 6 Dec 2026"]], btn: "Manage subscription", att: "",
+        note: "Want to switch to yearly and save BHD 30, or change your card? You can do it from your dashboard before the renewal date." },
+      invoice: { tab: "New invoice", tone: "ink", eyebrow: "Invoice INV-2026-0042", pre: "BHD 15.000 due on 9 November.",
+        h: "Your invoice is ready", i: "Here’s your invoice for the Monthly plan. You can pay it online in a minute by card or BenefitPay.",
+        rows: [["Invoice", "INV-2026-0042"], ["Amount due", "BHD 15.000"], ["Due date", "Mon 9 Nov 2026"]], btn: "Pay BHD 15.000", att: "Paiger-Invoice-INV-2026-0042.pdf",
+        note: "Paid already by bank transfer? Reply with the transfer reference and we’ll mark it as paid." },
+      reminder: { tab: "Payment reminder", tone: "warn", eyebrow: "Due tomorrow", pre: "A quick reminder: BHD 15.000 is due tomorrow.",
+        h: "A quick reminder about your invoice", i: "Invoice INV-2026-0042 is due tomorrow. Paying on time keeps your cashier running without a pause.",
+        rows: [["Invoice", "INV-2026-0042"], ["Amount due", "BHD 15.000"], ["Due date", "Mon 9 Nov 2026"]], btn: "Pay now", att: "Paiger-Invoice-INV-2026-0042.pdf",
+        note: "If you’ve just paid, you can ignore this email. The receipt is on its way." },
+      paid: { tab: "Payment received", tone: "ready", eyebrow: "Paid", pre: "Thank you. Your receipt is attached.",
+        h: "Thank you, payment received", i: "We’ve received your payment for Karak House. Your receipt is attached to this email and saved in your dashboard.",
+        rows: [["Receipt", "INV-2026-0042"], ["Amount paid", "BHD 15.000"], ["Paid with", "Visa ending 4242"], ["Active until", "Sat 5 Dec 2026"]], btn: "Open your dashboard", att: "Paiger-Receipt-INV-2026-0042.pdf",
+        note: "Paying for points? They’re already in your balance and ready for the next order." },
+      failed: { tab: "Payment failed", tone: "error", eyebrow: "Payment failed", pre: "Your card was declined. Update it to keep paging.",
+        h: "We couldn’t charge your card", i: "Your bank declined the renewal for Karak House. We’ll try again tomorrow, but updating your card now avoids any pause.",
+        rows: [["Amount", "BHD 15.000"], ["Card", "Visa ending 4242"], ["Next try", "Sat 7 Nov 2026"], ["Cashier pauses on", "Mon 9 Nov 2026"]], btn: "Update card", att: "",
+        note: "Common reasons are an expired card, low balance or online payments turned off. Your bank can tell you which one." },
+      points: { tab: "Points low", tone: "warn", eyebrow: "Points running low", pre: "142 points left, about 2 days at your pace.",
+        h: "You have 142 points left", i: "At today’s pace that’s about 2 days of orders. Top up now so the cashier never stops in the middle of a rush.",
+        rows: [["Points left", "142"], ["Used this month", "858"], ["1 point", "1 order · BHD 0.100"]], btn: "Top up points", att: "",
+        note: "Prefer not to think about it? Switch to Pay at the end of the month in your dashboard and we’ll bill only what you use." },
+    };
+    const $ = (id) => document.getElementById(id);
+    const td = (s, align) => `<td${align ? ' align="right"' : ""} style="padding:12px 18px;font-family:'IBM Plex Sans',Arial,sans-serif;font-size:14px;${align ? "font-weight:600;color:#111111;" : "color:#5f6368;"}">${s}</td>`;
+    function show(k) {
+      const m = M[k], [bg, fg] = TONE[m.tone];
+      $("pre").firstChild.textContent = m.pre;
+      $("eyebrow").textContent = m.eyebrow; $("eyebrow").style.background = bg; $("eyebrow").style.color = fg;
+      $("headline").textContent = m.h; $("intro").textContent = m.i; $("btn").textContent = m.btn; $("note").textContent = m.note;
+      $("rows").innerHTML = m.rows.map(([a, b], i) => `<tr>${td(a)}${td(b, 1)}</tr>`.replace(/padding:12px/g, i ? "padding:12px" : "padding:14px")).join("");
+      $("attRow").style.display = m.att ? "" : "none"; $("attName").textContent = m.att;
+      document.title = m.h;
+      document.querySelectorAll("#proto button").forEach((b) => { const on = b.dataset.k === k; b.style.background = on ? "#111" : "transparent"; b.style.color = on ? "#fff" : "#111"; });
+    }
+    $("proto").innerHTML = Object.entries(M).map(([k, m]) => `<button data-k="${k}" style="border:0;font:inherit;padding:6px 9px;border-radius:8px;cursor:pointer">${m.tab}</button>`).join("");
+    $("proto").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) show(b.dataset.k); });
+    show(new URLSearchParams(location.search).get("m") || "invoice");
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{% extends "emails/billing_base.html" %}
+{% from "emails/_bits.html" import pair %}
+{% block preheader %}Pick a plan to keep paging without a break.{% endblock %}
+{% block eyebrow %}Trial ends tomorrow{% endblock %}
+{% block headline %}Your free trial ends tomorrow{% endblock %}
+{% block intro %}{{ restaurant_name }} has paged {{ orders_paged }} orders on Paiger so far. Pick a plan before {{ ends_day }} so your cashier keeps working without a break. No card is needed until you choose.{% endblock %}
+{% block rows %}
+{{ pair("Trial ends", ends_label) }}
+{{ pair("Orders paged", orders_paged) }}
+{{ pair("Plans from", plans_from) }}
+{% endblock %}
+{% block button_label %}Choose a plan{% endblock %}
+{% block note %}If you don’t pick a plan, the cashier pauses when the trial ends. Your settings and QR stand stay saved, so you can come back any time.{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "emails/billing_base.html" %}
+{% from "emails/_bits.html" import pair %}
+{% block preheader %}Thank you. Your receipt is attached.{% endblock %}
+{% block eyebrow %}Paid{% endblock %}
+{% block headline %}Thank you, payment received{% endblock %}
+{% block intro %}We’ve received your payment for {{ restaurant_name }}. Your receipt is attached to this email and saved in your dashboard.{% endblock %}
+{% block rows %}
+{{ pair("Receipt", number) }}
+{{ pair("Amount paid", "BHD " ~ amount) }}
+{{ pair("Paid with", paid_with) }}
+{{ pair("Active until", active_until) }}
+{% endblock %}
+{% block button_label %}Open your dashboard{% endblock %}
+{% block note %}Paying for points? They’re already in your balance and ready for the next order.{% endblock %}

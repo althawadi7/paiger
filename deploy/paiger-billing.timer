@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Paiger billing emails every hour
+
+[Timer]
+OnCalendar=hourly
+Persistent=true
+Unit=paiger-billing.service
+
+[Install]
+WantedBy=timers.target

@@ -126,7 +126,11 @@ html[lang="ar"] .feat-hero h3 { font-weight: 600; line-height: 1.35; }
 .pricing { background: var(--ink); color: var(--on-ink); }
 .pricing .h2 { color: #fff; }
 .pricing .lead { color: var(--on-ink-dim); }
-.plans { margin-top: clamp(40px, 6vw, 64px); display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; align-items: stretch; }
+.plans { margin-top: clamp(40px, 6vw, 64px); display: grid; gap: 18px; align-items: stretch; }
+.plans.n1 { grid-template-columns: minmax(260px, 420px); justify-content: center; }
+.plans.n2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.plans.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.plans.n4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .plan { position: relative; display: flex; flex-direction: column; border-radius: 26px; padding: 30px 28px 28px; background: var(--ink-2); box-shadow: 0 0 0 1px var(--line-dark) inset; color: #fff; }
 .plan.featured { background: #fff; color: var(--ink); box-shadow: none; }
 .plan-tag { position: absolute; top: -13px; inset-inline-start: 26px; background: var(--ready); color: #052e14; font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 999px; }
@@ -170,7 +174,10 @@ html[lang="ar"] .final h2 { font-weight: 600; line-height: 1.3; letter-spacing: 
   .hero .wrap { grid-template-columns: 1fr; }
   .demo { max-width: 640px; }
   .feat-grid, .faq-grid { grid-template-columns: 1fr; }
-  .plans { grid-template-columns: 1fr; max-width: 520px; margin-inline: auto; }
+  .plans.n3, .plans.n4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
+  .plans.n1, .plans.n2, .plans.n3, .plans.n4 { grid-template-columns: 1fr; max-width: 520px; margin-inline: auto; justify-content: stretch; }
 }
 @media (max-width: 860px) {
   .steps { grid-template-columns: 1fr; }
@@ -194,7 +201,7 @@ html[lang="ar"] .final h2 { font-weight: 600; line-height: 1.3; letter-spacing: 
       <h1>{{ t('hero.title') }}</h1>
       <p class="hero-sub">{{ t('hero.sub') }}</p>
       <div class="hero-ctas">
-        <a class="btn btn-primary" href="/signup">{{ t('cta.trial3') }}</a>
+        <a class="btn btn-primary" href="/signup">{{ t('cta.trial3').replace('{n}', trial_days|string) }}</a>
         <a class="btn btn-outline" href="/#pricing">{{ t('cta.pricing') }}</a>
   </div>
       <p class="hero-note">{{ t('hero.note') }}</p>
@@ -347,30 +354,32 @@ html[lang="ar"] .final h2 { font-weight: 600; line-height: 1.3; letter-spacing: 
   </div>
 </section>
 
+{% if plans %}
 <section class="block pricing" id="pricing">
   <div class="wrap">
     <h2 class="h2">{{ t('price.title') }}</h2>
-    <p class="lead">{{ t('price.lead') }}</p>
-    <div class="plans">
+    <p class="lead">{{ t('price.lead').replace('{n}', trial_days|string) }}</p>
+    <div class="plans n{{ 4 if plans|length > 4 else plans|length }}">
       {% for plan in plans %}
       <article class="plan{% if plan.featured %} featured{% endif %}">
-        {% if plan.tag_key %}<span class="plan-tag">{{ t(plan.tag_key) }}</span>{% endif %}
-        <h3>{{ t(plan.name_key) }}</h3>
-        <p class="for">{{ t(plan.for_key) }}</p>
+        {% if plan.badge %}<span class="plan-tag">{{ plan.badge }}</span>{% endif %}
+        <h3>{{ plan.name }}</h3>
+        <p class="for">{{ plan.line }}</p>
         <div class="price"><span class="cur">{{ t('price.currency') }}</span><span class="amt">{{ plan.amount }}</span><span class="per">{{ t(plan.per_key) }}</span></div>
-        <p class="save">{% if plan.save_key %}{{ t(plan.save_key) }}{% endif %}</p>
+        <p class="save">{% if plan.note %}{{ plan.note }}{% endif %}</p>
         <ul>
-          {% for key in plan.features %}
-          <li><svg><use href="#i-check"/></svg><span>{{ t(key) }}</span></li>
+          {% for line in plan.features %}
+          <li><svg><use href="#i-check"/></svg><span>{{ line }}</span></li>
           {% endfor %}
         </ul>
         <a class="btn{% if plan.featured %} btn-primary{% endif %}" href="/signup?plan={{ plan.code }}">{{ t('cta.startFree') }}</a>
       </article>
       {% endfor %}
     </div>
-    <p class="trial-line">{{ t('price.trial')|safe }}</p>
+    <p class="trial-line">{{ t('price.trial').replace('{n}', trial_days|string)|safe }}</p>
   </div>
 </section>
+{% endif %}
 
 <section class="block" id="faq">
   <div class="wrap faq-grid">
@@ -380,7 +389,7 @@ html[lang="ar"] .final h2 { font-weight: 600; line-height: 1.3; letter-spacing: 
       <details><summary><span>{{ t('faq.q2') }}</span><span class="pm"></span></summary><p>{{ t('faq.a2') }}</p></details>
       <details><summary><span>{{ t('faq.q3') }}</span><span class="pm"></span></summary><p>{{ t('faq.a3') }}</p></details>
       <details><summary><span>{{ t('faq.q4') }}</span><span class="pm"></span></summary><p>{{ t('faq.a4') }}</p></details>
-      <details><summary><span>{{ t('faq.q5') }}</span><span class="pm"></span></summary><p>{{ t('faq.a5') }}</p></details>
+      <details><summary><span>{{ t('faq.q5') }}</span><span class="pm"></span></summary><p>{{ t('faq.a5').replace('{n}', trial_days|string) }}</p></details>
     </div>
   </div>
 </section>
@@ -389,7 +398,7 @@ html[lang="ar"] .final h2 { font-weight: 600; line-height: 1.3; letter-spacing: 
   <div class="wrap">
     <div>
       <h2>{{ t('final.title') }}</h2>
-      <p>{{ t('final.sub') }}</p>
+      <p>{{ t('final.sub').replace('{n}', trial_days|string) }}</p>
     </div>
     <a class="btn btn-primary" href="/signup">{{ t('cta.trial') }}</a>
   </div>

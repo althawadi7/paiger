@@ -1,0 +1,26 @@
+<div class="modal" id="confirmModal" hidden role="dialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText">
+  <div class="backdrop" data-close></div>
+  <div class="box">
+    <h3 id="confirmTitle"></h3>
+    <p id="confirmText"></p>
+    <div class="foot">
+      <button class="btn btn-quiet" type="button" id="confirmCancel" data-close>{{ t('admin.cancel') }}</button>
+      <button class="btn btn-ink" type="button" id="confirmOk"></button>
+    </div>
+  </div>
+</div>
+<script type="application/json" id="confirmAsks">{{ {
+  "plan": {"title": t("admin.ask.plan.title"), "text": t("admin.ask.plan.text"), "ok": t("admin.ask.plan.ok"), "tone": "danger"},
+  "pack": {"title": t("admin.ask.pack.title"), "text": t("admin.ask.pack.text"), "ok": t("admin.ask.pack.ok"), "tone": "danger"},
+  "suspend": {"title": t("admin.ask.suspend.title"), "text": t("admin.ask.suspend.text"), "ok": t("admin.ask.suspend.ok"), "tone": "danger"},
+  "reactivate": {"title": t("admin.ask.reactivate.title"), "text": t("admin.ask.reactivate.text"), "ok": t("admin.ask.reactivate.ok"), "tone": "ink"},
+  "paid": {"title": t("admin.ask.paid.title"), "text": t("admin.ask.paid.text"), "ok": t("admin.ask.paid.ok"), "tone": "ink"},
+  "points": {"title": t("admin.ask.points.title"), "text": t("admin.ask.points.text"), "ok": t("admin.ask.points.ok"), "tone": "ink"},
+  "setplan": {"title": t("admin.ask.setplan.title"), "text": t("admin.ask.setplan.text"), "ok": t("admin.ask.setplan.ok"), "tone": "ink"},
+  "trial": {"title": t("admin.ask.trial.title"), "text": t("admin.ask.trial.text"), "ok": t("admin.ask.trial.ok"), "tone": "ink"},
+  "view": {"title": t("admin.ask.view.title"), "text": t("admin.ask.view.text"), "ok": t("admin.ask.view.ok"), "tone": "ink"},
+  "pin": {"title": t("admin.ask.pin.title"), "text": t("admin.ask.pin.text"), "ok": t("admin.ask.pin.ok"), "tone": "ink"},
+  "devices": {"title": t("admin.ask.devices.title"), "text": t("admin.ask.devices.text"), "ok": t("admin.ask.devices.ok"), "tone": "danger"},
+  "card": {"title": t("admin.ask.card.title"), "text": t("admin.ask.card.text"), "ok": t("admin.ask.card.ok"), "tone": "danger"},
+  "email": {"title": t("admin.ask.email.title"), "text": t("admin.ask.email.text"), "ok": t("admin.ask.email.ok"), "tone": "ink"}
+}|tojson }}</script>

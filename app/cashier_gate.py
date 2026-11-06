@@ -90,6 +90,29 @@ def current_pin(restaurant_id: int) -> str:
     return decrypt_pin(row["cashier_pin_enc"])
 
 
+def issue_initial_pin(restaurant_id: int) -> str:
+    """The PIN a new restaurant gets once, the same way startup fills missing ones."""
+    row = _raw_pin(restaurant_id)
+    if row and row.get("cashier_pin_enc"):
+        return decrypt_pin(row["cashier_pin_enc"])
+    pin = generate_pin()
+    conn = db.get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE restaurants
+                SET cashier_pin_enc=%s, cashier_pin_version=1, cashier_pin_updated_at=%s
+                WHERE id=%s AND (cashier_pin_enc IS NULL OR cashier_pin_enc = '')
+                """,
+                (encrypt_pin(pin), datetime.now(), restaurant_id),
+            )
+            conn.commit()
+    finally:
+        conn.close()
+    return current_pin(restaurant_id) or pin
+
+
 def ensure_pins() -> None:
     conn = db.get_db_connection()
     try:

@@ -1,0 +1,13 @@
+{% extends "emails/billing_base.html" %}
+{% from "emails/_bits.html" import pair %}
+{% block preheader %}{% if when == "overdue" %}Invoice {{ number }} was due on {{ due_label }}.{% else %}A quick reminder: BHD {{ amount }} is due tomorrow.{% endif %}{% endblock %}
+{% block eyebrow %}{% if when == "overdue" %}Overdue{% else %}Due tomorrow{% endif %}{% endblock %}
+{% block headline %}A quick reminder about your invoice{% endblock %}
+{% block intro %}{% if when == "overdue" %}Invoice {{ number }} was due on {{ due_label }}. Paying it keeps your cashier running without a pause.{% else %}Invoice {{ number }} is due tomorrow. Paying on time keeps your cashier running without a pause.{% endif %}{% endblock %}
+{% block rows %}
+{{ pair("Invoice", number) }}
+{{ pair("Amount due", "BHD " ~ amount) }}
+{{ pair("Due date", due_label) }}
+{% endblock %}
+{% block button_label %}Pay now{% endblock %}
+{% block note %}If you’ve just paid, you can ignore this email. The receipt is on its way.{% endblock %}

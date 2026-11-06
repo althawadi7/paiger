@@ -1,0 +1,74 @@
+{% include "admin/top.html" %}
+<section>
+  <div class="ph"><div><h1>{{ t('admin.nSet') }}</h1><p>{{ t('admin.setSub') }}</p></div></div>
+  <form method="post" action="/admin/settings">
+    <input type="hidden" name="csrf" value="{{ csrf }}">
+    <div class="set-grid">
+      <div class="card set">
+        <header><h2>{{ t('admin.sTrial') }}</h2><p>{{ t('admin.sTrialSub') }}</p></header>
+        <div><div class="f" style="max-width:220px"><label for="trialDays">{{ t('admin.trialDays') }}</label><input class="in" id="trialDays" name="trial_days" type="number" min="0" max="60" value="{{ settings.trial_days }}" required></div>
+        <p class="muted">{{ t('admin.trialNote') }}</p></div>
+      </div>
+      <div class="card set">
+        <header><h2>{{ t('admin.sEmpty') }}</h2><p>{{ t('admin.sEmptySub') }}</p></header>
+        <div>
+          <div class="radio-cards">
+            <label><input type="radio" name="points_empty_rule" value="warn" {% if settings.points_empty_rule == 'warn' %}checked{% endif %}><div><b>{{ t('admin.eWarn') }}</b><span>{{ t('admin.eWarnSub') }}</span></div></label>
+            <label><input type="radio" name="points_empty_rule" value="block" {% if settings.points_empty_rule != 'warn' %}checked{% endif %}><div><b>{{ t('admin.eBlock') }}</b><span>{{ t('admin.eBlockSub') }}</span></div></label>
+          </div>
+          <div class="f" style="max-width:260px;margin-top:14px"><label for="lowAt">{{ t('admin.lowAt') }}</label><input class="in" id="lowAt" name="low_points_at" type="number" min="0" value="{{ settings.low_points_at }}" required></div>
+        </div>
+      </div>
+      <div class="card set">
+        <header><h2>{{ t('admin.sDunning') }}</h2><p>{{ t('admin.sDunningSub') }}</p></header>
+        <div>
+          <div class="f" style="max-width:220px"><label for="retryDays">{{ t('admin.dRetry') }}</label><input class="in" id="retryDays" name="renewal_retry_days" type="number" min="0" max="30" value="{{ settings.renewal_retry_days }}" required></div>
+          <div class="kv">
+            <div><span>{{ t('admin.dRetry') }}</span><b>{{ t('admin.dRetryV').replace('{n}', settings.renewal_retry_days) }}</b></div>
+            <div><span>{{ t('admin.dStatus') }}</span><b><span class="pill past_due">{{ t('admin.st.past_due') }}</span></b></div>
+            <div><span>{{ t('admin.dAfter') }}</span><b>{{ t('admin.dAfterV') }}</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="card set">
+        <header><h2>{{ t('admin.sSeller') }}</h2><p>{{ t('admin.sSellerSub') }}</p></header>
+        <div class="fields">
+          <div class="f"><label>{{ t('admin.sellerName') }}</label><input class="in" name="seller_name" value="{{ settings.seller_name }}" required></div>
+          <div class="f"><label>{{ t('admin.sellerCr') }}</label><input class="in" name="seller_cr" value="{{ settings.seller_cr }}" required></div>
+          <div class="f"><label>{{ t('admin.sellerAddress') }}</label><input class="in" name="seller_address" value="{{ settings.seller_address }}" required></div>
+          <div class="f"><label>{{ t('admin.billingEmail') }}</label><input class="in" name="billing_email" type="email" value="{{ settings.billing_email }}" required></div>
+          <div class="f"><label>{{ t('admin.supportEmail') }}</label><input class="in" name="support_email" type="email" value="{{ settings.support_email }}" required></div>
+          <button class="btn btn-ink" type="submit">{{ t('admin.savePlan') }}</button>
+        </div>
+      </div>
+      <div class="card set">
+        <header><h2>{{ t('admin.sGateway') }}</h2><p>{{ t('admin.sGatewaySub') }}</p></header>
+        <div class="kv">
+          <div><span>MyFatoorah</span><b>{{ t('admin.connected') if gateway.configured == 'yes' else t('admin.notConnected') }}</b></div>
+          <div><span>{{ t('admin.gMode') }}</span><b>{{ t('admin.gLive') if gateway.mode == 'live' else t('admin.gTest') }}</b></div>
+          <div><span>{{ t('admin.gWebhook') }}</span><b class="mono">{{ gateway.webhook }}</b></div>
+          <div><span>{{ t('admin.gLast') }}</span><b>{{ t('admin.gLastNone') }}</b></div>
+        </div>
+      </div>
+    </div>
+  </form>
+  {% if email_enabled is defined and email_enabled %}
+  <div class="set-grid" style="margin-top:16px">
+    <div class="card set">
+      <header><h2>{{ t('admin.sEmail') }}</h2><p>{{ t('admin.sEmailSub') }}</p></header>
+      <div>
+        <div class="kv">
+          <div><span>SMTP</span><b>{{ t('admin.smtpOn') if email.configured else t('admin.smtpOff') }}</b></div>
+          <div><span>{{ t('admin.lastSent') }}</span><b>{{ email.last_sent or t('admin.noneYet') }}</b></div>
+          <div><span>{{ t('admin.lastError') }}</span><b>{{ email.last_error or t('admin.noneYet') }}</b></div>
+        </div>
+        <form method="post" action="/admin/settings/test-email" style="margin-top:14px">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <button class="btn btn-ink" type="submit">{{ t('admin.sendTest') }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</section>
+{% include "admin/foot.html" %}

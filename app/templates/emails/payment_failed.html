@@ -1,0 +1,14 @@
+{% extends "emails/billing_base.html" %}
+{% from "emails/_bits.html" import pair %}
+{% block preheader %}Your card was declined. Update it to keep paging.{% endblock %}
+{% block eyebrow %}Payment failed{% endblock %}
+{% block headline %}We couldn’t charge your card{% endblock %}
+{% block intro %}Your bank declined the renewal for {{ restaurant_name }}. We’ll try again tomorrow, but updating your card now avoids any pause.{% endblock %}
+{% block rows %}
+{{ pair("Amount", "BHD " ~ amount) }}
+{{ pair("Card", card_label) }}
+{{ pair("Next try", next_try) }}
+{{ pair("Cashier pauses on", pauses_on) }}
+{% endblock %}
+{% block button_label %}Update card{% endblock %}
+{% block note %}Common reasons are an expired card, low balance or online payments turned off. Your bank can tell you which one.{% endblock %}

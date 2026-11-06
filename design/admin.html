@@ -1,0 +1,716 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin · Paiger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   PAIGER · Super admin: Overview, Restaurants (+ drawer), Plans, Payments, Settings
+   Dark sidebar = admin. Restaurant dashboard uses a white sidebar.
+   ===================================================================== */
+:root {
+  --ink: #111111; --ink-2: #1c1c1e; --ink-3: #2a2a2d; --grey: #5f6368; --grey-2: #8e8e93; --line: #e6e6e8;
+  --paper: #ffffff; --paper-2: #f6f6f7; --paper-3: #ececee;
+  --ready: #22c55e; --ready-deep: #15803d; --ready-soft: #e7f8ee;
+  --warn: #b45309; --warn-soft: #fdf2e3; --error: #b42318; --error-soft: #fdecea;
+  --display: "Fraunces", Georgia, serif;
+  --sans: "IBM Plex Sans", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", sans-serif;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+html[lang="ar"] { --sans: "IBM Plex Sans Arabic", "IBM Plex Sans", -apple-system, sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--paper-2); }
+body { font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: antialiased; font-size: 15px; line-height: 1.5; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+input, select, textarea { font: inherit; color: inherit; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.num { font-family: var(--display); font-variant-numeric: lining-nums tabular-nums; direction: ltr; unicode-bidi: isolate; }
+.mono { font-family: "IBM Plex Mono", monospace; font-size: 13px; direction: ltr; unicode-bidi: isolate; }
+
+/* shell */
+.shell { min-height: 100svh; display: grid; grid-template-columns: 236px minmax(0, 1fr); }
+.side { position: sticky; top: 0; height: 100svh; background: var(--ink); color: #fff; padding: 18px 12px; display: flex; flex-direction: column; gap: 2px; }
+.wm { display: flex; align-items: center; gap: 10px; padding: 6px 10px 22px; }
+.wm b { font-family: "Fraunces", serif; font-weight: 600; font-size: 19px; }
+.wm span { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .12em; color: var(--grey-2); padding: 2px 7px; border-radius: 6px; box-shadow: 0 0 0 1px var(--ink-3) inset; }
+.nav a { display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 12px; border-radius: 11px; color: #a1a1a6; text-decoration: none; font-weight: 500; }
+.nav a:hover { color: #fff; background: var(--ink-2); }
+.nav a[aria-current="page"] { color: var(--ink); background: #fff; }
+.nav svg { width: 19px; height: 19px; flex: none; }
+.nav .cnt { margin-inline-start: auto; font-size: 11.5px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--ink-3); color: #fff; }
+.nav a[aria-current="page"] .cnt { background: var(--paper-3); color: var(--ink); }
+.side-foot { margin-top: auto; display: grid; gap: 2px; border-top: 1px solid var(--ink-3); padding-top: 12px; }
+.me { display: flex; align-items: center; gap: 10px; padding: 6px 10px 10px; }
+.me i { width: 32px; height: 32px; border-radius: 50%; background: var(--ink-3); display: grid; place-items: center; font-style: normal; font-weight: 600; font-size: 13px; }
+.me b { display: block; font-size: 14px; font-weight: 500; } .me span { font-size: 12px; color: var(--grey-2); }
+.side-foot button, .side-foot a { display: flex; align-items: center; height: 38px; padding: 0 12px; border-radius: 10px; font-size: 14px; color: #a1a1a6; text-decoration: none; text-align: start; }
+.side-foot button:hover, .side-foot a:hover { color: #fff; background: var(--ink-2); }
+
+.main { min-width: 0; padding: 24px clamp(16px, 3vw, 36px) 60px; }
+.topbar { display: none; }
+.ph { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+.ph h1 { font-family: var(--display); font-weight: 500; font-size: 30px; line-height: 1.1; letter-spacing: -.01em; }
+html[lang="ar"] .ph h1 { font-family: var(--sans); font-weight: 600; letter-spacing: 0; }
+.ph p { color: var(--grey); margin-top: 4px; }
+.card { background: var(--paper); border-radius: 18px; box-shadow: 0 0 0 1px var(--line); }
+.card-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px 0; }
+.card-h h2 { font-size: 16px; font-weight: 600; }
+.muted { color: var(--grey); font-size: 13.5px; }
+.btn { height: 42px; padding: 0 16px; border-radius: 12px; font-weight: 600; font-size: 14.5px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; text-decoration: none; transition: background .15s, transform .1s; }
+.btn:active { transform: scale(.98); }
+.btn-ink { background: var(--ink); color: #fff; } .btn-ink:hover { background: #333336; }
+.btn-line { box-shadow: 0 0 0 1.5px var(--line) inset; } .btn-line:hover { box-shadow: 0 0 0 1.5px var(--ink) inset; }
+.btn-quiet { color: var(--grey); padding: 0 10px; } .btn-quiet:hover { color: var(--ink); background: var(--paper-2); }
+.btn-danger { color: var(--error); box-shadow: 0 0 0 1.5px #f3c7c2 inset; } .btn-danger:hover { background: var(--error-soft); }
+.btn-sm { height: 34px; padding: 0 12px; font-size: 13.5px; border-radius: 10px; }
+.btn svg { width: 17px; height: 17px; }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; white-space: nowrap; background: var(--paper-2); color: var(--grey); }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill.active { background: var(--ready-soft); color: var(--ready-deep); }
+.pill.trialing { background: var(--warn-soft); color: var(--warn); }
+.pill.past_due, .pill.failed { background: var(--error-soft); color: var(--error); }
+.pill.expired, .pill.suspended { background: var(--paper-3); color: var(--grey); }
+.pill.legacy { background: var(--ink); color: #fff; }
+.pill.paid { background: var(--ready-soft); color: var(--ready-deep); }
+.pill.unpaid { background: var(--warn-soft); color: var(--warn); }
+.docs { display: inline-flex; gap: 6px; align-items: center; justify-content: flex-end; }
+.pill.refunded { background: var(--paper-3); color: var(--grey); }
+.pill.nodot::before { display: none; }
+
+/* overview */
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+.kpi { padding: 16px 18px 18px; }
+.kpi .k { font-size: 13.5px; color: var(--grey); }
+.kpi .v { margin-top: 6px; font-size: 34px; font-weight: 500; line-height: 1; }
+.kpi .v small { font-family: var(--sans); font-size: 13px; font-weight: 500; color: var(--grey); margin-inline-end: 4px; }
+.kpi .d { margin-top: 8px; font-size: 13px; color: var(--grey); }
+.kpi .d.up { color: var(--ready-deep); }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 12px; margin-bottom: 12px; }
+.chart-wrap { padding: 6px 18px 16px; position: relative; }
+.chart { width: 100%; height: 230px; display: block; overflow: visible; }
+.chart .gl { stroke: var(--line); } .chart .ax { fill: var(--grey-2); font-size: 11px; font-family: var(--sans); }
+.chart .bar { fill: var(--ink); } .chart .bar.cur { fill: #8e8e93; }
+.chart g:hover .bar { fill: #444; }
+.chart .hit { fill: transparent; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: #fff; font-size: 13px; padding: 6px 10px; border-radius: 8px; white-space: nowrap; transform: translate(-50%, -112%); }
+.mix { padding: 14px 18px 18px; display: grid; gap: 14px; }
+.mix-row { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center; font-size: 14px; }
+.mix-row .bar2 { grid-column: 1 / -1; height: 8px; border-radius: 8px; background: var(--paper-3); overflow: hidden; }
+.mix-row .bar2 i { display: block; height: 100%; border-radius: inherit; background: var(--ink); }
+.mix-row b { font-weight: 600; }
+.attn { list-style: none; padding: 6px 8px 10px; }
+.attn li { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 11px 10px; }
+.attn li + li { border-top: 1px solid var(--line); }
+.attn .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; }
+.attn .ic svg { width: 17px; height: 17px; }
+.attn .ic.r { background: var(--error-soft); color: var(--error); } .attn .ic.a { background: var(--warn-soft); color: var(--warn); } .attn .ic.g { background: var(--paper-2); color: var(--grey); }
+.attn b { font-weight: 600; font-size: 14.5px; display: block; } .attn span { font-size: 13px; color: var(--grey); }
+
+/* tables */
+.filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.seg { display: inline-flex; background: var(--paper-2); border-radius: 12px; padding: 3px; flex-wrap: wrap; }
+.seg button { height: 34px; padding: 0 12px; border-radius: 9px; font-size: 13.5px; font-weight: 500; color: var(--grey); display: inline-flex; gap: 6px; align-items: center; }
+.seg button[aria-pressed="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.seg .c { font-size: 12px; color: var(--grey-2); }
+.search { margin-inline-start: auto; }
+.search input { height: 40px; width: 240px; border: 0; border-radius: 12px; background: var(--paper-2); padding: 0 14px; outline: none; }
+.search input:focus { background: #fff; box-shadow: 0 0 0 2px var(--ink) inset; }
+.table-scroll { overflow-x: auto; }
+table.t { width: 100%; border-collapse: collapse; font-size: 14px; }
+.t th { text-align: start; font-weight: 500; font-size: 12.5px; color: var(--grey); padding: 11px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.t td { padding: 12px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; vertical-align: middle; }
+.t tr:last-child td { border-bottom: 0; }
+.t tbody tr.click { cursor: pointer; } .t tbody tr.click:hover td { background: var(--paper-2); }
+.t .sub { color: var(--grey); font-size: 13px; }
+.t .r { text-align: end; }
+.rcell { display: flex; align-items: center; gap: 10px; }
+.rlogo { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; color: #fff; font-family: "Fraunces", serif; font-weight: 600; font-size: 15px; flex: none; }
+.rcell b { display: block; font-weight: 600; } .rcell span { font-size: 12.5px; color: var(--grey); direction: ltr; unicode-bidi: isolate; }
+.lowpts { color: var(--warn); font-weight: 600; }
+.tfoot { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; font-size: 13px; color: var(--grey); border-top: 1px solid var(--line); }
+
+/* drawer */
+.scrim { position: fixed; inset: 0; z-index: 40; background: rgba(17,17,17,.35); animation: fade .2s; }
+@keyframes fade { from { opacity: 0; } }
+.drawer { position: fixed; z-index: 41; inset-block: 0; inset-inline-end: 0; width: min(520px, 100%); background: var(--paper); box-shadow: -20px 0 60px -20px rgba(0,0,0,.3); display: flex; flex-direction: column; animation: slide .28s var(--ease); }
+html[dir="rtl"] .drawer { animation-name: slideR; }
+@keyframes slide { from { transform: translateX(40px); opacity: 0; } } @keyframes slideR { from { transform: translateX(-40px); opacity: 0; } }
+.dr-h { display: flex; align-items: center; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+.dr-h .rlogo { width: 44px; height: 44px; font-size: 20px; border-radius: 12px; }
+.dr-h h3 { font-size: 18px; font-weight: 600; } .dr-h p { font-size: 13px; color: var(--grey); direction: ltr; text-align: start; }
+html[dir="rtl"] .dr-h p { text-align: end; }
+.dr-h .x { margin-inline-start: auto; width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; color: var(--grey); }
+.dr-h .x:hover { background: var(--paper-2); color: var(--ink); }
+.dr-b { flex: 1; overflow-y: auto; padding: 18px 20px 28px; display: flex; flex-direction: column; gap: 18px; }
+.dr-b > * { flex-shrink: 0; }
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
+.facts div { background: var(--paper); padding: 12px 14px; }
+.facts span { display: block; font-size: 12.5px; color: var(--grey); }
+.facts b { font-weight: 600; font-size: 14.5px; }
+.sec h4 { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
+.acts { display: grid; gap: 8px; }
+.act { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; box-shadow: 0 0 0 1px var(--line); }
+.act > div { flex: 1; min-width: 0; }
+.act b { display: block; font-weight: 600; font-size: 14.5px; } .act span { font-size: 13px; color: var(--grey); }
+.inline { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+.in { height: 40px; border: 0; border-radius: 10px; background: var(--paper-2); padding: 0 12px; outline: none; min-width: 0; }
+.in:focus { background: #fff; box-shadow: 0 0 0 2px var(--ink) inset; }
+textarea.in { height: 72px; padding: 10px 12px; resize: vertical; width: 100%; }
+.log { list-style: none; display: grid; gap: 0; font-size: 13.5px; }
+.log li { display: grid; grid-template-columns: 92px 1fr; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+.log li:last-child { border-bottom: 0; }
+.log time { color: var(--grey); font-size: 12.5px; }
+
+/* plans */
+.plans-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.plan { padding: 18px; display: grid; gap: 4px; position: relative; }
+.plan.off { opacity: .55; }
+.plan .type { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--grey); }
+.plan h3 { font-size: 17px; font-weight: 600; }
+.plan .price { margin-top: 6px; display: flex; align-items: baseline; gap: 6px; direction: ltr; justify-content: flex-start; }
+html[dir="rtl"] .plan .price { justify-content: flex-end; }
+.plan .price b { font-family: "Fraunces", serif; font-size: 32px; font-weight: 500; line-height: 1; }
+.plan .price span { font-size: 13px; color: var(--grey); }
+.plan .meta { font-size: 13px; color: var(--grey); margin-top: 6px; }
+.plan .row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.switch { position: relative; width: 42px; height: 24px; border-radius: 999px; background: var(--paper-3); transition: background .15s; flex: none; }
+.switch::after { content: ""; position: absolute; top: 3px; inset-inline-start: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: inset-inline-start .18s var(--ease); }
+.switch[aria-checked="true"] { background: var(--ink); }
+.switch[aria-checked="true"]::after { inset-inline-start: 21px; }
+.add { min-height: 180px; border-radius: 18px; border: 1.5px dashed #c7c7cc; display: grid; place-items: center; color: var(--grey); font-weight: 600; }
+.add:hover { border-color: var(--ink); color: var(--ink); }
+.h3 { font-size: 16px; font-weight: 600; margin: 26px 0 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+
+/* modal */
+.modal { position: fixed; z-index: 45; inset: 0; display: grid; place-items: center; padding: 16px; }
+.modal .box { width: min(460px, 100%); background: #fff; border-radius: 20px; padding: 22px; box-shadow: 0 30px 80px -20px rgba(0,0,0,.4); animation: up .22s var(--ease); max-height: 92svh; overflow: auto; }
+@keyframes up { from { opacity: 0; transform: translateY(10px); } }
+.modal h3 { font-size: 18px; font-weight: 600; margin-bottom: 14px; }
+.f { display: grid; gap: 6px; margin-bottom: 12px; }
+.f label { font-size: 13.5px; font-weight: 500; }
+.f .in { width: 100%; height: 44px; }
+.f .help { font-size: 12.5px; color: var(--grey); }
+.f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.typepick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.typepick button { height: 40px; border-radius: 10px; box-shadow: 0 0 0 1px var(--line) inset; font-size: 13.5px; font-weight: 500; }
+.typepick button[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--ink) inset; font-weight: 600; }
+.money { position: relative; } .money .in { padding-inline-start: 52px; direction: ltr; text-align: left; }
+.money::before { content: "BHD"; position: absolute; inset-inline-start: 12px; top: 0; bottom: 0; display: flex; align-items: center; font-size: 13px; color: var(--grey); }
+html[dir="rtl"] .money .in { padding-inline-start: 12px; padding-inline-end: 52px; }
+.modal .foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+
+/* settings */
+.set-grid { display: grid; gap: 12px; max-width: 880px; }
+.set { padding: 20px; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 24px; }
+.set > header h2 { font-size: 15.5px; font-weight: 600; } .set > header p { font-size: 13px; color: var(--grey); margin-top: 4px; }
+.radio-cards { display: grid; gap: 8px; }
+.radio-cards label { display: flex; gap: 12px; padding: 13px 14px; border-radius: 14px; box-shadow: 0 0 0 1px var(--line); cursor: pointer; }
+.radio-cards label:has(input:checked) { box-shadow: 0 0 0 2px var(--ink); }
+.radio-cards input { accent-color: var(--ink); width: 18px; height: 18px; margin-top: 2px; flex: none; }
+.radio-cards b { display: block; font-weight: 600; font-size: 14.5px; } .radio-cards span { font-size: 13px; color: var(--grey); }
+.kv { display: grid; gap: 10px; }
+.kv div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.kv div:last-child { border-bottom: 0; }
+.okdot { color: var(--ready-deep); font-weight: 600; }
+
+.toast { position: fixed; z-index: 60; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 12px; font-size: 14.5px; box-shadow: 0 16px 40px -12px rgba(0,0,0,.4); max-width: calc(100% - 32px); }
+
+@media (max-width: 1150px) { .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .grid2 { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .side { position: fixed; inset-block: 0; inset-inline-start: 0; z-index: 50; width: 260px; transform: translateX(-105%); transition: transform .25s var(--ease); }
+  html[dir="rtl"] .side { transform: translateX(105%); }
+  .side.open { transform: none !important; }
+  .topbar { display: flex; align-items: center; gap: 10px; margin: -8px 0 16px; }
+  .set { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .search { margin-inline-start: 0; width: 100%; } .search input { width: 100%; }
+}
+@media (max-width: 520px) { .kpis { gap: 8px; } .kpi .v { font-size: 28px; } .facts { grid-template-columns: 1fr; } .f-row { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 20 20"><path d="M3 9l7-5.5L17 9v7.5a1 1 0 0 1-1 1h-3.5v-5h-5v5H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+  <symbol id="i-store" viewBox="0 0 20 20"><path d="M3 8.5V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8.5M2.5 8.5 4 3.5h12l1.5 5a2.5 2.5 0 0 1-5 0 2.5 2.5 0 0 1-5 0 2.5 2.5 0 0 1-5 0zM8 17v-4.5h4V17" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 20 20"><path d="M3 10.6V4a1 1 0 0 1 1-1h6.6a1 1 0 0 1 .7.3l5.6 5.6a1 1 0 0 1 0 1.4l-6.6 6.6a1 1 0 0 1-1.4 0L3.3 11.3a1 1 0 0 1-.3-.7z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="7" cy="7" r="1.3" fill="currentColor"/></symbol>
+  <symbol id="i-card" viewBox="0 0 20 20"><rect x="2.5" y="4.5" width="15" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 8h15M5.5 12.5h3" stroke="currentColor" stroke-width="1.5"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 20 20"><circle cx="10" cy="10" r="2.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 20 20"><path d="M3 6h14M3 10h14M3 14h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-x" viewBox="0 0 20 20"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 6v4.5M10 13.6h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 6v4l2.5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 20 20"><ellipse cx="10" cy="6" rx="6" ry="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M4 6v4c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V6M4 10v4c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5v-4" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 20 20"><path d="M10 3v10M6 9l4 4 4-4M4 16h12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="shell">
+  <aside class="side" id="side">
+    <div class="wm"><b>Paiger</b><span>ADMIN</span></div>
+    <nav class="nav">
+      <a href="#overview" data-view="overview" aria-current="page"><svg><use href="#i-home"/></svg><span data-t="nOverview">Overview</span></a>
+      <a href="#restaurants" data-view="restaurants"><svg><use href="#i-store"/></svg><span data-t="nRest">Restaurants</span><span class="cnt num" style="font-family:inherit">38</span></a>
+      <a href="#plans" data-view="plans"><svg><use href="#i-tag"/></svg><span data-t="nPlans">Plans & pricing</span></a>
+      <a href="#payments" data-view="payments"><svg><use href="#i-card"/></svg><span data-t="nPay">Payments</span></a>
+      <a href="#settings" data-view="settings"><svg><use href="#i-gear"/></svg><span data-t="nSet">Settings</span></a>
+    </nav>
+    <div class="side-foot">
+      <div class="me"><i>S</i><div><b>Sayed</b><span data-t="role">Super admin</span></div></div>
+      <button type="button" id="langBtn">العربية</button>
+      <a href="/admin/logout" data-t="logout">Log out</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar"><button class="btn btn-quiet" id="menuBtn" type="button" aria-label="Menu"><svg><use href="#i-menu"/></svg></button><b>Paiger Admin</b></div>
+
+    <!-- ================= OVERVIEW ================= -->
+    <section id="vOverview">
+      <div class="ph"><div><h1 data-t="nOverview">Overview</h1><p data-t="ovSub">How the platform is doing this month.</p></div></div>
+      <div class="kpis">
+        <div class="card kpi"><p class="k" data-t="kMrr">Monthly recurring revenue</p><p class="v"><small>BHD</small><span class="num">412.5</span></p><p class="d up" data-t="kMrrD">+45 since last month</p></div>
+        <div class="card kpi"><p class="k" data-t="kActive">Paying restaurants</p><p class="v num">24</p><p class="d" data-t="kActiveD">17 monthly · 3 yearly · 4 per order</p></div>
+        <div class="card kpi"><p class="k" data-t="kTrial">On free trial</p><p class="v num">9</p><p class="d" data-t="kTrialD">3 end in the next 24 hours</p></div>
+        <div class="card kpi"><p class="k" data-t="kOrders">Orders paged today</p><p class="v num">1,284</p><p class="d" data-t="kOrdersD">Across 31 restaurants</p></div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-h"><h2 data-t="revTitle">Revenue by month</h2><span class="muted" data-t="revSub">Paid invoices, BHD</span></div>
+          <div class="chart-wrap" id="chartWrap"><svg class="chart" id="chart" role="img" aria-label="Revenue by month"></svg><div class="tip" id="tip" hidden></div></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h2 data-t="attn">Needs attention</h2></div>
+          <ul class="attn" id="attn"></ul>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h"><h2 data-t="mixTitle">Restaurants by status</h2><span class="muted" data-t="mixSub">38 total</span></div>
+        <div class="mix" id="mix"></div>
+      </div>
+    </section>
+
+    <!-- ================= RESTAURANTS ================= -->
+    <section id="vRestaurants" hidden>
+      <div class="ph"><div><h1 data-t="nRest">Restaurants</h1><p data-t="restSub">Every account on Paiger. Click one to manage it.</p></div><button class="btn btn-line" type="button"><svg><use href="#i-dl"/></svg><span data-t="export">Export CSV</span></button></div>
+      <div class="card">
+        <div class="filters">
+          <div class="seg" id="statusSeg" role="group"></div>
+          <div class="search"><input type="search" id="rSearch" data-tp="searchRest" placeholder="Search name, slug or email"></div>
+        </div>
+        <div class="table-scroll">
+          <table class="t">
+            <thead><tr><th data-t="cRest">Restaurant</th><th data-t="cStatus">Status</th><th data-t="cPlan">Plan</th><th data-t="cRenew">Trial end / renews</th><th class="r" data-t="cOrders30">Orders (30d)</th><th data-t="cJoined">Joined</th></tr></thead>
+            <tbody id="restBody"></tbody>
+          </table>
+        </div>
+        <div class="tfoot"><span id="restCount"></span></div>
+      </div>
+    </section>
+
+    <!-- ================= PLANS ================= -->
+    <section id="vPlans" hidden>
+      <div class="ph"><div><h1 data-t="nPlans">Plans & pricing</h1><p data-t="plansSub">What restaurants see on their Subscription page. Price changes apply to new purchases and renewals.</p></div></div>
+      <div class="plans-grid" id="plansGrid"></div>
+
+      <h2 class="h3"><span data-t="packsTitle">Point packs</span><button class="btn btn-line btn-sm" type="button" id="addPack" data-t="addPack">Add pack</button></h2>
+      <div class="card">
+        <div class="table-scroll">
+          <table class="t">
+            <thead><tr><th data-t="cPoints">Points</th><th data-t="cPrice">Price</th><th data-t="cPerPoint">Per point</th><th data-t="cSold">Sold</th><th data-t="cVisible">Visible</th><th></th></tr></thead>
+            <tbody id="packBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PAYMENTS ================= -->
+    <section id="vPayments" hidden>
+      <div class="ph"><div><h1 data-t="nPay">Payments</h1><p data-t="paySub">Every charge through MyFatoorah.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-line" type="button"><svg><use href="#i-dl"/></svg><span data-t="export">Export CSV</span></button><button class="btn btn-ink" type="button" id="newInv" data-t="newInv">New invoice</button></div></div>
+      <div class="kpis" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+        <div class="card kpi"><p class="k" data-t="pMonth">Collected this month</p><p class="v"><small>BHD</small><span class="num">468.0</span></p></div>
+        <div class="card kpi"><p class="k" data-t="pFailed">Unpaid invoices</p><p class="v" style="color:var(--warn)"><small>BHD</small><span class="num">30.0</span></p><p class="d" data-t="pFailedD">2 invoices waiting for payment</p></div>
+        <div class="card kpi"><p class="k" data-t="pPost">Postpaid due on 1 Dec</p><p class="v"><small>BHD</small><span class="num">63.4</span></p><p class="d" data-t="pPostD">634 orders from 4 restaurants</p></div>
+      </div>
+      <div class="card">
+        <div class="filters">
+          <div class="seg" id="paySeg" role="group"></div>
+          <div class="search"><input type="search" data-tp="searchPay" placeholder="Search restaurant or reference"></div>
+        </div>
+        <div class="table-scroll">
+          <table class="t">
+            <thead><tr><th data-t="cDate">Date</th><th data-t="cRest">Restaurant</th><th data-t="cDesc">Description</th><th class="r" data-t="cAmount">Amount</th><th data-t="cStatus">Status</th><th data-t="cRef">Reference</th><th></th></tr></thead>
+            <tbody id="payBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SETTINGS ================= -->
+    <section id="vSettings" hidden>
+      <div class="ph"><div><h1 data-t="nSet">Settings</h1><p data-t="setSub">Rules that apply to every restaurant.</p></div></div>
+      <div class="set-grid">
+        <div class="card set">
+          <header><h2 data-t="sTrial">Free trial</h2><p data-t="sTrialSub">New sign-ups get this many days with no card.</p></header>
+          <div><div class="f" style="max-width:220px"><label for="trialDays" data-t="trialDays">Trial length (days)</label><input class="in num" id="trialDays" type="number" min="0" max="60" value="3" style="font-family:inherit"></div>
+          <p class="muted" data-t="trialNote">Changing this only affects new sign-ups.</p></div>
+        </div>
+        <div class="card set">
+          <header><h2 data-t="sEmpty">When prepaid points run out</h2><p data-t="sEmptySub">For restaurants on Pay per order who top up in advance.</p></header>
+          <div><div class="radio-cards">
+            <label><input type="radio" name="empty" value="warn"><div><b data-t="eWarn">Keep working, show a warning</b><span data-t="eWarnSub">Orders continue and the balance goes negative. The next top-up covers it.</span></div></label>
+            <label><input type="radio" name="empty" value="block" checked><div><b data-t="eBlock">Stop new orders until they top up</b><span data-t="eBlockSub">The cashier shows a top-up message. Orders already open still ring.</span></div></label>
+          </div>
+          <div class="f" style="max-width:260px;margin-top:14px"><label for="lowAt" data-t="lowAt">Warn the owner when below (points)</label><input class="in num" id="lowAt" type="number" value="100" style="font-family:inherit"></div></div>
+        </div>
+        <div class="card set">
+          <header><h2 data-t="sDunning">Failed renewals</h2><p data-t="sDunningSub">What happens when a saved card is declined.</p></header>
+          <div class="kv">
+            <div><span data-t="dRetry">Retry the card</span><b data-t="dRetryV">Every day for 3 days</b></div>
+            <div><span data-t="dStatus">Status during retries</span><b><span class="pill past_due" data-t="stPast_due">Payment failed</span></b></div>
+            <div><span data-t="dAfter">After the last retry</span><b data-t="dAfterV">Cashier paused until they pay</b></div>
+          </div>
+        </div>
+        <div class="card set">
+          <header><h2 data-t="sGateway">Payment gateway</h2><p data-t="sGatewaySub">Keys live in the server .env file, never here.</p></header>
+          <div class="kv">
+            <div><span>MyFatoorah</span><b class="okdot" data-t="connected">Connected</b></div>
+            <div><span data-t="gMode">Mode</span><b data-t="gLive">Live</b></div>
+            <div><span data-t="gWebhook">Webhook</span><b class="mono">/webhooks/myfatoorah</b></div>
+            <div><span data-t="gLast">Last webhook received</span><b data-t="gLastV">4 min ago</b></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- restaurant drawer -->
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="drName">
+  <div class="dr-h"><div class="rlogo" id="drLogo">K</div><div><h3 id="drName">Karak House</h3><p id="drSlug">/r/karak-house</p></div><button class="x" type="button" id="drClose" aria-label="Close"><svg width="20" height="20"><use href="#i-x"/></svg></button></div>
+  <div class="dr-b" id="drBody"></div>
+</aside>
+
+<!-- plan modal -->
+<div class="modal" id="planModal" hidden role="dialog" aria-modal="true" aria-labelledby="pmTitle">
+  <div class="scrim" data-close></div>
+  <form class="box" id="planForm" style="position:relative;z-index:1">
+    <h3 id="pmTitle" data-t="editPlan">Edit plan</h3>
+    <div class="f"><label data-t="pType">Type</label>
+      <div class="typepick" id="typePick"><button type="button" data-type="monthly" data-t="tMonthly">Monthly</button><button type="button" data-type="yearly" data-t="tYearly">Yearly</button><button type="button" data-type="points" data-t="tPoints">Per order</button></div></div>
+    <div class="f-row">
+      <div class="f"><label for="pmNameEn" data-t="nameEn">Name (English)</label><input class="in" id="pmNameEn" dir="ltr"></div>
+      <div class="f"><label for="pmNameAr" data-t="nameAr">Name (Arabic)</label><input class="in" id="pmNameAr" dir="rtl"></div>
+    </div>
+    <div class="f"><label for="pmPrice" id="pmPriceLbl" data-t="priceLbl">Price</label><div class="money"><input class="in num" id="pmPrice" inputmode="decimal" style="font-family:inherit"></div><p class="help" id="pmHelp"></p></div>
+    <div class="f"><label for="pmDesc" data-t="descLbl">Short line (shown under the name)</label><input class="in" id="pmDesc"></div>
+    <div class="foot"><button class="btn btn-quiet" type="button" data-close data-t="cancel">Cancel</button><button class="btn btn-ink" type="submit" data-t="savePlan">Save plan</button></div>
+  </form>
+</div>
+
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+(() => {
+  "use strict";
+  const T = {
+    en: {
+      nOverview: "Overview", nRest: "Restaurants", nPlans: "Plans & pricing", nPay: "Payments", nSet: "Settings", role: "Super admin", logout: "Log out",
+      ovSub: "How the platform is doing this month.", kMrr: "Monthly recurring revenue", kMrrD: "+45 since last month", kActive: "Paying restaurants", kActiveD: "17 monthly · 3 yearly · 4 per order",
+      kTrial: "On free trial", kTrialD: "3 end in the next 24 hours", kOrders: "Orders paged today", kOrdersD: "Across 31 restaurants",
+      revTitle: "Revenue by month", revSub: "Paid invoices, BHD", revTip: (m, v) => `${m}: BHD ${v}`, thisMonth: "so far",
+      attn: "Needs attention", mixTitle: "Restaurants by status", mixSub: "38 total",
+      a1: "Burger Lab: renewal failed", a1s: "Card declined, retry 2 of 3", a2: "3 trials end in 24 hours", a2s: "Mocha Corner, Shawarma Way, Bean & Co", a3: "Saj Street: 12 points left", a3s: "Prepaid, will stop at zero", a4: "Grill Point: no orders for 7 days", a4s: "Active monthly plan", view: "View",
+      stAll: "All", stActive: "Active", stTrialing: "Trial", stPast_due: "Payment failed", stExpired: "Trial ended", stSuspended: "Suspended", stLegacy: "Legacy",
+      restSub: "Every account on Paiger. Click one to manage it.", export: "Export CSV", searchRest: "Search name, slug or email",
+      cRest: "Restaurant", cStatus: "Status", cPlan: "Plan", cRenew: "Trial end / renews", cOrders30: "Orders (30d)", cJoined: "Joined", showing: (a, b) => `${a} of ${b} restaurants`,
+      plMonthly: "Monthly", plYearly: "Yearly", plPoints: "Per order", plTrial: "Free trial", plNone: "None", pts: (n) => `${n} pts`,
+      dPlan: "Plan", dStatus: "Status", dRenew: "Renews / trial end", dOwner: "Owner", dPhone: "Mobile", dCard: "Saved card", dOrders: "Orders (30 days)", dBalance: "Points balance", none: "None",
+      manage: "Manage", extend: "Extend trial", extendSub: "Give more free days.", days: "days", apply: "Apply",
+      setPlan: "Set plan manually", setPlanSub: "For cash or bank-transfer customers. No card is charged.", until: "until",
+      adjust: "Adjust points", adjustSub: "Add or remove points, for refunds or goodwill.", reason: "Reason (shown in history)",
+      suspend: "Suspend account", suspendSub: "Cashier and customer pages stop working. Data is kept.", suspendBtn: "Suspend", unsuspend: "Reactivate",
+      openOwner: "Open their dashboard", openOwnerSub: "View as the owner, read only. Logged in history.",
+      history: "History", h1: "Paid BHD 15.000, monthly renewal", h2: "Changed brand colour", h3: "Plan changed: Trial → Monthly", h4: "Signed up",
+      done: "Saved", plansSub: "What restaurants see on their Subscription page. Price changes apply to new purchases and renewals.",
+      perMonth: "/ month", perYear: "/ year", perOrder: "/ order", onPlan: (n) => `${n} restaurants on this plan`, visible: "Visible to restaurants", hidden: "Hidden", edit: "Edit", addPlan: "Add plan",
+      packsTitle: "Point packs", addPack: "Add pack", cPoints: "Points", cPrice: "Price", cPerPoint: "Per point", cSold: "Sold", cVisible: "Visible",
+      editPlan: "Edit plan", newPlan: "New plan", pType: "Type", tMonthly: "Monthly", tYearly: "Yearly", tPoints: "Per order", nameEn: "Name (English)", nameAr: "Name (Arabic)",
+      priceLbl: "Price", pricePoint: "Price of 1 point (= 1 order)", descLbl: "Short line (shown under the name)", cancel: "Cancel", savePlan: "Save plan",
+      helpMonthly: "Charged every month on the saved card.", helpYearly: "Charged once a year. Show the saving next to it.", helpPoints: "Prepaid packs use this price. Postpaid restaurants pay this per order.",
+      paySub: "Every charge through MyFatoorah.", pMonth: "Collected this month", pFailed: "Unpaid invoices", pFailedD: "2 invoices waiting for payment", pPost: "Postpaid due on 1 Dec", pPostD: "634 orders from 4 restaurants",
+      pAll: "All", pPaid: "Paid", pFailedS: "Failed", pRefunded: "Refunded", pUnpaid: "Unpaid", stUnpaid: "Unpaid", dInvoice: "Invoice", dReceipt: "Receipt", dCredit: "Credit note", markPaid: "Mark as paid", markedPaid: "Marked as paid. The invoice is now a receipt.", newInv: "New invoice", newInvSoon: "Pick a restaurant, add a line and an amount, then send the pay link.", searchPay: "Search restaurant or reference",
+      cDate: "Date", cDesc: "Description", cAmount: "Amount", cRef: "Reference", stPaid: "Paid", stFailed: "Failed", stRefunded: "Refunded",
+      setSub: "Rules that apply to every restaurant.", sTrial: "Free trial", sTrialSub: "New sign-ups get this many days with no card.", trialDays: "Trial length (days)", trialNote: "Changing this only affects new sign-ups.",
+      sEmpty: "When prepaid points run out", sEmptySub: "For restaurants on Pay per order who top up in advance.", eWarn: "Keep working, show a warning", eWarnSub: "Orders continue and the balance goes negative. The next top-up covers it.",
+      eBlock: "Stop new orders until they top up", eBlockSub: "The cashier shows a top-up message. Orders already open still ring.", lowAt: "Warn the owner when below (points)",
+      sDunning: "Failed renewals", sDunningSub: "What happens when a saved card is declined.", dRetry: "Retry the card", dRetryV: "Every day for 3 days", dStatus: "Status during retries", dAfter: "After the last retry", dAfterV: "Cashier paused until they pay",
+      sGateway: "Payment gateway", sGatewaySub: "Keys live in the server .env file, never here.", connected: "Connected", gMode: "Mode", gLive: "Live", gWebhook: "Webhook", gLast: "Last webhook received", gLastV: "4 min ago",
+    },
+    ar: {
+      nOverview: "نظرة عامة", nRest: "المطاعم", nPlans: "الباقات والأسعار", nPay: "المدفوعات", nSet: "الإعدادات", role: "مدير المنصة", logout: "تسجيل الخروج",
+      ovSub: "أحوال المنصة هالشهر.", kMrr: "الدخل الشهري المتكرر", kMrrD: "+٤٥ عن الشهر اللي طاف", kActive: "مطاعم مشتركة", kActiveD: "١٧ شهري · ٣ سنوي · ٤ لكل طلب",
+      kTrial: "في التجربة المجانية", kTrialD: "٣ تخلص خلال ٢٤ ساعة", kOrders: "طلبات اليوم", kOrdersD: "في ٣١ مطعم",
+      revTitle: "الدخل حسب الشهر", revSub: "الفواتير المدفوعة، بالدينار", revTip: (m, v) => `${m}: ${v} دينار`, thisMonth: "لين الحين",
+      attn: "يحتاج انتباهك", mixTitle: "المطاعم حسب الحالة", mixSub: "٣٨ مطعم",
+      a1: "Burger Lab: فشل التجديد", a1s: "البطاقة انرفضت، المحاولة ٢ من ٣", a2: "٣ تجارب تخلص خلال ٢٤ ساعة", a2s: "Mocha Corner، Shawarma Way، Bean & Co", a3: "Saj Street: باقي ١٢ نقطة", a3s: "دفع مقدم، بيوقف عند الصفر", a4: "Grill Point: ما في طلبات من ٧ أيام", a4s: "باقة شهرية فعّالة", view: "عرض",
+      stAll: "الكل", stActive: "فعّال", stTrialing: "تجربة", stPast_due: "فشل الدفع", stExpired: "خلصت التجربة", stSuspended: "موقوف", stLegacy: "قديم",
+      restSub: "كل الحسابات في Paiger. اضغط على أي مطعم عشان تديره.", export: "تصدير CSV", searchRest: "ابحث بالاسم أو الرابط أو الإيميل",
+      cRest: "المطعم", cStatus: "الحالة", cPlan: "الباقة", cRenew: "نهاية التجربة / التجديد", cOrders30: "الطلبات (٣٠ يوم)", cJoined: "التسجيل", showing: (a, b) => `${a} من ${b} مطعم`,
+      plMonthly: "شهري", plYearly: "سنوي", plPoints: "لكل طلب", plTrial: "تجربة مجانية", plNone: "بدون", pts: (n) => `${n} نقطة`,
+      dPlan: "الباقة", dStatus: "الحالة", dRenew: "التجديد / نهاية التجربة", dOwner: "المالك", dPhone: "الجوال", dCard: "البطاقة المحفوظة", dOrders: "الطلبات (٣٠ يوم)", dBalance: "رصيد النقاط", none: "ما في",
+      manage: "إدارة", extend: "تمديد التجربة", extendSub: "أعطه أيام مجانية زيادة.", days: "يوم", apply: "تطبيق",
+      setPlan: "تفعيل باقة يدوياً", setPlanSub: "للعملاء اللي يدفعون كاش أو تحويل. ما ينخصم شي من أي بطاقة.", until: "لين",
+      adjust: "تعديل النقاط", adjustSub: "زيادة أو خصم نقاط، للاسترجاع أو كتعويض.", reason: "السبب (يطلع في السجل)",
+      suspend: "إيقاف الحساب", suspendSub: "الكاشير وصفحة العميل يوقفون. البيانات تبقى محفوظة.", suspendBtn: "إيقاف", unsuspend: "إعادة التفعيل",
+      openOwner: "افتح لوحته", openOwnerSub: "تشوفها مثل المالك، قراءة بس. تنسجّل في السجل.",
+      history: "السجل", h1: "دفع ١٥٫٠٠٠ دينار، تجديد شهري", h2: "غيّر لون العلامة", h3: "تغيّرت الباقة: تجربة ← شهري", h4: "سجّل في المنصة",
+      done: "تم الحفظ", plansSub: "اللي تشوفه المطاعم في صفحة الاشتراك. تغيير السعر يطبق على الشراء الجديد والتجديد.",
+      perMonth: "/ شهرياً", perYear: "/ سنوياً", perOrder: "/ للطلب", onPlan: (n) => `${n} مطعم على هالباقة`, visible: "ظاهرة للمطاعم", hidden: "مخفية", edit: "تعديل", addPlan: "إضافة باقة",
+      packsTitle: "باقات النقاط", addPack: "إضافة باقة نقاط", cPoints: "النقاط", cPrice: "السعر", cPerPoint: "سعر النقطة", cSold: "المبيعات", cVisible: "ظاهرة",
+      editPlan: "تعديل الباقة", newPlan: "باقة جديدة", pType: "النوع", tMonthly: "شهري", tYearly: "سنوي", tPoints: "لكل طلب", nameEn: "الاسم (إنجليزي)", nameAr: "الاسم (عربي)",
+      priceLbl: "السعر", pricePoint: "سعر النقطة الوحدة (= طلب واحد)", descLbl: "سطر قصير (يطلع تحت الاسم)", cancel: "إلغاء", savePlan: "حفظ الباقة",
+      helpMonthly: "ينخصم كل شهر من البطاقة المحفوظة.", helpYearly: "ينخصم مرة وحدة بالسنة. حط التوفير جنبه.", helpPoints: "باقات الشحن المقدم تستخدم هالسعر، واللي يدفعون نهاية الشهر يدفعون هالسعر لكل طلب.",
+      paySub: "كل عمليات الدفع عن طريق MyFatoorah.", pMonth: "المحصّل هالشهر", pFailed: "فواتير غير مدفوعة", pFailedD: "فاتورتين تنتظر الدفع", pPost: "مستحق الدفع الآجل يوم ١ ديسمبر", pPostD: "٦٣٤ طلب من ٤ مطاعم",
+      pAll: "الكل", pPaid: "مدفوعة", pFailedS: "فاشلة", pRefunded: "مسترجعة", pUnpaid: "غير مدفوعة", stUnpaid: "غير مدفوعة", dInvoice: "فاتورة", dReceipt: "إيصال", dCredit: "إشعار دائن", markPaid: "تم الدفع", markedPaid: "تم تسجيل الدفع، والفاتورة صارت إيصال.", newInv: "فاتورة جديدة", newInvSoon: "اختار المطعم، أضف الوصف والمبلغ، وأرسل له رابط الدفع.", searchPay: "ابحث بالمطعم أو المرجع",
+      cDate: "التاريخ", cDesc: "الوصف", cAmount: "المبلغ", cRef: "المرجع", stPaid: "مدفوعة", stFailed: "فاشلة", stRefunded: "مسترجعة",
+      setSub: "قواعد تطبق على كل المطاعم.", sTrial: "التجربة المجانية", sTrialSub: "المشترك الجديد ياخذ هالعدد من الأيام بدون بطاقة.", trialDays: "مدة التجربة (أيام)", trialNote: "التغيير يأثر على التسجيلات الجديدة بس.",
+      sEmpty: "لما تخلص النقاط المدفوعة مقدماً", sEmptySub: "للمطاعم على الدفع لكل طلب اللي يشحنون مقدماً.", eWarn: "يكمل الشغل مع تنبيه", eWarnSub: "الطلبات تكمل والرصيد يصير بالسالب، والشحنة الجاية تغطيه.",
+      eBlock: "يوقف الطلبات الجديدة لين يشحن", eBlockSub: "الكاشير يطلع رسالة شحن. الطلبات المفتوحة ترن عادي.", lowAt: "نبّه المالك لما يقل الرصيد عن (نقطة)",
+      sDunning: "التجديدات الفاشلة", sDunningSub: "شنو يصير لما البطاقة المحفوظة تنرفض.", dRetry: "إعادة محاولة الخصم", dRetryV: "كل يوم لمدة ٣ أيام", dStatus: "الحالة وقت المحاولات", dAfter: "بعد آخر محاولة", dAfterV: "الكاشير يوقف لين يدفع",
+      sGateway: "بوابة الدفع", sGatewaySub: "المفاتيح في ملف .env على السيرفر، مو هني.", connected: "متصلة", gMode: "الوضع", gLive: "فعلي", gWebhook: "الويب هوك", gLast: "آخر ويب هوك وصل", gLastV: "قبل ٤ دقائق",
+    },
+  };
+  let lang = "en"; try { lang = localStorage.getItem("paiger.lang") || "en"; } catch (_) {}
+  const t = (k, ...a) => { const v = (T[lang] && T[lang][k]) ?? T.en[k] ?? k; return typeof v === "function" ? v(...a) : v; };
+  const $ = (id) => document.getElementById(id);
+
+  /* ---------- mock data ---------- */
+  const REST = [
+    ["Karak House", "karak-house", "#c2410c", "active", "monthly", "6 Dec 2026", 1840, "12 Sep 2026", "owner@karak.bh", null],
+    ["Burger Lab", "burger-lab", "#b91c1c", "past_due", "monthly", "4 Nov 2026", 2210, "2 Aug 2026", "hi@burgerlab.bh", null],
+    ["Saj Street", "saj-street", "#7a4b2a", "active", "points", "", 960, "19 Sep 2026", "saj@street.bh", 12],
+    ["Mocha Corner", "mocha-corner", "#1d4ed8", "trialing", "trial", "7 Nov 2026", 41, "4 Nov 2026", "mocha@corner.bh", null],
+    ["Shawarma Way", "shawarma-way", "#166534", "trialing", "trial", "7 Nov 2026", 66, "4 Nov 2026", "way@shawarma.bh", null],
+    ["Bean & Co", "bean-co", "#111111", "trialing", "trial", "7 Nov 2026", 18, "4 Nov 2026", "hello@beanco.bh", null],
+    ["Main", "main", "#c2410c", "legacy", "monthly", "", 3120, "1 Jun 2026", "admin@main.bh", null],
+    ["Grill Point", "grill-point", "#6d28d9", "active", "yearly", "14 Jul 2027", 0, "14 Jul 2026", "grill@point.bh", null],
+    ["Tea Time", "tea-time", "#b45309", "expired", "trial", "28 Oct 2026", 12, "25 Oct 2026", "tea@time.bh", null],
+    ["Falafel Bros", "falafel-bros", "#15803d", "active", "points", "", 1420, "3 Sep 2026", "bros@falafel.bh", 860],
+    ["Old Souq Cafe", "old-souq", "#5f6368", "suspended", "monthly", "", 0, "11 Jul 2026", "souq@cafe.bh", null],
+  ];
+  const STATUSES = ["all", "active", "trialing", "past_due", "expired", "suspended", "legacy"];
+  const MONTHS = [["Jun", 15], ["Jul", 60], ["Aug", 135], ["Sep", 228], ["Oct", 367.5], ["Nov", 468]];
+  const PLANS = [
+    { id: 1, type: "monthly", en: "Monthly", ar: "شهري", price: "15.000", desc: "Unlimited orders, billed every month.", n: 17, on: true },
+    { id: 2, type: "yearly", en: "Yearly", ar: "سنوي", price: "150.000", desc: "Unlimited orders, two months free.", n: 3, on: true },
+    { id: 3, type: "points", en: "Pay per order", ar: "الدفع لكل طلب", price: "0.100", desc: "No subscription. 1 order uses 1 point.", n: 4, on: true },
+  ];
+  const PACKS = [[500, "50.000", 6, true], [1000, "100.000", 11, true], [2500, "250.000", 2, true], [5000, "450.000", 0, false]];
+  const PAYS = [
+    ["6 Nov 2026", "Mocha Corner", "Monthly plan, bank transfer", "15.000", "unpaid", ""],
+    ["6 Nov 2026", "Karak House", "Monthly plan, Nov 2026", "15.000", "paid", "MF-07734512"],
+    ["6 Nov 2026", "Saj Street", "Points top-up, 1,000 points", "100.000", "paid", "MF-07734488"],
+    ["4 Nov 2026", "Burger Lab", "Monthly plan, Nov 2026 (card declined twice)", "15.000", "unpaid", ""],
+    ["1 Nov 2026", "Falafel Bros", "Postpaid, 1,244 orders in Oct", "124.400", "paid", "MF-07729044"],
+    ["29 Oct 2026", "Grill Point", "Yearly plan refund (partial)", "-30.000", "refunded", "MF-07725310"],
+    ["14 Jul 2026", "Grill Point", "Yearly plan, Jul 2026 – Jul 2027", "150.000", "paid", "MF-07601188"],
+  ];
+  let view = "overview", rFilter = "all", rQuery = "", pFilter = "all", editing = null, newType = "monthly";
+
+  /* ---------- i18n ---------- */
+  function apply() {
+    document.documentElement.lang = lang; document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    document.querySelectorAll("[data-t]").forEach((n) => { const v = t(n.dataset.t); if (typeof v === "string") n.textContent = v; });
+    document.querySelectorAll("[data-tp]").forEach((n) => (n.placeholder = t(n.dataset.tp)));
+    $("langBtn").textContent = lang === "ar" ? "English" : "العربية";
+    renderAll();
+  }
+  $("langBtn").onclick = () => { lang = lang === "ar" ? "en" : "ar"; try { localStorage.setItem("paiger.lang", lang); } catch (_) {} apply(); };
+
+  /* ---------- nav ---------- */
+  function go(v) {
+    view = v;
+    ["overview", "restaurants", "plans", "payments", "settings"].forEach((x) => ($("v" + x[0].toUpperCase() + x.slice(1)).hidden = x !== v));
+    document.querySelectorAll(".nav a").forEach((a) => a.dataset.view === v ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
+    $("side").classList.remove("open"); scrollTo(0, 0);
+    if (v === "overview") drawChart();
+  }
+  document.addEventListener("click", (e) => { const a = e.target.closest("[data-view]"); if (a) { e.preventDefault(); go(a.dataset.view); } });
+  $("menuBtn").onclick = () => $("side").classList.toggle("open");
+  let toastT; function toast(m) { const el = $("toast"); el.textContent = m; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (el.hidden = true), 2400); }
+
+  const stLabel = (s) => t("st" + s[0].toUpperCase() + s.slice(1));
+  const planLabel = (p, pts) => p === "points" ? `${t("plPoints")}${pts != null ? " · " + t("pts", pts) : ""}` : t("pl" + p[0].toUpperCase() + p.slice(1));
+
+  /* ---------- overview ---------- */
+  function drawChart() {
+    const svg = $("chart"), w = svg.clientWidth || 600, h = 230, padL = 36, padB = 24, padT = 10, max = 500;
+    const n = MONTHS.length, slot = (w - padL) / n, bw = Math.min(40, slot * 0.5), rtl = document.documentElement.dir === "rtl";
+    let s = "";
+    [0, 100, 200, 300, 400, 500].forEach((v) => { const y = padT + (h - padB - padT) * (1 - v / max); s += `<line class="gl" x1="${padL}" x2="${w}" y1="${y}" y2="${y}"/><text class="ax" x="${padL - 8}" y="${y + 4}" text-anchor="end">${v}</text>`; });
+    MONTHS.forEach(([m, v], i) => {
+      const idx = rtl ? n - 1 - i : i, x = padL + idx * slot + (slot - bw) / 2, bh = (h - padB - padT) * (v / max), y = h - padB - bh, r = 4;
+      const d = `M${x},${h - padB} V${y + r} Q${x},${y} ${x + r},${y} H${x + bw - r} Q${x + bw},${y} ${x + bw},${y + r} V${h - padB} Z`;
+      s += `<g data-m="${m}${i === n - 1 ? " (" + t("thisMonth") + ")" : ""}" data-v="${v.toFixed(3)}"><rect class="hit" x="${padL + idx * slot}" y="${padT}" width="${slot}" height="${h - padT - padB}"/><path class="bar${i === n - 1 ? " cur" : ""}" d="${d}"/></g>`;
+      s += `<text class="ax" x="${x + bw / 2}" y="${h - 6}" text-anchor="middle">${m}</text>`;
+    });
+    svg.setAttribute("viewBox", `0 0 ${w} ${h}`); svg.innerHTML = s;
+  }
+  $("chart").addEventListener("mousemove", (e) => {
+    const g = e.target.closest("g[data-m]"), tip = $("tip"); if (!g) return (tip.hidden = true);
+    const r = g.querySelector(".bar").getBoundingClientRect(), wr = $("chartWrap").getBoundingClientRect();
+    tip.textContent = t("revTip", g.dataset.m, g.dataset.v); tip.hidden = false;
+    tip.style.left = r.left - wr.left + r.width / 2 + "px"; tip.style.top = r.top - wr.top + "px";
+  });
+  $("chart").addEventListener("mouseleave", () => ($("tip").hidden = true));
+  addEventListener("resize", () => view === "overview" && drawChart());
+
+  function renderOverview() {
+    const items = [["r", "i-alert", "a1", "a1s", "burger-lab"], ["a", "i-clock", "a2", "a2s", null], ["a", "i-coin", "a3", "a3s", "saj-street"], ["g", "i-store", "a4", "a4s", "grill-point"]];
+    $("attn").innerHTML = items.map(([c, ic, k, ks, slug]) => `<li><span class="ic ${c}"><svg><use href="#${ic}"/></svg></span><div><b>${t(k)}</b><span>${t(ks)}</span></div>${slug ? `<button class="btn btn-quiet btn-sm" data-open="${slug}">${t("view")}</button>` : `<button class="btn btn-quiet btn-sm" data-filter="trialing">${t("view")}</button>`}</li>`).join("");
+    const mix = [["active", 24], ["trialing", 9], ["past_due", 1], ["expired", 2], ["suspended", 1], ["legacy", 1]];
+    $("mix").innerHTML = mix.map(([s, n]) => `<div class="mix-row"><span>${stLabel(s)}</span><b class="num" style="font-family:inherit">${n}</b><div class="bar2"><i style="width:${(n / 38) * 100}%"></i></div></div>`).join("");
+  }
+  document.addEventListener("click", (e) => {
+    const o = e.target.closest("[data-open]"); if (o) openDrawer(o.dataset.open);
+    const f = e.target.closest("[data-filter]"); if (f) { rFilter = f.dataset.filter; go("restaurants"); renderRest(); }
+  });
+
+  /* ---------- restaurants ---------- */
+  function renderRest() {
+    const counts = Object.fromEntries(STATUSES.map((s) => [s, s === "all" ? REST.length : REST.filter((r) => r[3] === s).length]));
+    $("statusSeg").innerHTML = STATUSES.map((s) => `<button type="button" aria-pressed="${s === rFilter}" data-s="${s}">${s === "all" ? t("stAll") : stLabel(s)} <span class="c">${counts[s]}</span></button>`).join("");
+    const q = rQuery.trim().toLowerCase();
+    const rows = REST.filter((r) => (rFilter === "all" || r[3] === rFilter) && (!q || (r[0] + r[1] + r[8]).toLowerCase().includes(q)));
+    $("restBody").innerHTML = rows.map(([name, slug, c, st, plan, renew, o30, joined, email, pts]) => `
+      <tr class="click" data-open="${slug}">
+        <td><div class="rcell"><span class="rlogo" style="background:${c}">${name[0]}</span><div><b>${name}</b><span>/r/${slug}</span></div></div></td>
+        <td><span class="pill ${st}">${stLabel(st)}</span></td>
+        <td>${plan === "points" && pts != null && pts < 100 ? `<span class="lowpts">${planLabel(plan, pts)}</span>` : planLabel(plan, pts)}</td>
+        <td class="sub">${renew || "—"}</td>
+        <td class="r"><span class="num" style="font-family:inherit">${o30.toLocaleString("en")}</span></td>
+        <td class="sub">${joined}</td></tr>`).join("");
+    $("restCount").textContent = t("showing", rows.length, REST.length);
+  }
+  $("statusSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; rFilter = b.dataset.s; renderRest(); });
+  $("rSearch").addEventListener("input", (e) => { rQuery = e.target.value; renderRest(); });
+
+  /* ---------- drawer ---------- */
+  let lastFocus;
+  function openDrawer(slug) {
+    const r = REST.find((x) => x[1] === slug); if (!r) return;
+    const [name, , c, st, plan, renew, o30, joined, email, pts] = r;
+    lastFocus = document.activeElement;
+    $("drLogo").textContent = name[0]; $("drLogo").style.background = c; $("drName").textContent = name; $("drSlug").textContent = "/r/" + slug;
+    const susp = st === "suspended";
+    $("drBody").innerHTML = `
+      <div><span class="pill ${st}">${stLabel(st)}</span></div>
+      <div class="facts">
+        <div><span>${t("dPlan")}</span><b>${planLabel(plan)}</b></div>
+        <div><span>${t("dRenew")}</span><b>${renew || "—"}</b></div>
+        <div><span>${t("dOwner")}</span><b dir="ltr">${email}</b></div>
+        <div><span>${t("dPhone")}</span><b dir="ltr">+973 3355 1234</b></div>
+        <div><span>${t("dCard")}</span><b dir="ltr">${st === "trialing" || st === "legacy" ? t("none") : "Visa •••• 4242"}</b></div>
+        <div><span>${plan === "points" ? t("dBalance") : t("dOrders")}</span><b class="num" style="font-family:inherit">${plan === "points" ? pts : o30.toLocaleString("en")}</b></div>
+      </div>
+      <div class="sec"><h4>${t("manage")}</h4><div class="acts">
+        ${st === "trialing" || st === "expired" ? `<div class="act"><div><b>${t("extend")}</b><span>${t("extendSub")}</span>
+          <div class="inline"><input class="in num" type="number" value="7" min="1" max="60" style="width:84px;font-family:inherit"><span class="muted">${t("days")}</span><button class="btn btn-line btn-sm" data-done>${t("apply")}</button></div></div></div>` : ""}
+        <div class="act"><div><b>${t("setPlan")}</b><span>${t("setPlanSub")}</span>
+          <div class="inline"><select class="in"><option>${t("plMonthly")}</option><option>${t("plYearly")}</option></select><span class="muted">${t("until")}</span><input class="in" type="date" value="2026-12-06" dir="ltr"><button class="btn btn-line btn-sm" data-done>${t("apply")}</button></div></div></div>
+        ${plan === "points" ? `<div class="act"><div><b>${t("adjust")}</b><span>${t("adjustSub")}</span>
+          <div class="inline"><input class="in num" type="number" value="100" style="width:100px;font-family:inherit" dir="ltr"><input class="in" style="flex:1;min-width:140px" placeholder="${t("reason")}"><button class="btn btn-line btn-sm" data-done>${t("apply")}</button></div></div></div>` : ""}
+        <div class="act"><div><b>${t("openOwner")}</b><span>${t("openOwnerSub")}</span></div><button class="btn btn-line btn-sm" data-done>${t("view")}</button></div>
+        <div class="act"><div><b>${susp ? t("unsuspend") : t("suspend")}</b><span>${t("suspendSub")}</span></div><button class="btn ${susp ? "btn-line" : "btn-danger"} btn-sm" data-done>${susp ? t("unsuspend") : t("suspendBtn")}</button></div>
+      </div></div>
+      <div class="sec"><h4>${t("history")}</h4><ul class="log">
+        <li><time>6 Nov 09:12</time><span>${t("h1")}</span></li><li><time>2 Nov 18:40</time><span>${t("h2")}</span></li>
+        <li><time>15 Sep 11:03</time><span>${t("h3")}</span></li><li><time>${joined}</time><span>${t("h4")}</span></li></ul></div>`;
+    $("scrim").hidden = false; $("drawer").hidden = false; $("drClose").focus();
+  }
+  function closeDrawer() { $("scrim").hidden = true; $("drawer").hidden = true; lastFocus && lastFocus.focus(); }
+  $("drClose").onclick = closeDrawer; $("scrim").onclick = closeDrawer;
+  $("drBody").addEventListener("click", (e) => { if (e.target.closest("[data-done]")) toast(t("done")); });
+  addEventListener("keydown", (e) => { if (e.key === "Escape") { if (!$("planModal").hidden) closeModal(); else if (!$("drawer").hidden) closeDrawer(); } });
+
+  /* ---------- plans ---------- */
+  function renderPlans() {
+    const per = { monthly: "perMonth", yearly: "perYear", points: "perOrder" };
+    $("plansGrid").innerHTML = PLANS.map((p) => `
+      <div class="card plan ${p.on ? "" : "off"}">
+        <span class="type">${t("t" + p.type[0].toUpperCase() + p.type.slice(1))}</span>
+        <h3>${lang === "ar" ? p.ar : p.en}</h3>
+        <p class="price"><span>BHD</span><b>${p.price}</b><span>${t(per[p.type])}</span></p>
+        <p class="meta">${t("onPlan", p.n)}</p>
+        <div class="row"><label style="display:flex;align-items:center;gap:10px;font-size:13.5px;cursor:pointer"><button type="button" class="switch" role="switch" aria-checked="${p.on}" data-toggle="${p.id}"></button>${p.on ? t("visible") : t("hidden")}</label>
+        <button class="btn btn-quiet btn-sm" data-edit="${p.id}">${t("edit")}</button></div>
+      </div>`).join("") + `<button class="add" type="button" id="addPlan">+ ${t("addPlan")}</button>`;
+    $("packBody").innerHTML = PACKS.map(([pts, price, sold, on], i) => `<tr>
+      <td><b class="num" style="font-family:inherit">${pts.toLocaleString("en")}</b></td><td dir="ltr" style="text-align:start">BHD ${price}</td>
+      <td class="sub" dir="ltr" style="text-align:start">${(parseFloat(price) / pts).toFixed(3)}</td><td class="sub">${sold}</td>
+      <td><button type="button" class="switch" role="switch" aria-checked="${on}" data-pack="${i}" aria-label="${t("cVisible")}"></button></td>
+      <td class="r"><button class="btn btn-quiet btn-sm">${t("edit")}</button></td></tr>`).join("");
+  }
+  $("vPlans").addEventListener("click", (e) => {
+    const tg = e.target.closest("[data-toggle]"); if (tg) { const p = PLANS.find((x) => x.id == tg.dataset.toggle); p.on = !p.on; renderPlans(); toast(t("done")); return; }
+    const pk = e.target.closest("[data-pack]"); if (pk) { PACKS[pk.dataset.pack][3] = !PACKS[pk.dataset.pack][3]; renderPlans(); return; }
+    const ed = e.target.closest("[data-edit]"); if (ed) return openModal(PLANS.find((x) => x.id == ed.dataset.edit));
+    if (e.target.closest("#addPlan")) openModal(null);
+  });
+  function setType(type) {
+    newType = type;
+    document.querySelectorAll("#typePick button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.type === type));
+    $("pmPriceLbl").textContent = t(type === "points" ? "pricePoint" : "priceLbl");
+    $("pmHelp").textContent = t("help" + type[0].toUpperCase() + type.slice(1));
+  }
+  function openModal(p) {
+    editing = p; $("pmTitle").textContent = t(p ? "editPlan" : "newPlan");
+    $("pmNameEn").value = p ? p.en : ""; $("pmNameAr").value = p ? p.ar : ""; $("pmPrice").value = p ? p.price : ""; $("pmDesc").value = p ? p.desc : "";
+    setType(p ? p.type : "monthly");
+    document.querySelectorAll("#typePick button").forEach((b) => (b.disabled = !!p)); // type is fixed once restaurants use the plan
+    $("planModal").hidden = false; $("pmNameEn").focus();
+  }
+  function closeModal() { $("planModal").hidden = true; }
+  $("typePick").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b && !b.disabled) setType(b.dataset.type); });
+  $("planModal").addEventListener("click", (e) => { if (e.target.closest("[data-close]")) closeModal(); });
+  $("planForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const price = parseFloat($("pmPrice").value); if (!$("pmNameEn").value || !$("pmNameAr").value || !(price > 0)) return;
+    const data = { type: newType, en: $("pmNameEn").value, ar: $("pmNameAr").value, price: price.toFixed(3), desc: $("pmDesc").value };
+    if (editing) Object.assign(editing, data); else PLANS.push({ id: Date.now(), n: 0, on: false, ...data });
+    closeModal(); renderPlans(); toast(t("done"));
+  });
+
+  /* ---------- payments ---------- */
+  function renderPays() {
+    const segs = [["all", "pAll"], ["unpaid", "pUnpaid"], ["paid", "pPaid"], ["refunded", "pRefunded"]];
+    $("paySeg").innerHTML = segs.map(([s, k]) => `<button type="button" aria-pressed="${s === pFilter}" data-s="${s}">${t(k)}</button>`).join("");
+    $("payBody").innerHTML = PAYS.map((p, i) => [p, i]).filter(([p]) => pFilter === "all" || p[4] === pFilter).map(([[d, r, desc, a, st, ref], i]) => `<tr>
+      <td class="sub">${d}</td><td><b style="font-weight:600">${r}</b></td><td>${desc}</td>
+      <td class="r" dir="ltr" style="${a.startsWith("-") ? "color:var(--grey)" : ""}">BHD ${a}</td>
+      <td><span class="pill ${st}">${t("st" + st[0].toUpperCase() + st.slice(1))}</span></td><td class="mono sub">${ref || "—"}</td>
+      <td class="r"><div class="docs">${st === "unpaid" ? `<button class="btn btn-quiet btn-sm" data-markpaid="${i}">${t("markPaid")}</button>` : ""}<a class="btn btn-line btn-sm doc" href="invoice.html${st === "unpaid" ? "?s=due" : ""}" target="_blank" rel="noopener"><svg><use href="#i-dl"/></svg>${t(st === "unpaid" ? "dInvoice" : st === "refunded" ? "dCredit" : "dReceipt")}</a></div></td></tr>`).join("");
+  }
+  $("paySeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; pFilter = b.dataset.s; renderPays(); });
+  $("payBody").addEventListener("click", (e) => {
+    const m = e.target.closest("[data-markpaid]"); if (!m) return;
+    const row = PAYS[m.dataset.markpaid]; row[4] = "paid"; row[5] = "CASH-" + String(Date.now()).slice(-6); renderPays(); toast(t("markedPaid"));
+  });
+  $("newInv").onclick = () => toast(t("newInvSoon"));
+
+  function renderAll() { renderOverview(); renderRest(); renderPlans(); renderPays(); if (view === "overview") drawChart(); }
+  apply();
+  const h = location.hash.replace("#", ""); if (["restaurants", "plans", "payments", "settings"].includes(h)) go(h);
+})();
+</script>
+</body>
+</html>

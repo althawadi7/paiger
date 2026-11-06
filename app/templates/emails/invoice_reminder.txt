@@ -1,0 +1,14 @@
+A quick reminder about your invoice
+{% if when == "overdue" %}Invoice {{ number }} was due on {{ due_label }}. Paying it keeps your cashier running without a pause.{% else %}Invoice {{ number }} is due tomorrow. Paying on time keeps your cashier running without a pause.{% endif %}
+
+Invoice: {{ number }}
+Amount due: BHD {{ amount }}
+Due date: {{ due_label }}
+{% if attachment_name %}Attached: {{ attachment_name }}{% endif %}
+
+Pay: {{ button_url }}
+
+If you’ve just paid, you can ignore this email. The receipt is on its way.
+
+Paiger account: {{ restaurant_name }}
+{{ support_email }}

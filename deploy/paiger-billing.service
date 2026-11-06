@@ -1,0 +1,11 @@
+[Unit]
+Description=Paiger billing emails
+After=network.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/www/pager
+ExecStart=/var/www/pager/venv/bin/python -m app.jobs.billing_daily
+
+[Install]
+WantedBy=multi-user.target

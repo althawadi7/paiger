@@ -1,0 +1,13 @@
+{% extends "emails/billing_base.html" %}
+{% from "emails/_bits.html" import pair %}
+{% block preheader %}{{ points_left }} points left{% if days_left_label %}, about {{ days_left_label }} at your pace{% endif %}.{% endblock %}
+{% block eyebrow %}Points running low{% endblock %}
+{% block headline %}You have {{ points_left }} points left{% endblock %}
+{% block intro %}{% if days_left_label %}At today’s pace that’s about {{ days_left_label }} of orders. {% endif %}Top up now so the cashier never stops in the middle of a rush.{% endblock %}
+{% block rows %}
+{{ pair("Points left", points_left) }}
+{{ pair("Used this month", used_month) }}
+{{ pair("1 point", point_value) }}
+{% endblock %}
+{% block button_label %}Top up points{% endblock %}
+{% block note %}Prefer not to think about it? Switch to Pay at the end of the month in your dashboard and we’ll bill only what you use.{% endblock %}

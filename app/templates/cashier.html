@@ -319,7 +319,9 @@ window.PAIGER_I18N = {{ {
   "mSoundOn": t("cash.mSoundOn"),
   "mSoundOff": t("cash.mSoundOff"),
   "more": t("cash.more"),
-  "tooFast": t("cash.tooFast")
+  "tooFast": t("cash.tooFast"),
+  "needPoints": t("cash.needPoints"),
+  "paused": t("cash.paused")
 }|tojson }};
 window.PAIGER_CASHIER = {{ {
   "restaurantId": restaurant.id,
@@ -541,6 +543,8 @@ window.PAIGER_CASHIER = {{ {
     });
     if (res.status === 401) { bounceLogin(); return; }
     if (res.status === 429) { toast(t("tooFast")); renderDisplay(); return; }
+    if (res.status === 402) { toast(t("needPoints")); renderDisplay(); return; }
+    if (res.status === 403) { toast(t("paused")); renderDisplay(); return; }
     if (res.status === 409) { await reload(); value = number; renderDisplay(); return; }
     if (!res.ok) { renderDisplay(); return; }
     const raw = await res.json();
