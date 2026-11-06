@@ -49,7 +49,7 @@ def get_public_base_url(request: Request) -> str:
 class ConnectionManager:
     def __init__(self):
         self.pager_connections: Dict[str, List[WebSocket]] = {}
-        self.cashier_connections: List[WebSocket] = []
+        self.cashier_connections: List[Dict[str, Any]] = []
 
     async def connect_pager(self, token: str, websocket: WebSocket):
         await websocket.accept()
@@ -66,13 +66,12 @@ class ConnectionManager:
             if not self.pager_connections[token_str]:
                 del self.pager_connections[token_str]
 
-    async def connect_cashier(self, websocket: WebSocket):
+    async def connect_cashier(self, websocket: WebSocket, restaurant_id: Optional[int]):
         await websocket.accept()
-        self.cashier_connections.append(websocket)
+        self.cashier_connections.append({"ws": websocket, "restaurant_id": restaurant_id})
 
     def disconnect_cashier(self, websocket: WebSocket):
-        if websocket in self.cashier_connections:
-            self.cashier_connections.remove(websocket)
+        self.cashier_connections = [c for c in self.cashier_connections if c["ws"] is not websocket]
 
     async def notify_pager(self, token: str, data: dict):
         token_str = str(token).strip()
@@ -88,20 +87,26 @@ class ConnectionManager:
                 self.disconnect_pager(token_str, ws)
 
     async def notify_cashiers(self, data: dict):
-        message = json.dumps(data)
-        for ws in list(self.cashier_connections):
+        payload = dict(data)
+        restaurant_id = payload.get("restaurant_id")
+        order = payload.get("order")
+        if restaurant_id is None and isinstance(order, dict):
+            restaurant_id = order.get("restaurant_id")
+        if restaurant_id is not None:
+            payload["restaurant_id"] = int(restaurant_id)
+        message = json.dumps(payload)
+        for conn in list(self.cashier_connections):
+            conn_restaurant = conn.get("restaurant_id")
+            if conn_restaurant is not None and payload.get("restaurant_id") is not None and int(conn_restaurant) != int(payload["restaurant_id"]):
+                continue
             try:
-                await ws.send_text(message)
+                await conn["ws"].send_text(message)
             except Exception:
                 pass
 
     async def broadcast_all(self, data: dict):
+        await self.notify_cashiers(data)
         message = json.dumps(data)
-        for ws in list(self.cashier_connections):
-            try:
-                await ws.send_text(message)
-            except Exception:
-                pass
         for token, ws_list in list(self.pager_connections.items()):
             for ws in list(ws_list):
                 try:
@@ -1077,7 +1082,11 @@ async def delete_order(order_id: int, request: Request):
     if order:
         db.delete_order(order_id)
         await manager.notify_pager(order["token"], {"event": "order_deleted"})
-        await manager.notify_cashiers({"event": "order_deleted", "order_id": order_id})
+        await manager.notify_cashiers({
+            "event": "order_deleted",
+            "order_id": order_id,
+            "restaurant_id": order.get("restaurant_id"),
+        })
     return {"status": "success"}
 
 # ─────────────────────────────────────────────────────────────
@@ -1168,9 +1177,24 @@ async def websocket_pager(websocket: WebSocket, token: str):
     except WebSocketDisconnect:
         manager.disconnect_pager(token, websocket)
 
+class _AuthSource:
+    def __init__(self, cookies, headers):
+        self.cookies = cookies
+        self.headers = headers
+
+
 @app.websocket("/ws/cashier")
 async def websocket_cashier(websocket: WebSocket):
-    await manager.connect_cashier(websocket)
+    source = _AuthSource(websocket.cookies, websocket.headers)
+    restaurant = auth.get_current_restaurant(source)
+    if restaurant and restaurant.get("sub"):
+        scope_id: Optional[int] = int(restaurant["sub"])
+    elif auth.get_current_super_admin(source):
+        scope_id = None
+    else:
+        await websocket.close(code=1008)
+        return
+    await manager.connect_cashier(websocket, scope_id)
     try:
         while True:
             await websocket.receive_text()
