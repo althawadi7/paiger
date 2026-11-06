@@ -49,9 +49,18 @@ class CashierController {
     });
   }
 
+  async staffFetch(url, options) {
+    const res = await fetch(url, options);
+    if (res.status === 401) {
+      const next = window.location.pathname + window.location.search;
+      window.location.href = "/login?next=" + encodeURIComponent(next);
+    }
+    return res;
+  }
+
   async loadOrders() {
     try {
-      const res = await fetch("/api/orders");
+      const res = await this.staffFetch("/api/orders");
       if (res.ok) {
         this.orders = await res.json();
         this.renderOrders();
@@ -74,7 +83,7 @@ class CashierController {
     };
 
     try {
-      const res = await fetch("/api/orders", {
+      const res = await this.staffFetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -105,7 +114,7 @@ class CashierController {
 
   async callOrder(orderId) {
     try {
-      await fetch(`/api/orders/${orderId}/call`, { method: "POST" });
+      await this.staffFetch(`/api/orders/${orderId}/call`, { method: "POST" });
       await this.loadOrders();
     } catch (err) {
       console.error(err);
@@ -114,7 +123,7 @@ class CashierController {
 
   async repeatCallOrder(orderId) {
     try {
-      await fetch(`/api/orders/${orderId}/repeat_call`, { method: "POST" });
+      await this.staffFetch(`/api/orders/${orderId}/repeat_call`, { method: "POST" });
       await this.loadOrders();
     } catch (err) {
       console.error(err);
@@ -123,7 +132,7 @@ class CashierController {
 
   async completeOrder(orderId) {
     try {
-      await fetch(`/api/orders/${orderId}/complete`, { method: "POST" });
+      await this.staffFetch(`/api/orders/${orderId}/complete`, { method: "POST" });
       await this.loadOrders();
     } catch (err) {
       console.error(err);
@@ -132,7 +141,7 @@ class CashierController {
 
   async resetOrder(orderId) {
     try {
-      await fetch(`/api/orders/${orderId}/reset`, { method: "POST" });
+      await this.staffFetch(`/api/orders/${orderId}/reset`, { method: "POST" });
       await this.loadOrders();
     } catch (err) {
       console.error(err);
@@ -142,7 +151,7 @@ class CashierController {
   async deleteOrder(orderId) {
     if (!confirm("هل أنت متأكد من حذف هذا الطلب؟")) return;
     try {
-      await fetch(`/api/orders/${orderId}`, { method: "DELETE" });
+      await this.staffFetch(`/api/orders/${orderId}`, { method: "DELETE" });
       await this.loadOrders();
     } catch (err) {
       console.error(err);

@@ -1324,9 +1324,7 @@ if (permissionAcceptBtn) {
     e.stopPropagation();
     activateArming();
     if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
-      setTimeout(function(){
-        window.location.href = "dawrak://pager/" + order.token;
-      }, 400);
+      window.location.href = "dawrak://pager/" + order.token;
     }
   };
 }

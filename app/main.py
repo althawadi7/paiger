@@ -979,11 +979,23 @@ def _restaurant_id_for_create(actor: Dict[str, Any], requested_id: Optional[int]
 
 
 @app.get("/api/orders")
-async def list_orders(request: Request):
-    actor = _order_actor(request)
-    if actor["role"] == "restaurant":
-        return db.get_all_orders(limit=150, restaurant_id=actor["restaurant_id"])
-    return db.get_all_orders(limit=150)
+async def list_orders(request: Request, restaurant_id: Optional[int] = None):
+    """Staff sessions keep the Phase 0 scope.
+
+    The shipped Dawrak app calls this with ?restaurant_id= and no cookie, then
+    registers the Live Activity token. A 401 there aborts that registration,
+    so the later ring has nothing to push. Writes stay session-only.
+    """
+    restaurant = auth.get_current_restaurant(request)
+    if restaurant and restaurant.get("sub"):
+        return db.get_all_orders(limit=150, restaurant_id=int(restaurant["sub"]))
+    if auth.get_current_super_admin(request):
+        return db.get_all_orders(limit=150)
+    if restaurant_id:
+        if not db.get_restaurant_by_id(int(restaurant_id)):
+            raise HTTPException(status_code=404, detail="Restaurant not found")
+        return db.get_all_orders(limit=150, restaurant_id=int(restaurant_id))
+    raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 @app.post("/api/orders")
