@@ -1,12 +1,16 @@
 import io
 import os
+import re
 import json
 import logging
+import secrets
 import socket
 import asyncio
+from datetime import datetime
+from decimal import Decimal
 from urllib.parse import quote
 from typing import Any, Dict, List, Optional
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request, Form, Depends, status
+from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect, HTTPException, Request, Form, Depends, status
 from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse, FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -18,6 +22,7 @@ from pathlib import Path
 from . import database as db
 from . import push_service
 from . import auth
+from . import i18n
 
 logger = logging.getLogger("pager")
 
@@ -33,6 +38,103 @@ app = FastAPI(
 # Static files & templates
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+i18n.install(templates)
+
+
+def _hex_luminance(color: str) -> float:
+    value = color.lstrip("#")
+    if len(value) == 3:
+        value = "".join(ch * 2 for ch in value)
+    red, green, blue = int(value[0:2], 16) / 255, int(value[2:4], 16) / 255, int(value[4:6], 16) / 255
+
+    def channel(part: float) -> float:
+        if part <= 0.04045:
+            return part / 12.92
+        return ((part + 0.055) / 1.055) ** 2.4
+
+    return 0.2126 * channel(red) + 0.7152 * channel(green) + 0.0722 * channel(blue)
+
+
+def _contrast_ratio(left: str, right: str) -> float:
+    lighter = max(_hex_luminance(left), _hex_luminance(right))
+    darker = min(_hex_luminance(left), _hex_luminance(right))
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def restaurant_brand(restaurant: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Name, logo, initial and contrast ink. Same object on the customer page, cashier and print stand."""
+    source = restaurant or {}
+    name = str(source.get("name") or "").strip() or "Paiger"
+    raw_logo = str(source.get("logo_url") or "").strip()
+    raw_color = str(source.get("brand_color") or "").strip()
+    brand = raw_color if re.fullmatch(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})", raw_color) else "#111111"
+    ink = "#111" if _contrast_ratio(brand, "#111111") >= _contrast_ratio(brand, "#ffffff") else "#ffffff"
+    return {
+        "name": name,
+        "logo_url": raw_logo or None,
+        "initial": name[:1],
+        "brand": brand,
+        "brand_ink": ink,
+    }
+
+
+templates.env.globals["restaurant_brand"] = restaurant_brand
+
+
+@app.middleware("http")
+async def language_middleware(request: Request, call_next):
+    token = i18n.activate(i18n.get_lang(request))
+    try:
+        response = await call_next(request)
+    finally:
+        i18n.reset(token)
+    query_lang = request.query_params.get("lang")
+    if query_lang in ("en", "ar"):
+        i18n.apply_lang_cookie(response, query_lang, request)
+    return response
+
+
+def _format_money(value: str) -> str:
+    amount = Decimal(value)
+    if amount == amount.to_integral_value():
+        return str(int(amount))
+    return f"{amount:.3f}"
+
+
+def _landing_plans() -> List[Dict[str, Any]]:
+    # Placeholder until the plans table exists (batch 4). Same figures as design/landing.html.
+    return [
+        {
+            "code": "monthly",
+            "name_key": "price.m",
+            "for_key": "price.mFor",
+            "amount": _format_money("15"),
+            "per_key": "price.perMonth",
+            "features": ["price.unl", "price.f1", "price.f2", "price.f3"],
+            "featured": False,
+        },
+        {
+            "code": "yearly",
+            "name_key": "price.y",
+            "for_key": "price.yFor",
+            "amount": _format_money("150"),
+            "per_key": "price.perYear",
+            "save_key": "price.ySave",
+            "tag_key": "price.best",
+            "features": ["price.unl", "price.allM", "price.f4"],
+            "featured": True,
+        },
+        {
+            "code": "points",
+            "name_key": "price.p",
+            "for_key": "price.pFor",
+            "amount": _format_money("0.100"),
+            "per_key": "price.perOrder",
+            "save_key": "price.pNote",
+            "features": ["price.p1", "price.p2", "price.allM"],
+            "featured": False,
+        },
+    ]
 
 def get_local_ip() -> str:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -143,6 +245,7 @@ class PushSubscriptionRequest(BaseModel):
     endpoint: str
     p256dh: str
     auth: str
+    lang: Optional[str] = "en"
 
 class ThemeSettingRequest(BaseModel):
     theme: str
@@ -645,6 +748,78 @@ async def api_merchant_save_settings(req: MerchantSettingsDto, request: Request)
     )
     return {"status": "ok", "restaurant": updated}
 
+
+_LOGO_DIR = BASE_DIR / "static" / "uploads" / "logos"
+_LOGO_URL = re.compile(r"^/static/uploads/logos/(\d+-[0-9a-f]+\.webp)$")
+_LOGO_BYTES = 2 * 1024 * 1024
+
+
+def _remove_logo_file(logo_url: str) -> None:
+    match = _LOGO_URL.match(logo_url or "")
+    if not match:
+        return
+    path = (_LOGO_DIR / match.group(1)).resolve()
+    root = _LOGO_DIR.resolve()
+    if path.parent != root or not path.is_file():
+        return
+    path.unlink()
+
+
+@app.post("/api/merchant/logo")
+async def upload_restaurant_logo(request: Request, file: UploadFile = File(...)):
+    user = _require_restaurant_user(request)
+    rest_id = int(user["sub"])
+    rest = db.get_restaurant_by_id(rest_id)
+    if not rest:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+    raw = await file.read()
+    if not raw or len(raw) > _LOGO_BYTES:
+        raise HTTPException(status_code=413, detail="Logo must be a PNG, JPG or WEBP under 2 MB")
+    try:
+        from PIL import Image, ImageOps, UnidentifiedImageError
+        Image.MAX_IMAGE_PIXELS = 24_000_000
+        try:
+            probe = Image.open(io.BytesIO(raw))
+            kind = (probe.format or "").upper()
+            probe.verify()
+        except (UnidentifiedImageError, OSError):
+            raise HTTPException(status_code=400, detail="PNG, JPG or WEBP only")
+        if kind not in ("PNG", "JPEG", "WEBP"):
+            raise HTTPException(status_code=400, detail="PNG, JPG or WEBP only")
+        image = ImageOps.exif_transpose(Image.open(io.BytesIO(raw)))
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=400, detail="PNG, JPG or WEBP only")
+    width, height = image.size
+    side = min(width, height)
+    left = (width - side) // 2
+    top = (height - side) // 2
+    image = image.crop((left, top, left + side, top + side)).resize((512, 512), Image.Resampling.LANCZOS)
+    if image.mode not in ("RGB", "RGBA"):
+        image = image.convert("RGBA")
+    _LOGO_DIR.mkdir(parents=True, exist_ok=True)
+    filename = f"{rest_id}-{secrets.token_hex(6)}.webp"
+    image.save(_LOGO_DIR / filename, format="WEBP", quality=82, method=6)
+    _remove_logo_file(str(rest.get("logo_url") or ""))
+    url = f"/static/uploads/logos/{filename}"
+    db.set_restaurant_logo(rest_id, url)
+    rest["logo_url"] = url
+    return {"logo_url": url, "brand": restaurant_brand(rest)}
+
+
+@app.delete("/api/merchant/logo")
+async def delete_restaurant_logo(request: Request):
+    user = _require_restaurant_user(request)
+    rest_id = int(user["sub"])
+    rest = db.get_restaurant_by_id(rest_id)
+    if not rest:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+    _remove_logo_file(str(rest.get("logo_url") or ""))
+    db.set_restaurant_logo(rest_id, "")
+    rest["logo_url"] = ""
+    return {"logo_url": None, "brand": restaurant_brand(rest)}
+
 # ─────────────────────────────────────────────────────────────
 # CASHIER TERMINALS (PER-RESTAURANT & CENTRAL)
 # ─────────────────────────────────────────────────────────────
@@ -683,17 +858,7 @@ async def restaurant_dedicated_cashier(request: Request, slug: str):
     port = request.url.port or (443 if request.url.scheme == "https" else 80)
     theme = db.get_setting("theme", "light")
 
-    return templates.TemplateResponse(
-        "cashier.html",
-        {
-            "request": request,
-            "restaurant": rest,
-            "local_ip": local_ip,
-            "port": port,
-            "base_url": base_url,
-            "theme": theme
-        }
-    )
+    return templates.TemplateResponse("cashier.html", _cashier_context(request, rest, local_ip, port, base_url, theme))
 
 @app.get("/r/{slug}/print", response_class=HTMLResponse)
 async def restaurant_qr_print_sheet(request: Request, slug: str):
@@ -734,17 +899,20 @@ async def default_cashier_redirect(request: Request):
     port = request.url.port or (443 if request.url.scheme == "https" else 80)
     theme = db.get_setting("theme", "light")
 
-    return templates.TemplateResponse(
-        "cashier.html",
-        {
-            "request": request,
-            "restaurant": rest,
-            "local_ip": local_ip,
-            "port": port,
-            "base_url": base_url,
-            "theme": theme
-        }
-    )
+    return templates.TemplateResponse("cashier.html", _cashier_context(request, rest, local_ip, port, base_url, theme))
+
+@app.get("/lang/{code}")
+async def set_language(code: str, request: Request):
+    chosen = code if code in ("en", "ar") else "en"
+    response = RedirectResponse(i18n.return_path(request), status_code=302)
+    i18n.apply_lang_cookie(response, chosen, request)
+    return response
+
+
+@app.get("/signup")
+async def signup_placeholder():
+    return RedirectResponse("/login", status_code=302)
+
 
 @app.get("/", response_class=HTMLResponse)
 async def index_route(request: Request):
@@ -754,8 +922,7 @@ async def index_route(request: Request):
         {
             "request": request,
             "footer_pages": footer_pages,
-            "current_admin": auth.get_current_super_admin(request),
-            "current_restaurant": auth.get_current_restaurant(request),
+            "plans": _landing_plans(),
         }
     )
 
@@ -796,8 +963,13 @@ async def public_custom_page(request: Request, slug: str):
         raise HTTPException(status_code=404, detail="الصفحة المطلوبة غير موجودة أو قيد المراجعة")
 
     footer_pages = db.get_all_custom_pages(published_only=True, footer_only=True)
-    html_ar = markdown.markdown(page.get("content", ""), extensions=['extra', 'nl2br'])
-    html_en = markdown.markdown(page.get("content_en", "") or page.get("content", ""), extensions=['extra', 'nl2br'])
+    if i18n.get_lang(request) == "en":
+        page_title = page.get("title_en") or page.get("title") or ""
+        raw = page.get("content_en") or page.get("content") or ""
+    else:
+        page_title = page.get("title") or page.get("title_en") or ""
+        raw = page.get("content") or page.get("content_en") or ""
+    html_content = markdown.markdown(raw, extensions=['extra', 'nl2br'])
 
     return templates.TemplateResponse(
         "custom_page.html",
@@ -805,8 +977,8 @@ async def public_custom_page(request: Request, slug: str):
             "request": request,
             "page": page,
             "footer_pages": footer_pages,
-            "html_content_ar": html_ar,
-            "html_content_en": html_en
+            "page_title": page_title,
+            "html_content": html_content,
         }
     )
 
@@ -819,39 +991,38 @@ async def public_custom_page(request: Request, slug: str):
 async def pager_page(request: Request, token: str):
     order = db.get_order_by_token(token)
     if not order:
-        return HTMLResponse(
-            """
-            <div style="font-family:'Readex Pro',sans-serif; text-align:center; padding:50px; background:#08090d; color:#f3f5f9; height:100vh;">
-                <h1>⚠️ طلب غير موجود | Order Not Found</h1>
-                <p style="color:#8a93a6; margin-top:10px;">الرابط غير صحيح أو قد تم حذف الطلب من الكاشير.</p>
-                <a href="/login" style="display:inline-block; margin-top:20px; color:#8b7bff; text-decoration:none;">العودة للرئيسية</a>
-            </div>
-            """,
-            status_code=404
+        return templates.TemplateResponse(
+            "pager.html",
+            {"request": request, "order": None, "brand": restaurant_brand(None), "queue_info": {}, "token": token},
+            status_code=404,
         )
-    local_ip = get_local_ip()
-    base_url = get_public_base_url(request)
-    port = request.url.port or (443 if request.url.scheme == "https" else 80)
+    order = await _note_customer_view(request, order)
+    restaurant = db.get_restaurant_by_id(int(order.get("restaurant_id") or 0)) if order.get("restaurant_id") else None
+    if not restaurant:
+        restaurant = {
+            "name": order.get("restaurant_name") or "Paiger",
+            "brand_color": order.get("brand_color") or "#111111",
+            "logo_url": "",
+        }
     queue_info = db.get_order_queue_info(order["id"])
-    theme = db.get_setting("theme", "light")
     return templates.TemplateResponse(
         "pager.html",
         {
             "request": request,
             "order": order,
             "token": token,
-            "base_url": base_url,
             "queue_info": queue_info,
-            "theme": theme
+            "brand": restaurant_brand(restaurant),
         }
     )
 
 @app.get("/api/pager/{token}/status")
 @app.get("/api/orders/{token}/details")
-async def get_order_details(token: str):
+async def get_order_details(token: str, request: Request):
     order = db.get_order_by_token(token)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    order = await _note_customer_view(request, order)
     q_info = db.get_order_queue_info(order["id"])
     theme = db.get_setting("theme", "light")
     default_rest = db.get_setting("restaurant_name", "بيجر الطلبات")
@@ -870,8 +1041,10 @@ async def get_order_details(token: str):
         "created_at": order["created_at"],
         "called_at": order["called_at"],
         "completed_at": order["completed_at"],
+        "scanned": bool(order.get("scanned")),
         "orders_ahead": q_info["orders_ahead"],
         "estimated_wait": q_info["estimated_wait"],
+        "estimated_wait_minutes": int(q_info.get("estimated_wait_minutes") or 0),
         "avg_prep_mins": q_info["avg_prep_mins"],
         "theme": theme
     }
@@ -897,10 +1070,11 @@ async def mobile_onway_order(token: str, request: Request):
 
 @app.post("/api/orders/{token}/live-activity-token")
 @app.post("/api/orders/{token}/live-activity")
-async def register_live_activity_token(token: str, req: LiveActivityTokenRequest):
+async def register_live_activity_token(token: str, req: LiveActivityTokenRequest, request: Request):
     order = db.get_order_by_token(token)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    await _note_customer_view(request, order)
     actual_tok = req.push_token or req.pushToken or ""
     db.save_live_activity_token(
         order_token=token,
@@ -912,6 +1086,48 @@ async def register_live_activity_token(token: str, req: LiveActivityTokenRequest
 # ─────────────────────────────────────────────────────────────
 # CORE ORDERS REST APIS
 # ─────────────────────────────────────────────────────────────
+
+def _cashier_context(request: Request, rest: Dict[str, Any], local_ip: str, port: int, base_url: str, theme: str) -> Dict[str, Any]:
+    stats = db.cashier_today_stats(int(rest["id"]))
+    offset = datetime.now().astimezone().strftime("%z")
+    tz_offset = f"{offset[:3]}:{offset[3:]}" if len(offset) == 5 else "+00:00"
+    return {
+        "request": request,
+        "restaurant": rest,
+        "local_ip": local_ip,
+        "port": port,
+        "base_url": base_url,
+        "theme": theme,
+        "tz_offset": tz_offset,
+        "today_count": stats["today_count"],
+        "called_count": stats["called_count"],
+        "avg_seconds": stats["avg_seconds"] if stats["avg_seconds"] is not None else "",
+    }
+
+
+def _has_restaurant_session(source) -> bool:
+    user = auth.get_current_restaurant(source)
+    return bool(user and user.get("sub"))
+
+
+async def _note_customer_view(source, order: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """First customer view sets scanned_at. A logged-in restaurant session does not count."""
+    if not order or _has_restaurant_session(source):
+        return order
+    try:
+        fresh = db.mark_order_scanned(order["id"])
+    except Exception:
+        logger.exception("Could not record customer scan")
+        return order
+    if not fresh:
+        return order
+    await manager.notify_cashiers({
+        "event": "customer_connected",
+        "order_id": fresh["id"],
+        "restaurant_id": fresh.get("restaurant_id"),
+    })
+    return fresh
+
 
 def _order_actor(request: Request) -> Dict[str, Any]:
     """Restaurant id comes from the restaurant JWT. Super-admin has no tenant id."""
@@ -1002,6 +1218,8 @@ async def list_orders(request: Request, restaurant_id: Optional[int] = None):
 async def create_new_order(order_data: CreateOrderRequest, request: Request):
     actor = _order_actor(request)
     restaurant_id = _restaurant_id_for_create(actor, order_data.restaurant_id)
+    if db.find_active_order_number(restaurant_id, order_data.order_number):
+        raise HTTPException(status_code=409, detail="An active order with this number already exists")
     order = db.create_order(
         order_number=order_data.order_number,
         restaurant_id=restaurant_id,
@@ -1154,7 +1372,7 @@ async def get_push_public_key():
 
 @app.post("/api/push/subscribe")
 async def subscribe_push(req: PushSubscriptionRequest):
-    db.save_push_subscription(req.token, req.endpoint, req.p256dh, req.auth)
+    db.save_push_subscription(req.token, req.endpoint, req.p256dh, req.auth, req.lang or "en")
     return {"status": "ok"}
 
 # ─────────────────────────────────────────────────────────────
@@ -1166,6 +1384,8 @@ async def subscribe_push(req: PushSubscriptionRequest):
 async def websocket_pager(websocket: WebSocket, token: str):
     await manager.connect_pager(token, websocket)
     order = db.get_order_by_token(token)
+    if order:
+        order = await _note_customer_view(websocket, order)
     if order:
         q_info = db.get_order_queue_info(order["id"])
         theme = db.get_setting("theme", "light")

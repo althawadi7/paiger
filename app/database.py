@@ -1,4 +1,5 @@
 import os
+import re
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -56,6 +57,8 @@ def _serialize_row(row: Optional[Dict[str, Any]], include_secrets: bool = False)
             d[k] = int(v) if v % 1 == 0 else float(v)
     if not include_secrets:
         d.pop("password_hash", None)
+    if "scanned_at" in d:
+        d["scanned"] = bool(d.get("scanned_at"))
     return d
 
 def init_db():
@@ -171,6 +174,36 @@ def init_db():
                     INDEX idx_page_published (is_published)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             """)
+            conn.commit()
+    finally:
+        conn.close()
+    ensure_column("orders", "scanned_at", "DATETIME NULL")
+    ensure_column("push_subscriptions", "lang", "VARCHAR(8) NULL")
+
+
+_IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def ensure_column(table: str, column: str, definition: str) -> None:
+    """Add a column when it is missing. Later batches can reuse this for new columns."""
+    if not _IDENT.match(table) or not _IDENT.match(column):
+        raise ValueError("invalid SQL identifier")
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT COUNT(*) AS n
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND COLUMN_NAME = %s
+                """,
+                (table, column),
+            )
+            row = cur.fetchone() or {}
+            count = row.get("n", 0) if isinstance(row, dict) else row[0]
+            if int(count or 0):
+                return
+            cur.execute(f"ALTER TABLE `{table}` ADD COLUMN `{column}` {definition}")
             conn.commit()
     finally:
         conn.close()
@@ -550,6 +583,77 @@ def get_order_by_token(token: str) -> Optional[Dict[str, Any]]:
     finally:
         conn.close()
 
+def find_active_order_number(restaurant_id: int, order_number: str) -> Optional[Dict[str, Any]]:
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT * FROM orders
+                WHERE restaurant_id = %s AND order_number = %s
+                  AND status IN ('waiting', 'ringing', 'onway')
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                (restaurant_id, str(order_number).strip()),
+            )
+            return _serialize_row(cur.fetchone())
+    finally:
+        conn.close()
+
+
+def mark_order_scanned(order_id: int) -> Optional[Dict[str, Any]]:
+    """Set scanned_at the first time only. Returns the order when this call set it."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE orders
+                SET scanned_at = %s
+                WHERE id = %s AND scanned_at IS NULL
+                """,
+                (datetime.now(), order_id),
+            )
+            changed = cur.rowcount
+            conn.commit()
+        if not changed:
+            return None
+        return get_order_by_id(order_id)
+    finally:
+        conn.close()
+
+
+def cashier_today_stats(restaurant_id: int) -> Dict[str, Any]:
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    SUM(DATE(created_at) = CURDATE()) AS today_count,
+                    SUM(called_at IS NOT NULL AND DATE(called_at) = CURDATE()) AS called_count,
+                    AVG(CASE
+                        WHEN called_at IS NOT NULL AND DATE(called_at) = CURDATE()
+                        THEN TIMESTAMPDIFF(SECOND, created_at, called_at)
+                    END) AS avg_seconds
+                FROM orders
+                WHERE restaurant_id = %s
+                """,
+                (restaurant_id,),
+            )
+            row = cur.fetchone() or {}
+        if not isinstance(row, dict):
+            return {"today_count": 0, "called_count": 0, "avg_seconds": None}
+        return {
+            "today_count": int(row.get("today_count") or 0),
+            "called_count": int(row.get("called_count") or 0),
+            "avg_seconds": float(row["avg_seconds"]) if row.get("avg_seconds") is not None else None,
+        }
+    finally:
+        conn.close()
+
+
 def get_order_by_number_and_restaurant(order_number: str, restaurant_id: int) -> Optional[Dict[str, Any]]:
     conn = get_db_connection()
     try:
@@ -685,13 +789,14 @@ def format_arabic_time(total_minutes: int) -> str:
 def get_order_queue_info(order_id: int) -> Dict[str, Any]:
     order = get_order_by_id(order_id)
     if not order:
-        return {"orders_ahead": 0, "estimated_wait": "0 دقيقة", "avg_prep_mins": 5.0}
+        return {"orders_ahead": 0, "estimated_wait": "0 دقيقة", "estimated_wait_minutes": 0, "avg_prep_mins": 5.0}
 
     status = order["status"]
     if status in ("ringing", "onway", "done"):
         return {
             "orders_ahead": 0,
             "estimated_wait": "جاهز للاستلام الآن! 🎉" if status != "done" else "تم الاستلام",
+            "estimated_wait_minutes": 0,
             "avg_prep_mins": 0
         }
 
@@ -738,6 +843,7 @@ def get_order_queue_info(order_id: int) -> Dict[str, Any]:
             return {
                 "orders_ahead": orders_ahead,
                 "estimated_wait": est_wait_str,
+                "estimated_wait_minutes": int(est_total_mins),
                 "avg_prep_mins": avg_mins
             }
     finally:
@@ -757,6 +863,18 @@ def get_setting(key: str, default: str = "") -> str:
     finally:
         conn.close()
 
+def set_restaurant_logo(restaurant_id: int, logo_url: str) -> None:
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE restaurants SET logo_url = %s WHERE id = %s",
+                (logo_url, restaurant_id),
+            )
+            conn.commit()
+    finally:
+        conn.close()
+
 def set_setting(key: str, value: str):
     conn = get_db_connection()
     try:
@@ -772,20 +890,22 @@ def set_setting(key: str, value: str):
     finally:
         conn.close()
 
-def save_push_subscription(token: str, endpoint: str, p256dh: str, auth: str):
+def save_push_subscription(token: str, endpoint: str, p256dh: str, auth: str, lang: str = "en"):
+    chosen = lang if lang in ("en", "ar") else "en"
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO push_subscriptions (token, endpoint, p256dh, auth)
-                VALUES (%s, %s, %s, %s)
-                ON DUPLICATE KEY UPDATE 
+                INSERT INTO push_subscriptions (token, endpoint, p256dh, auth, lang)
+                VALUES (%s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
                     token = VALUES(token),
                     p256dh = VALUES(p256dh),
-                    auth = VALUES(auth)
+                    auth = VALUES(auth),
+                    lang = VALUES(lang)
                 """,
-                (token, endpoint, p256dh, auth)
+                (token, endpoint, p256dh, auth, chosen)
             )
             conn.commit()
     finally:

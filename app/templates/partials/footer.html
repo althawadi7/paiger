@@ -1,0 +1,11 @@
+<footer>
+  <div class="wrap">
+    <a class="logo" href="/"><svg class="logo-mark" style="width:24px;height:24px"><use href="#i-mark"/></svg><span class="logo-word" style="font-size:20px">Paiger</span></a>
+    <nav aria-label="{{ t('foot.nav') }}">
+      {% for fp in footer_pages|default([]) %}
+      <a href="/p/{{ fp.slug }}">{% if lang == 'ar' %}{{ fp.title }}{% else %}{{ fp.title_en or fp.title }}{% endif %}</a>
+      {% endfor %}
+    </nav>
+    <span>{{ t('foot.copy') }}</span>
+  </div>
+</footer>

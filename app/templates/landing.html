@@ -1,384 +1,509 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="apple-itunes-app" content="app-clip-bundle-id=com.dawrak.app.Clip, app-id=6829547522">
-<title>بيجر — حوّل كل هاتف إلى بيجر مطعم</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="icon" href="/static/img/brand-logo.png">
+{% extends "base.html" %}
+{% block head %}
+<meta name="description" content="{{ t('meta.description') }}">
 <style>
-:root{
-  --bg:#f6f3ed;
-  --card:#ffffff;
-  --ink:#23150d;
-  --mute:#7a6656;
-  --line:rgba(58,38,28,.11);
-  --primary:#3e2415;
-  --primary-hover:#2b190e;
-  --accent:#c05621;
-  --accent-hover:#a84717;
-  --ring:#dc2626;
-  --go:#5b3829;
-  --wait:#c05621;
-  --done:#16a34a;
-  --org:#9c531d;
-  --grad:linear-gradient(135deg,#3e2415,#c05621);
-  color-scheme:light;
-  box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px);
-  padding-bottom:env(safe-area-inset-bottom,0px);
+.hero { position: relative; background: var(--paper); color: var(--ink); overflow: hidden; isolation: isolate; }
+.hero::before {
+  content: ""; position: absolute; z-index: -1; width: 820px; height: 820px; inset-inline-end: -200px; top: -140px;
+  background: radial-gradient(closest-side, #f1f1f3, rgba(241,241,243,0) 72%);
 }
-*,*:before,*:after{box-sizing:inherit}
-*{margin:0}
-html{scroll-behavior:smooth;scroll-padding-top:calc(80px + env(safe-area-inset-top,0px));overflow-x:clip;max-width:100vw;width:100%}
-body{background:var(--bg);color:var(--ink);font-family:"Readex Pro",system-ui,sans-serif;line-height:1.6;overflow-x:clip;max-width:100vw;width:100%;position:relative}
-@supports not (overflow-x:clip){html,body{overflow-x:hidden}}
-a{color:inherit;text-decoration:none}
-button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
-.wrap{max-width:1200px;margin:0 auto;padding:0 22px;width:100%}
-:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.hero .wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); gap: clamp(32px, 5vw, 72px); align-items: center; padding-block: clamp(56px, 8vw, 104px) clamp(64px, 8vw, 112px); }
+.hero h1 { font-family: var(--display); font-weight: 500; font-size: clamp(44px, 6.2vw, 82px); line-height: .98; letter-spacing: -.025em; color: var(--ink); font-variation-settings: "opsz" 144; }
+html[lang="ar"] .hero h1 { line-height: 1.18; letter-spacing: 0; font-weight: 600; font-size: clamp(40px, 5.4vw, 70px); }
+.hero-sub { margin-top: 26px; max-width: 30em; font-size: clamp(17px, 1.5vw, 19px); color: var(--grey); }
+.hero-ctas { margin-top: 36px; display: flex; flex-wrap: wrap; gap: 12px; }
+.hero-note { margin-top: 18px; font-size: 14px; color: var(--grey-2); }
 
-/* nav */
-nav{position:sticky;top:0;z-index:30;background:rgba(246,243,237,.92);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid var(--line);width:100%}
-.nv{display:flex;align-items:center;justify-content:space-between;height:68px;gap:14px}
-.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:19px;color:var(--ink);flex-shrink:0}
-.mk{width:36px;height:36px;border-radius:11px;background:var(--accent);display:grid;place-items:center;box-shadow:0 8px 20px rgba(192,86,33,.28);color:#fff;flex-shrink:0}
-.mk svg{width:20px;height:20px}
-.links{display:flex;gap:28px;color:var(--mute);font-size:14.5px}.links a:hover{color:var(--ink)}
-.nr{display:flex;gap:10px;align-items:center;flex-shrink:0}
-.lang{height:40px;padding:0 14px;border-radius:12px;background:#fff;border:1px solid var(--line);font-weight:600;font-size:13px;color:var(--ink);display:inline-flex;align-items:center;justify-content:center}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 24px;border-radius:14px;font-weight:600;font-size:15px;transition:transform .15s,box-shadow .2s,background .2s;text-align:center}
-.btn:hover{transform:translateY(-2px)}
-.pri{background:var(--primary);color:#fff;box-shadow:0 10px 24px rgba(62,36,21,.22)}
-.pri:hover{background:var(--primary-hover)}
-.sec{background:#fff;border:1px solid var(--line);color:var(--ink)}
-.sec:hover{background:#f0ebe1}
-.btn.sm{height:40px;padding:0 18px;font-size:13.5px;border-radius:12px}
+.demo { position: relative; display: grid; grid-template-columns: 1.25fr 1fr; align-items: end; gap: clamp(14px, 2vw, 26px); }
+.demo-cap { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; gap: 16px; font-size: 14px; color: var(--grey); margin-bottom: 2px; }
 
-/* hero */
-.hero{position:relative;padding:80px 0 44px;overflow-x:clip}
-.hero:before{content:"";position:absolute;inset:-100px 0 auto;height:700px;background:radial-gradient(520px 320px at 80% 20%,rgba(192,86,33,.12),transparent),radial-gradient(460px 300px at 15% 10%,rgba(62,36,21,.06),transparent);pointer-events:none}
-.hg{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:28px;align-items:center;width:100%}
-.badge{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:99px;background:#fff;border:1px solid var(--line);font-size:13px;color:var(--ink);box-shadow:0 4px 14px rgba(58,38,28,.05)}
-.badge i{width:8px;height:8px;border-radius:50%;background:var(--done);animation:lv 2s infinite}
-@keyframes lv{70%{box-shadow:0 0 0 7px transparent}0%{box-shadow:0 0 0 0 var(--done)}}
-h1{font-size:clamp(28px,5vw,58px);line-height:1.15;font-weight:700;letter-spacing:-.02em;margin:18px 0;color:var(--ink)}
-h1 em{font-style:normal;color:var(--accent)}
-.lead{font-size:17px;color:var(--mute);max-width:520px;line-height:1.6}
-.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
-.facts{display:flex;gap:26px;margin-top:34px;flex-wrap:wrap}
-.facts b{display:block;font-size:20px;color:var(--ink)}.facts span{font-size:12.5px;color:var(--mute)}
+.tablet { background: var(--ink); border-radius: 26px; padding: 12px; box-shadow: 0 40px 80px -36px rgba(0,0,0,.45); }
+.tablet-screen { background: var(--paper-2); color: var(--ink); border-radius: 16px; padding: 16px; display: grid; gap: 12px; }
+.t-head { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--grey); }
+.t-head b { color: var(--ink); font-weight: 600; font-size: 14px; }
+.t-display { height: 64px; border-radius: 12px; background: #fff; box-shadow: 0 0 0 1px var(--line) inset; display: flex; align-items: center; justify-content: center; font-family: "Fraunces", serif; font-size: 40px; font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: .03em; }
+.t-display .ph { font-family: var(--sans); font-size: 14px; color: var(--grey-2); letter-spacing: 0; }
+.t-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; direction: ltr; }
+.t-pad button { height: 44px; border-radius: 10px; background: #fff; box-shadow: 0 0 0 1px var(--line) inset; font-family: "Fraunces", serif; font-size: 21px; color: var(--ink); transition: background .12s, transform .12s; }
+.t-pad button:hover { background: var(--paper-3); }
+.t-pad button:active { transform: scale(.95); }
+.t-pad .soft { font-family: var(--sans); font-size: 13px; color: var(--grey); background: transparent; box-shadow: none; }
+.t-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.t-actions button { height: 46px; border-radius: 12px; font-weight: 600; font-size: 14.5px; transition: opacity .2s, background .2s; }
+.t-issue { background: var(--ink); color: #fff; }
+.t-ready { background: var(--ready-deep); color: #fff; }
+.t-actions button:disabled { opacity: .25; cursor: not-allowed; }
+.t-row { display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; background: #fff; box-shadow: 0 0 0 1px var(--line) inset; font-size: 13.5px; }
+.t-row .num { font-family: "Fraunces", serif; font-weight: 600; font-size: 18px; color: var(--ink); min-width: 34px; }
+.t-row .st { margin-inline-start: auto; font-size: 12.5px; padding: 3px 10px; border-radius: 999px; background: var(--paper-2); color: var(--grey); }
+.t-row.is-ready .st { background: var(--ready-soft); color: var(--ready-deep); }
+.t-empty { font-size: 13px; color: var(--grey-2); text-align: center; padding: 8px 0 2px; }
 
-/* 3D stage */
-.stage{perspective:1700px;height:540px;display:flex;justify-content:center;align-items:center;position:relative;width:100%;max-width:100%;min-width:0;overflow:clip}
-.scene{width:600px;height:500px;position:relative;transform-style:preserve-3d;transform-origin:center center;transform:scale(var(--k,1)) rotateX(calc(9deg + var(--rx,0deg))) rotateY(calc(-16deg + var(--ry,0deg)));transition:transform .25s ease-out;direction:ltr;flex-shrink:0}
-[dir=rtl] .scene .txt{direction:rtl}
-.scene[data-state=waiting]{--c:var(--wait)}.scene[data-state=ringing]{--c:var(--ring)}.scene[data-state=onway]{--c:var(--go)}.scene[data-state=done]{--c:var(--done)}
-.floor{position:absolute;left:30px;right:30px;bottom:-10px;height:60px;background:radial-gradient(closest-side,rgba(58,38,28,.18),transparent);filter:blur(10px)}
-.tablet{position:absolute;left:0;top:50px;width:440px;height:330px;border-radius:28px;background:#fff;padding:20px;box-shadow:0 40px 80px rgba(58,38,28,.14),0 0 0 8px #fff,0 0 0 9px var(--line);transform-style:preserve-3d}
-.th{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.th b{font-size:15px;color:var(--ink)}
-.live{width:8px;height:8px;border-radius:50%;background:var(--done)}
-.mini{display:flex;gap:8px;margin-bottom:14px}
-.mini div{flex:1;background:var(--bg);border-radius:12px;padding:8px 10px;font-size:11px;color:var(--mute)}.mini strong{display:block;color:var(--ink);font-size:18px;line-height:1.2}
-.ords{display:flex;gap:10px;align-items:stretch;transform-style:preserve-3d}
-.oc{flex:1;border-radius:18px;border:1px solid var(--line);padding:12px;background:#fff;opacity:.55}
-.oc .n{font-size:28px;font-weight:700;letter-spacing:-1px;line-height:1.1;margin:8px 0 2px;color:var(--ink)}
-.oc small{color:var(--mute);font-size:11.5px}
-.oc.main{opacity:1;border-color:var(--c);box-shadow:0 18px 40px rgba(58,38,28,.15),0 0 0 1px var(--c);transform:translateZ(36px);background:#fff;transition:border-color .3s,box-shadow .3s}
-.pill{display:inline-block;font-size:10.5px;font-weight:600;color:var(--c);background:color-mix(in srgb,var(--c) 14%,#fff);padding:3px 9px;border-radius:99px;transition:color .3s,background .3s}
-.rb{width:100%;height:36px;margin-top:10px;border-radius:11px;background:var(--c);color:#fff;font-weight:600;font-size:12px;transition:transform .15s,background .3s}
-.rb.press{transform:scale(.92);box-shadow:0 0 0 6px color-mix(in srgb,var(--c) 25%,transparent)}
-.pw{position:absolute;right:6px;top:0;width:208px;height:420px;transform:translateZ(120px);animation:bob 6s ease-in-out infinite;transform-style:preserve-3d}
-@keyframes bob{50%{transform:translateZ(120px) translateY(-14px)}}
-.pw:before,.pw:after{content:"";position:absolute;inset:-10px;border-radius:52px;border:3px solid var(--ring);opacity:0}
-.scene[data-state=ringing] .pw:before{animation:wv 1.2s infinite}.scene[data-state=ringing] .pw:after{animation:wv 1.2s .6s infinite}
-@keyframes wv{from{transform:scale(.95);opacity:.8}to{transform:scale(1.35);opacity:0}}
-.phone{width:100%;height:100%;border-radius:38px;padding:8px;background:linear-gradient(145deg,#2b190e,#140b07);box-shadow:34px 56px 80px rgba(45,30,20,.32),inset 0 0 0 1px rgba(255,255,255,.16)}
-.scene[data-state=ringing] .phone{animation:shake .4s infinite}
-@keyframes shake{25%{transform:translateX(-5px) rotate(-1deg)}75%{transform:translateX(5px) rotate(1deg)}}
-.scr{height:100%;border-radius:30px;padding:10px 12px 14px;display:flex;flex-direction:column;color:#fff;background:radial-gradient(120% 70% at 80% 0,#3e2415,transparent 60%),radial-gradient(100% 60% at 0 100%,#2b190e,transparent 60%),#180d07}
-.scene[data-state=ringing] .scr{animation:fl .6s infinite alternate}
-@keyframes fl{from{background:radial-gradient(120% 80% at 50% 45%,#7a0f26,transparent 70%),#1a0610}to{background:radial-gradient(120% 80% at 50% 45%,#dc2626,transparent 70%),#4a0a1a}}
-.isl{width:64px;height:18px;border-radius:12px;background:#000;margin:0 auto}
-.clk{text-align:center;font-size:40px;font-weight:200;margin-top:14px;line-height:1}
-.dt{text-align:center;font-size:10.5px;opacity:.65;margin:4px 0 12px}
-.wd{flex:1;border-radius:22px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);padding:12px;display:flex;flex-direction:column;gap:6px;text-align:center}
-.wd .h{display:flex;justify-content:space-between;font-size:10px;opacity:.85}
-.wd .bn{font-size:62px;font-weight:700;letter-spacing:-3px;line-height:1.05}
-.wd .st{font-size:14px;font-weight:600}.wd .sb{font-size:10.5px;opacity:.75}
-.bars{display:flex;gap:4px;margin-top:auto}.bars i{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.22);transition:background .3s}.bars i.on{background:#fff}
-.chip{position:absolute;padding:10px 14px;border-radius:16px;background:#fff;box-shadow:0 20px 40px rgba(58,38,28,.18);border:1px solid var(--line);color:var(--ink);font-size:12.5px;font-weight:600;transform:translateZ(200px) translateY(10px);opacity:0;transition:opacity .35s,transform .35s;white-space:nowrap}
-.chip.on{opacity:1;transform:translateZ(200px)}
-.c1{left:10px;bottom:70px}.c2{left:120px;bottom:20px}
-
-/* sections */
-section{padding:84px 0}
-.eyebrow{color:var(--accent);font-weight:700;font-size:13px;letter-spacing:.04em}
-h2{font-size:clamp(28px,4vw,42px);line-height:1.2;letter-spacing:-.02em;margin:10px 0 14px;color:var(--ink)}
-.sub{color:var(--mute);max-width:560px;font-size:17px}
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:44px}
-.fc{background:#fff;border:1px solid var(--line);border-radius:24px;padding:26px;transition:transform .25s,box-shadow .25s}
-.fc:hover{transform:translateY(-6px);box-shadow:0 30px 60px rgba(58,38,28,.12)}
-.ic{width:50px;height:50px;border-radius:16px;display:grid;place-items:center;font-size:22px;margin-bottom:18px;background:color-mix(in srgb,var(--c) 14%,#fff);color:var(--c)}
-.fc h3{font-size:18px;margin-bottom:6px;color:var(--ink)}.fc p{color:var(--mute);font-size:14.5px}
-.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:44px;counter-reset:s}
-.sp{position:relative;background:#fff;border:1px solid var(--line);border-radius:24px;padding:28px 26px}
-.sp:before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:42px;height:42px;border-radius:14px;background:var(--primary);color:#fff;font-weight:700;margin-bottom:18px}
-.sp h3{font-size:18px;margin-bottom:6px;color:var(--ink)}.sp p{color:var(--mute);font-size:14.5px}
-.band{margin:0 22px 70px;border-radius:36px;padding:70px 24px;text-align:center;color:#fff;background:radial-gradient(500px 260px at 85% 0,rgba(192,86,33,.38),transparent),radial-gradient(500px 300px at 10% 100%,rgba(62,36,21,.7),transparent),#23150d;box-shadow:0 24px 60px rgba(45,30,20,.16)}
-.band h2{max-width:640px;margin:0 auto 12px;color:#fff}.band p{color:rgba(255,255,255,.8);margin-bottom:28px}
-.band .btn{background:#fff;color:var(--primary);font-weight:700}
-.band .btn:hover{background:#f6f3ed}
-.band-actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
-
-footer{border-top:1px solid var(--line);padding:36px 0;color:var(--mute);font-size:13.5px;background:#fff}
-footer .wrap{display:flex;flex-direction:column;gap:20px}
-.f-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;padding-bottom:18px;border-bottom:1px solid var(--line)}
-.flinks{display:flex;gap:18px;flex-wrap:wrap;font-size:13.5px;color:var(--mute)}
-.f-btm{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-size:12.5px;color:var(--mute)}
-.rv{opacity:0;transform:translateY(24px);transition:opacity .7s,transform .7s}.rv.in{opacity:1;transform:none}
-@media (max-width:960px){
-  .hg{grid-template-columns:minmax(0,1fr);gap:32px}
-  .links{display:none}
-  .stage{height:calc(500px*var(--k,1) + 20px)}
-  .cards,.steps{grid-template-columns:1fr 1fr}
-  .hero{padding-top:50px}
+.phone-wrap { position: relative; justify-self: center; width: min(100%, 236px); }
+.phone { position: relative; aspect-ratio: 9 / 19.2; border-radius: 40px; background: #000; padding: 9px; box-shadow: 0 0 0 1px #2c2c2e, 0 50px 90px -34px rgba(0,0,0,.55); }
+.phone-screen { position: relative; height: 100%; border-radius: 32px; overflow: hidden; background: linear-gradient(180deg, #2a2a2d, #121214 70%); color: #fff; display: flex; flex-direction: column; align-items: center; padding: 18px 14px; }
+.island { width: 34%; height: 20px; border-radius: 20px; background: #000; margin-bottom: 18px; flex: none; }
+.lock-time { font-family: "Fraunces", serif; font-weight: 400; font-size: 50px; line-height: 1; color: #fff; letter-spacing: -.02em; direction: ltr; }
+.lock-date { font-size: 12px; color: var(--on-ink-dim); margin-top: 4px; }
+.phone-idle { margin-top: auto; margin-bottom: 18px; text-align: center; font-size: 12.5px; color: #8e8e93; padding: 0 10px; }
+.activity { margin-top: 22px; width: 100%; border-radius: 22px; padding: 12px 14px; background: rgba(0,0,0,.55); backdrop-filter: blur(10px); box-shadow: 0 0 0 1px rgba(255,255,255,.10) inset; opacity: 0; transform: translateY(10px) scale(.97); transition: opacity .45s var(--ease), transform .45s var(--ease), box-shadow .4s; }
+.activity.show { opacity: 1; transform: none; }
+.act-top { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--on-ink-dim); }
+.act-top svg { width: 18px; height: 18px; color: #fff; }
+.act-top .dot { margin-inline-start: auto; width: 7px; height: 7px; border-radius: 50%; background: #8e8e93; }
+.act-body { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 8px; gap: 8px; }
+.act-num { font-family: "Fraunces", serif; font-weight: 500; font-size: 38px; line-height: .95; color: #fff; direction: ltr; }
+.act-status { font-size: 13px; font-weight: 600; color: #fff; text-align: end; }
+.act-status small { display: block; font-weight: 400; font-size: 11px; color: var(--on-ink-dim); }
+.act-bar { margin-top: 10px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.14); overflow: hidden; }
+.act-bar i { display: block; height: 100%; width: 18%; border-radius: inherit; background: #fff; transition: width 1.2s var(--ease), background .3s; }
+.phone.ringing { animation: buzz .5s linear infinite; }
+.phone.ringing .activity { box-shadow: 0 0 0 1.5px var(--ready) inset, 0 0 40px -6px rgba(34,197,94,.6); }
+.phone.ringing .act-top .dot { background: var(--ready); box-shadow: 0 0 10px var(--ready); }
+.phone.ringing .act-bar i { width: 100%; background: var(--ready); }
+.phone.ringing .act-status { color: var(--ready); }
+@keyframes buzz {
+  0%, 100% { transform: translate(0, 0) rotate(0); }
+  10% { transform: translate(-2px, 0) rotate(-1.2deg); } 20% { transform: translate(2px, 0) rotate(1.2deg); }
+  30% { transform: translate(-2px, 0) rotate(-1deg); } 40% { transform: translate(2px, 0) rotate(1deg); }
+  50% { transform: none; }
 }
-@media (max-width:640px){
-  .wrap{padding:0 16px}
-  .nv{height:58px;gap:8px}
-  .logo{font-size:17px;gap:8px}
-  .mk{width:32px;height:32px;border-radius:9px}
-  .mk svg{width:18px;height:18px}
-  .nr{gap:6px}
-  .nr .btn.pri{display:none}
-  .lang{height:36px;padding:0 10px;font-size:12px;border-radius:10px}
-  .btn.sm{height:36px;padding:0 14px;font-size:12.5px;border-radius:10px}
+.rings { position: absolute; inset: 0; pointer-events: none; }
+.rings i { position: absolute; inset: 8%; border-radius: 44px; border: 1.5px solid var(--ready); opacity: 0; }
+.phone.ringing ~ .rings i { animation: wave 1.6s var(--ease) infinite; }
+.phone.ringing ~ .rings i:nth-child(2) { animation-delay: .55s; }
+@keyframes wave { 0% { transform: scale(.9); opacity: .55; } 100% { transform: scale(1.22); opacity: 0; } }
+.demo-hint { grid-column: 1 / -1; font-size: 13.5px; color: var(--grey); min-height: 1.6em; }
+.demo-hint b { color: var(--ink); font-weight: 600; }
+.sound-toggle { color: var(--grey); font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+.sound-toggle:hover { color: var(--ink); }
 
-  .hero{padding:24px 0 20px}
-  h1{font-size:clamp(25px,6.8vw,38px);margin:12px 0 10px;line-height:1.2}
-  .lead{font-size:14.5px;line-height:1.55}
+.strip { background: var(--paper-2); color: var(--grey); border-block: 1px solid var(--line); }
+.strip .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 18px 40px; padding-block: 22px; font-size: 15px; }
+.strip span { display: inline-flex; align-items: center; gap: 10px; }
+.strip svg { width: 18px; height: 18px; color: var(--ink); flex: none; }
 
-  .cta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px;width:100%}
-  .cta .btn:first-child{grid-column:1 / -1;height:48px;font-size:15px}
-  .cta .btn{height:42px;font-size:13px;padding:0 10px;border-radius:12px}
+section.block { padding-block: clamp(72px, 10vw, 128px); }
+.h2 { font-family: var(--display); font-weight: 500; font-size: clamp(34px, 4.4vw, 56px); line-height: 1.04; letter-spacing: -.02em; color: var(--ink); font-variation-settings: "opsz" 144; max-width: 16em; }
+html[lang="ar"] .h2 { line-height: 1.25; letter-spacing: 0; font-weight: 600; }
+.lead { margin-top: 18px; max-width: 36em; font-size: 18px; color: var(--grey); }
 
-  .facts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:20px;width:100%}
-  .facts div{background:#fff;border:1px solid var(--line);border-radius:14px;padding:9px 4px;text-align:center;box-shadow:0 2px 8px rgba(58,38,28,.04)}
-  .facts b{font-size:14px;margin-bottom:2px}
-  .facts span{font-size:10.5px;line-height:1.2;display:block}
+.steps { margin-top: clamp(40px, 6vw, 64px); display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1.5px solid var(--ink); }
+.step { padding-block: 28px 8px; padding-inline-end: clamp(16px, 2.4vw, 32px); border-inline-end: 1px solid var(--line); }
+.step + .step { padding-inline-start: clamp(16px, 2.4vw, 32px); }
+.step:last-child { border-inline-end: 0; }
+.step-n { font-family: "Fraunces", serif; font-size: 64px; line-height: 1; color: var(--ink); font-weight: 400; }
+.step h3 { margin-top: 18px; font-size: 21px; font-weight: 600; color: var(--ink); line-height: 1.3; }
+.step p { margin-top: 8px; color: var(--grey); font-size: 16px; max-width: 24em; }
 
-  .stage{height:calc(480px*var(--k,.55));margin:10px 0 0}
-  .scene{transform:scale(var(--k,.55)) rotateX(calc(6deg + var(--rx,0deg))) rotateY(calc(-6deg + var(--ry,0deg)))}
+.feat { background: var(--paper-2); }
+.feat-grid { margin-top: clamp(40px, 6vw, 64px); display: grid; grid-template-columns: 1.05fr 1fr; gap: clamp(28px, 5vw, 72px); align-items: start; }
+.feat-hero { background: var(--ink); color: var(--on-ink); border-radius: 28px; padding: clamp(26px, 3.4vw, 44px); position: relative; overflow: hidden; }
+.feat-hero h3 { font-family: var(--display); font-weight: 500; font-size: clamp(26px, 2.6vw, 34px); line-height: 1.12; color: #fff; }
+html[lang="ar"] .feat-hero h3 { font-weight: 600; line-height: 1.35; }
+.feat-hero p { margin-top: 14px; color: var(--on-ink-dim); max-width: 28em; }
+.mini-lock { margin-top: 30px; border-radius: 22px; padding: 14px 16px; background: var(--ink-2); box-shadow: 0 0 0 1.5px var(--ready) inset, 0 0 36px -10px rgba(34,197,94,.55); max-width: 340px; }
+.mini-lock .act-top { font-size: 12px; }
+.mini-lock .act-num { font-size: 42px; }
+.mini-lock .act-status { color: var(--ready); }
+.mini-lock .act-top .dot { background: var(--ready); box-shadow: 0 0 10px var(--ready); }
+.mini-lock .act-bar i { width: 100%; background: var(--ready); }
+.feat-list { list-style: none; }
+.feat-list li { display: grid; grid-template-columns: 40px 1fr; gap: 4px 16px; padding: 22px 0; border-bottom: 1px solid var(--line); }
+.feat-list li:first-child { padding-top: 4px; }
+.feat-list svg { width: 26px; height: 26px; color: var(--ink); grid-row: span 2; margin-top: 2px; }
+.feat-list h3 { font-size: 18.5px; font-weight: 600; color: var(--ink); line-height: 1.35; }
+.feat-list p { color: var(--grey); font-size: 15.5px; }
 
-  section{padding:44px 0}
-  h2{font-size:clamp(22px,5.5vw,34px);margin:8px 0 10px}
-  .sub{font-size:14.5px}
-  .cards,.steps{grid-template-columns:1fr;gap:14px;margin-top:26px}
-  .fc{padding:18px;border-radius:20px}
-  .sp{padding:18px;border-radius:20px}
-  .sp:before{width:36px;height:36px;border-radius:12px;margin-bottom:12px;font-size:14px}
+.compare { margin-top: clamp(36px, 5vw, 56px); width: 100%; border-collapse: collapse; font-size: 16px; }
+.compare th, .compare td { text-align: start; padding: 18px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.compare thead th { font-size: 15px; font-weight: 500; color: var(--grey); border-bottom: 1.5px solid var(--ink); }
+.compare thead th.us { color: var(--ink); font-weight: 600; }
+.compare tbody th { font-weight: 600; color: var(--ink); width: 28%; }
+.compare td.us { color: var(--ink); font-weight: 500; background: var(--paper-2); }
+.compare td { color: var(--grey); }
 
-  .band{margin:0 10px 36px;padding:36px 16px;border-radius:24px}
-  .band h2{font-size:22px;line-height:1.25}
-  .band p{font-size:13.5px;margin-bottom:20px}
-  .band .band-actions{flex-direction:column;align-items:stretch;gap:10px}
-  .band .btn{width:100%;max-width:100%;height:46px}
+.pricing { background: var(--ink); color: var(--on-ink); }
+.pricing .h2 { color: #fff; }
+.pricing .lead { color: var(--on-ink-dim); }
+.plans { margin-top: clamp(40px, 6vw, 64px); display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; align-items: stretch; }
+.plan { position: relative; display: flex; flex-direction: column; border-radius: 26px; padding: 30px 28px 28px; background: var(--ink-2); box-shadow: 0 0 0 1px var(--line-dark) inset; color: #fff; }
+.plan.featured { background: #fff; color: var(--ink); box-shadow: none; }
+.plan-tag { position: absolute; top: -13px; inset-inline-start: 26px; background: var(--ready); color: #052e14; font-size: 13px; font-weight: 600; padding: 4px 12px; border-radius: 999px; }
+.plan h3 { font-size: 20px; font-weight: 600; }
+.plan .for { margin-top: 4px; font-size: 14.5px; color: var(--on-ink-dim); min-height: 2.9em; }
+.plan.featured .for { color: var(--grey); }
+.price { margin-top: 22px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; direction: ltr; justify-content: flex-start; }
+html[dir="rtl"] .price { justify-content: flex-end; }
+.price .cur { font-size: 15px; font-weight: 500; opacity: .7; }
+.price .amt { font-family: "Fraunces", serif; font-size: 54px; font-weight: 500; line-height: 1; letter-spacing: -.02em; }
+.price .per { font-size: 15px; opacity: .7; }
+.plan .save { margin-top: 8px; font-size: 14px; color: var(--on-ink-dim); min-height: 1.5em; }
+.plan.featured .save { color: var(--ready-deep); font-weight: 500; }
+.plan ul { list-style: none; margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--line-dark); display: grid; gap: 11px; font-size: 15px; flex: 1; align-content: start; }
+.plan.featured ul { border-top-color: var(--line); }
+.plan li { display: grid; grid-template-columns: 18px 1fr; gap: 10px; }
+.plan li svg { width: 16px; height: 16px; margin-top: 4px; color: currentColor; opacity: .85; }
+.plan .btn { margin-top: 28px; width: 100%; }
+.plan:not(.featured) .btn { color: #fff; box-shadow: 0 0 0 1px rgba(255,255,255,.35) inset; }
+.plan:not(.featured) .btn:hover { box-shadow: 0 0 0 1px #fff inset; }
+.trial-line { margin-top: 28px; font-size: 15px; color: var(--on-ink-dim); text-align: center; }
+.trial-line b { color: #fff; font-weight: 500; }
 
-  footer{padding:26px 0}
-  .f-top{flex-direction:column;align-items:center;text-align:center;gap:16px}
-  .flinks{justify-content:center;gap:12px 16px;font-size:13px}
-  .f-btm{flex-direction:column;align-items:center;text-align:center;gap:8px}
+.faq-grid { display: grid; grid-template-columns: .8fr 1.2fr; gap: clamp(28px, 6vw, 96px); align-items: start; }
+.faq details { border-bottom: 1px solid var(--line); }
+.faq summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 22px 0; font-size: 18px; font-weight: 600; color: var(--ink); }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary .pm { position: relative; flex: none; width: 18px; height: 18px; }
+.faq summary .pm::before, .faq summary .pm::after { content: ""; position: absolute; inset: 8px 0 auto; height: 1.6px; background: var(--ink); transition: transform .25s var(--ease); }
+.faq summary .pm::after { transform: rotate(90deg); }
+.faq details[open] .pm::after { transform: rotate(0); }
+.faq details p { padding: 0 0 22px; color: var(--grey); max-width: 40em; }
+
+.final { background: var(--paper-2); color: var(--ink); border-top: 1px solid var(--line); }
+.final .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 28px; padding-block: clamp(56px, 7vw, 88px); }
+.final h2 { font-family: var(--display); font-weight: 500; font-size: clamp(32px, 4vw, 50px); line-height: 1.05; letter-spacing: -.02em; max-width: 14em; }
+html[lang="ar"] .final h2 { font-weight: 600; line-height: 1.3; letter-spacing: 0; }
+.final p { margin-top: 10px; font-size: 17px; color: var(--grey); }
+
+@media (max-width: 1020px) {
+  .hero .wrap { grid-template-columns: 1fr; }
+  .demo { max-width: 640px; }
+  .feat-grid, .faq-grid { grid-template-columns: 1fr; }
+  .plans { grid-template-columns: 1fr; max-width: 520px; margin-inline: auto; }
 }
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}}
+@media (max-width: 860px) {
+  .steps { grid-template-columns: 1fr; }
+  .step, .step + .step { padding-block: 26px; padding-inline: 0; border-inline-end: 0; border-bottom: 1px solid var(--line); }
+  .compare { font-size: 14.5px; }
+  .compare th, .compare td { padding: 14px 10px; }
+}
+@media (max-width: 560px) {
+  .demo { grid-template-columns: 1fr; }
+  .phone-wrap { width: 200px; }
+  .compare thead th:nth-child(2), .compare td:nth-child(2) { display: none; }
+  .hero-ctas .btn { flex: 1 1 100%; }
+}
 </style>
-</head>
-<body>
-<nav><div class="wrap nv">
-  <a href="#top" class="logo"><span class="mk"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span><span data-k="brand"></span></a>
-  <div class="links"><a href="#features" data-k="n1"></a><a href="#how" data-k="n2"></a><a href="#start" data-k="n3"></a></div>
-  <div class="nr">
-    <button class="lang" id="lang" aria-label="Language"></button>
-    {% if current_admin %}
-    <a href="/admin" class="btn sm sec">لوحة الإدارة</a>
-    {% elif current_restaurant %}
-    <a href="/dashboard" class="btn sm sec">لوحة التحكم</a>
-    {% else %}
-    <a href="/login" class="btn sm sec" data-k="cta_login">دخول المتاجر</a>
-    {% endif %}
-    <a href="/r/main/cashier" target="_blank" class="btn sm pri" data-k="cta_cashier">تجربة الكاشير ↗</a>
-  </div>
-</div></nav>
-
-<header class="hero" id="top"><div class="wrap hg">
-  <div>
-    <span class="badge"><i></i><span data-k="badge"></span></span>
-    <h1><span data-k="h1a"></span> <em data-k="h1b"></em></h1>
-    <p class="lead" data-k="lead"></p>
-    <div class="cta">
-      <a href="/r/main/cashier" target="_blank" class="btn pri" style="background:var(--accent);box-shadow:0 10px 24px rgba(192,86,33,.25);" data-k="cta_cashier"></a>
-      <a href="/login" class="btn sec" data-k="cta_login"></a>
-      <a href="#how" class="btn sec" data-k="cta2"></a>
+{% endblock %}
+{% block content %}
+<main id="top">
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <h1>{{ t('hero.title') }}</h1>
+      <p class="hero-sub">{{ t('hero.sub') }}</p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="/signup">{{ t('cta.trial3') }}</a>
+        <a class="btn btn-outline" href="/#pricing">{{ t('cta.pricing') }}</a>
+      </div>
+      <p class="hero-note">{{ t('hero.note') }}</p>
     </div>
-    <div class="facts"><div><b data-k="f1t"></b><span data-k="f1s"></span></div><div><b data-k="f2t"></b><span data-k="f2s"></span></div><div><b data-k="f3t"></b><span data-k="f3s"></span></div></div>
-  </div>
-  <div class="stage" id="stage"><div class="scene" id="scene" data-state="waiting">
-    <div class="floor"></div>
-    <div class="tablet"><div class="txt">
-      <div class="th"><b data-k="d_cash"></b><span class="live"></span></div>
-      <div class="mini"><div><strong>1</strong><span data-k="d_s1"></span></div><div><strong id="mr">0</strong><span data-k="d_s2"></span></div><div><strong>3</strong><span data-k="d_s3"></span></div></div>
-      <div class="ords">
-        <div class="oc"><span class="pill" style="--c:var(--done)" data-k="d_done"></span><div class="n">#07</div><small data-k="d_n1"></small></div>
-        <div class="oc main"><span class="pill" id="pill"></span><div class="n">#08</div><small data-k="d_n2"></small><button class="rb" id="rb" tabindex="-1" data-k="d_ring"></button></div>
-        <div class="oc"><span class="pill" style="--c:var(--wait)" data-k="d_wait"></span><div class="n">#09</div><small data-k="d_n3"></small></div>
-      </div></div></div>
-    <div class="pw"><div class="phone"><div class="scr"><div class="isl"></div>
-      <div class="clk">9:41</div><div class="dt" data-k="d_date"></div>
-      <div class="wd txt"><div class="h"><span data-k="d_app"></span><span>●</span></div><div class="bn">#08</div><div class="st" id="st"></div><div class="sb" id="sb"></div>
-        <div class="bars" id="bars"><i></i><i></i><i></i></div></div>
-    </div></div></div>
-    <div class="chip txt" id="ch1">🔔 <span data-k="c1"></span></div>
-    <div class="chip txt" id="ch2">🏃 <span data-k="c2"></span></div>
-  </div></div>
-</div></header>
 
-<section id="features"><div class="wrap">
-  <span class="eyebrow rv" data-k="e1"></span><h2 class="rv" data-k="h2a"></h2><p class="sub rv" data-k="s2a"></p>
-  <div class="cards">
-    <div class="fc rv" style="--c:var(--accent)"><div class="ic">⚡</div><h3 data-k="a1t"></h3><p data-k="a1p"></p></div>
-    <div class="fc rv" style="--c:var(--primary)"><div class="ic">🔊</div><h3 data-k="a2t"></h3><p data-k="a2p"></p></div>
-    <div class="fc rv" style="--c:var(--org)"><div class="ic">📳</div><h3 data-k="a3t"></h3><p data-k="a3p"></p></div>
-    <div class="fc rv" style="--c:var(--done)"><div class="ic">💡</div><h3 data-k="a4t"></h3><p data-k="a4p"></p></div>
-    <div class="fc rv" style="--c:var(--primary)"><div class="ic">👆</div><h3 data-k="a5t"></h3><p data-k="a5p"></p></div>
-    <div class="fc rv" style="--c:var(--ring)"><div class="ic">🧾</div><h3 data-k="a6t"></h3><p data-k="a6p"></p></div>
-  </div>
-</div></section>
+    <div class="demo" aria-label="{{ t('demo.aria') }}">
+      <p class="demo-cap"><span>{{ t('demo.cap') }}</span><button class="sound-toggle" id="soundBtn" type="button" aria-pressed="true">{{ t('demo.soundOn') }}</button></p>
 
-<section id="how" style="padding-top:20px"><div class="wrap">
-  <span class="eyebrow rv" data-k="e2"></span><h2 class="rv" data-k="h2b"></h2>
-  <div class="steps">
-    <div class="sp rv"><h3 data-k="p1t"></h3><p data-k="p1p"></p></div>
-    <div class="sp rv"><h3 data-k="p2t"></h3><p data-k="p2p"></p></div>
-    <div class="sp rv"><h3 data-k="p3t"></h3><p data-k="p3p"></p></div>
-  </div>
-</div></section>
+      <div class="tablet">
+        <div class="tablet-screen">
+          <div class="t-head"><b>Maison Café</b><span>{{ t('demo.cashier') }}</span></div>
+          <div class="t-display" id="tDisplay" aria-live="polite"><span class="ph">{{ t('demo.enter') }}</span></div>
+          <div class="t-pad" id="tPad">
+            <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
+            <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button>
+            <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>
+            <button type="button" class="soft" data-k="c">{{ t('demo.clear') }}</button><button type="button" data-k="0">0</button><button type="button" class="soft" data-k="b" aria-label="{{ t('demo.delete') }}">⌫</button>
+          </div>
+          <div class="t-actions">
+            <button class="t-issue" id="tIssue" type="button" disabled>{{ t('demo.issue') }}</button>
+            <button class="t-ready" id="tReady" type="button" disabled>{{ t('demo.ready') }}</button>
+          </div>
+          <div id="tList"><p class="t-empty">{{ t('demo.none') }}</p></div>
+        </div>
+      </div>
 
-<div class="band rv" id="start">
-  <h2 data-k="bt"></h2>
-  <p data-k="bp"></p>
-  <div class="band-actions">
-    <a href="/login" class="btn" style="background:var(--accent);color:#fff;" data-k="cta_band1"></a>
-    <a href="/r/main/cashier" target="_blank" class="btn" style="background:#fff;color:var(--primary);" data-k="cta_band2"></a>
+      <div class="phone-wrap">
+        <div class="phone" id="phone">
+          <div class="phone-screen">
+            <div class="island"></div>
+            <div class="lock-time" id="lockTime">9:41</div>
+            <div class="lock-date" id="lockDate"></div>
+            <div class="activity" id="activity" aria-live="polite">
+              <div class="act-top">
+                <svg><use href="#i-mark"/></svg>
+                <span>Maison Café</span><span class="dot"></span>
+              </div>
+              <div class="act-body">
+                <div class="act-num" id="actNum">--</div>
+                <div class="act-status" id="actStatus"><span>{{ t('demo.preparing') }}</span><small>{{ t('demo.prepSub') }}</small></div>
+              </div>
+              <div class="act-bar"><i id="actBar"></i></div>
+            </div>
+            <p class="phone-idle" id="phoneIdle">{{ t('demo.idle') }}</p>
+          </div>
+        </div>
+        <div class="rings" aria-hidden="true"><i></i><i></i></div>
+      </div>
+
+      <p class="demo-hint" id="demoHint">{{ t('demo.h1')|safe }}</p>
+    </div>
+  </div>
+</section>
+
+<div class="strip">
+  <div class="wrap">
+    <span><svg viewBox="0 0 18 18"><use href="#i-check"/></svg><span>{{ t('strip.1') }}</span></span>
+    <span><svg viewBox="0 0 18 18"><use href="#i-check"/></svg><span>{{ t('strip.2') }}</span></span>
+    <span><svg viewBox="0 0 18 18"><use href="#i-check"/></svg><span>{{ t('strip.3') }}</span></span>
+    <span><svg viewBox="0 0 18 18"><use href="#i-check"/></svg><span>{{ t('strip.4') }}</span></span>
   </div>
 </div>
 
-<footer>
+<section class="block" id="how">
   <div class="wrap">
-    <div class="f-top">
-      <div style="display:flex;align-items:center;gap:10px;font-weight:700;font-size:17px;color:var(--ink);">
-        <span class="mk" style="width:30px;height:30px;border-radius:9px;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>
-        <span data-k="brand"></span>
+    <h2 class="h2">{{ t('how.title') }}</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">1</div>
+        <h3>{{ t('how.1t') }}</h3>
+        <p>{{ t('how.1p') }}</p>
       </div>
-      <div class="flinks">
-        {% for fp in footer_pages %}
-        <a href="/p/{{ fp.slug }}" target="_blank" style="transition:color .2s;">{{ fp.title }}</a>
-        {% endfor %}
-        <a href="/login" style="transition:color .2s;" data-k="cta_login">دخول المتاجر</a>
-        <a href="/r/main/cashier" target="_blank" style="transition:color .2s;" data-k="cta_cashier">تجربة الكاشير ↗</a>
-        <a href="/flutterapp.md" target="_blank" style="transition:color .2s;">دليل مطوري Flutter</a>
+      <div class="step">
+        <div class="step-n">2</div>
+        <h3>{{ t('how.2t') }}</h3>
+        <p>{{ t('how.2p') }}</p>
       </div>
-    </div>
-    <div class="f-btm">
-      <span>© 2026 <span data-k="brand"></span> — تكنولوجيا نداء المطاعم الفورية</span>
-      <span data-k="foot">صُنع لمطاعم أذكى</span>
+      <div class="step">
+        <div class="step-n">3</div>
+        <h3>{{ t('how.3t') }}</h3>
+        <p>{{ t('how.3p') }}</p>
+      </div>
     </div>
   </div>
-</footer>
+</section>
 
+<section class="block feat" id="features">
+  <div class="wrap">
+    <h2 class="h2">{{ t('feat.title') }}</h2>
+    <div class="feat-grid">
+      <article class="feat-hero">
+        <h3>{{ t('feat.heroT') }}</h3>
+        <p>{{ t('feat.heroP') }}</p>
+        <div class="mini-lock" aria-hidden="true">
+          <div class="act-top"><svg><use href="#i-mark"/></svg><span>Maison Café</span><span class="dot"></span></div>
+          <div class="act-body">
+            <div class="act-num">128</div>
+            <div class="act-status"><span>{{ t('demo.readyNow') }}</span><small>{{ t('demo.readySub') }}</small></div>
+          </div>
+          <div class="act-bar"><i></i></div>
+        </div>
+      </article>
+
+      <ul class="feat-list">
+        <li>
+          <svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="20" height="16" rx="3"/><path d="M8 10h10M8 14h6"/></svg>
+          <h3>{{ t('feat.1t') }}</h3>
+          <p>{{ t('feat.1p') }}</p>
+        </li>
+        <li>
+          <svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="13" cy="13" r="9"/><path d="M13 4a9 9 0 0 0 0 18" fill="currentColor" fill-opacity=".18"/></svg>
+          <h3>{{ t('feat.2t') }}</h3>
+          <p>{{ t('feat.2p') }}</p>
+        </li>
+        <li>
+          <svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 20l5-6 4 3 8-10"/><path d="M4 23h18"/></svg>
+          <h3>{{ t('feat.3t') }}</h3>
+          <p>{{ t('feat.3p') }}</p>
+        </li>
+        <li>
+          <svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 7h10M10 5v2M7 7c1 4 4 7 7 8M13 7c-1 4-4 7-8 8"/><path d="M14 21l4-9 4 9M15.5 18h5"/></svg>
+          <h3>{{ t('feat.4t') }}</h3>
+          <p>{{ t('feat.4p') }}</p>
+        </li>
+        <li>
+          <svg viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="3" width="16" height="20" rx="3"/><path d="M10 19h6"/><path d="M3 9l3 2M23 9l-3 2"/></svg>
+          <h3>{{ t('feat.5t') }}</h3>
+          <p>{{ t('feat.5p') }}</p>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="compare">
+  <div class="wrap">
+    <h2 class="h2">{{ t('cmp.title') }}</h2>
+    <table class="compare">
+      <thead>
+        <tr><th scope="col"><span class="sr">{{ t('cmp.topic') }}</span></th><th scope="col">{{ t('cmp.old') }}</th><th scope="col" class="us">Paiger</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">{{ t('cmp.r1') }}</th><td>{{ t('cmp.r1a') }}</td><td class="us">{{ t('cmp.r1b') }}</td></tr>
+        <tr><th scope="row">{{ t('cmp.r2') }}</th><td>{{ t('cmp.r2a') }}</td><td class="us">{{ t('cmp.r2b') }}</td></tr>
+        <tr><th scope="row">{{ t('cmp.r3') }}</th><td>{{ t('cmp.r3a') }}</td><td class="us">{{ t('cmp.r3b') }}</td></tr>
+        <tr><th scope="row">{{ t('cmp.r4') }}</th><td>{{ t('cmp.r4a') }}</td><td class="us">{{ t('cmp.r4b') }}</td></tr>
+        <tr><th scope="row">{{ t('cmp.r5') }}</th><td>{{ t('cmp.r5a') }}</td><td class="us">{{ t('cmp.r5b') }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="block pricing" id="pricing">
+  <div class="wrap">
+    <h2 class="h2">{{ t('price.title') }}</h2>
+    <p class="lead">{{ t('price.lead') }}</p>
+    <div class="plans">
+      {% for plan in plans %}
+      <article class="plan{% if plan.featured %} featured{% endif %}">
+        {% if plan.tag_key %}<span class="plan-tag">{{ t(plan.tag_key) }}</span>{% endif %}
+        <h3>{{ t(plan.name_key) }}</h3>
+        <p class="for">{{ t(plan.for_key) }}</p>
+        <div class="price"><span class="cur">{{ t('price.currency') }}</span><span class="amt">{{ plan.amount }}</span><span class="per">{{ t(plan.per_key) }}</span></div>
+        <p class="save">{% if plan.save_key %}{{ t(plan.save_key) }}{% endif %}</p>
+        <ul>
+          {% for key in plan.features %}
+          <li><svg><use href="#i-check"/></svg><span>{{ t(key) }}</span></li>
+          {% endfor %}
+        </ul>
+        <a class="btn{% if plan.featured %} btn-primary{% endif %}" href="/signup?plan={{ plan.code }}">{{ t('cta.startFree') }}</a>
+      </article>
+      {% endfor %}
+    </div>
+    <p class="trial-line">{{ t('price.trial')|safe }}</p>
+  </div>
+</section>
+
+<section class="block" id="faq">
+  <div class="wrap faq-grid">
+    <h2 class="h2">{{ t('faq.title') }}</h2>
+    <div class="faq">
+      <details><summary><span>{{ t('faq.q1') }}</span><span class="pm"></span></summary><p>{{ t('faq.a1') }}</p></details>
+      <details><summary><span>{{ t('faq.q2') }}</span><span class="pm"></span></summary><p>{{ t('faq.a2') }}</p></details>
+      <details><summary><span>{{ t('faq.q3') }}</span><span class="pm"></span></summary><p>{{ t('faq.a3') }}</p></details>
+      <details><summary><span>{{ t('faq.q4') }}</span><span class="pm"></span></summary><p>{{ t('faq.a4') }}</p></details>
+      <details><summary><span>{{ t('faq.q5') }}</span><span class="pm"></span></summary><p>{{ t('faq.a5') }}</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <div>
+      <h2>{{ t('final.title') }}</h2>
+      <p>{{ t('final.sub') }}</p>
+    </div>
+    <a class="btn btn-primary" href="/signup">{{ t('cta.trial') }}</a>
+  </div>
+</section>
+</main>
+{% endblock %}
+{% block scripts %}
 <script>
-(function(){
-var D={
-ar:{t:'بيجر — حوّل كل هاتف إلى بيجر مطعم',brand:'بيجر',n1:'المزايا',n2:'كيف يعمل',n3:'ابدأ',
-cta1:'ابدأ الآن',cta2:'كيف يعمل؟',cta_login:'دخول المتاجر',cta_cashier:'تجربة الكاشير ↗',
-cta_band1:'تسجيل دخول المتاجر',cta_band2:'تجربة الكاشير المباشرة ↗',
-badge:'بدون أجهزة. بدون تطبيق للعميل.',h1a:'حوّل كل هاتف إلى',h1b:'بيجر مطعم ذكي.',
-lead:'العميل يمسح رمز QR، وعندما يجهز طلبه يرنّ هاتفه ويهتز ويومض — لحظياً وبدون أي تأخير وبدون تحميل أي تطبيق.',
-f1t:'لحظي',f1s:'اتصال WebSocket مباشر',f2t:'بدون تثبيت',f2s:'يعمل من المتصفح والـ App Clip',f3t:'iOS و Android',f3s:'صوت · اهتزاز · شاشة مفتوحة',
-d_cash:'لوحة الكاشير',d_s1:'تم الاستلام',d_s2:'يرن',d_s3:'قيد التحضير',d_done:'تم الاستلام',d_wait:'قيد التحضير',d_ring:'🔔 رنين البيجر',d_n1:'سارة',d_n2:'أحمد',d_n3:'خالد',d_date:'الاثنين 2 نوفمبر',d_app:'🔔 بيجر المطعم',c1:'الطلب #08 يرن الآن',c2:'العميل في الطريق',
-s_waiting:['طلبك قيد التحضير','سنرنّ فور أن يجهز','قيد التحضير'],s_ringing:['طلبك جاهز! 🎉','تفضّل إلى الكاونتر','جاهز - يرن'],s_onway:['أبلغنا الكاشير','الكاشير يعلم أنك قادم','في الطريق'],s_done:['تم الاستلام','بالعافية! شكراً لزيارتك','تم الاستلام'],
-e1:'المزايا',h2a:'كل ما يفعله البيجر الحقيقي، وأكثر.',s2a:'صُمم ليعمل بسلاسة على هواتف العملاء دون أي إعداد معقد.',
-a1t:'تنبيه لحظي',a1p:'اتصال WebSocket فوري مع إعادة اتصال تلقائية وبديل احتياطي عند انقطاع الشبكة.',
-a2t:'صوت بيجر حقيقي',a2p:'نغمة مزدوجة مولّدة بالكامل في المتصفح، بدون ملفات صوت قد تفشل.',
-a3t:'اهتزاز فعلي',a3p:'نمط اهتزاز مخصص يعطي إحساس نبضات البيجر على الأجهزة المدعومة.',
-a4t:'الشاشة تبقى مضاءة',a4p:'يمنع قفل الشاشة أثناء انتظار الطعام حتى لا يفوت العميل التنبيه.',
-a5t:'تفعيل بنقرة واحدة',a5p:'نقرة واحدة تتخطى قيود تشغيل الصوت في Safari وAndroid.',
-a6t:'لوحة كاشير متكاملة',a6p:'أنشئ الطلبات، أرنّ البيجر، كرّر التنبيه، وتابع من هو في الطريق.',
-e2:'كيف يعمل',h2b:'ثلاث خطوات فقط.',
-p1t:'أنشئ الطلب',p1p:'أدخل رقم الطلب من لوحة الكاشير وسيظهر رمز QR فوراً.',
-p2t:'العميل يمسح الرمز',p2p:'يفتح بيجره في المتصفح أو الـ App Clip بضغطة واحدة.',
-p3t:'رنّ واستلم',p3p:'اضغط رنين، فيرنّ الهاتف ويهتز، ويضغط العميل «أنا في الطريق».',
-bt:'جاهز لتستغني عن أجهزة البيجر البلاستيكية؟',bp:'ابدأ بتجربة بيجر السحابي في مطعمك اليوم ووفر آلاف الريالات.',foot:'صُنع لمطاعم أذكى'},
+window.PAIGER_I18N = {{ {
+  "demo.enter": t("demo.enter"),
+  "demo.none": t("demo.none"),
+  "demo.stPrep": t("demo.stPrep"),
+  "demo.stReady": t("demo.stReady"),
+  "demo.preparing": t("demo.preparing"),
+  "demo.prepSub": t("demo.prepSub"),
+  "demo.readyNow": t("demo.readyNow"),
+  "demo.readySub": t("demo.readySub"),
+  "demo.h1": t("demo.h1"),
+  "demo.h2": t("demo.h2"),
+  "demo.h3": t("demo.h3"),
+  "demo.soundOn": t("demo.soundOn"),
+  "demo.soundOff": t("demo.soundOff")
+}|tojson }};
+</script>
+<script>
+(() => {
+  "use strict";
+  const I = window.PAIGER_I18N || {};
+  const t = (k) => I[k] || k;
+  const lang = document.documentElement.lang === "ar" ? "ar" : "en";
+  const $ = (id) => document.getElementById(id);
+  const ui = { display: $("tDisplay"), pad: $("tPad"), issue: $("tIssue"), ready: $("tReady"), list: $("tList"),
+    phone: $("phone"), activity: $("activity"), idle: $("phoneIdle"), num: $("actNum"), status: $("actStatus"), bar: $("actBar"), hint: $("demoHint"), sound: $("soundBtn") };
+  let value = "", order = null, step = 1, soundOn = true, ringTimer = null, audioCtx = null;
 
-en:{t:'Pager — Turn every phone into a restaurant pager',brand:'Pager',n1:'Features',n2:'How it works',n3:'Get started',
-cta1:'Get started',cta2:'How it works',cta_login:'Store Login',cta_cashier:'Live Cashier ↗',
-cta_band1:'Restaurant Login',cta_band2:'Try Live Cashier ↗',
-badge:'No hardware. No customer app.',h1a:'Turn every phone into a',h1b:'smart restaurant pager.',
-lead:'Customers scan a QR code. When the order is ready, their phone rings, vibrates and flashes — live, with zero latency.',
-f1t:'Real-time',f1s:'Live WebSocket link',f2t:'No install',f2s:'Runs in browser & App Clip',f3t:'iOS & Android',f3s:'Sound · Vibration · Wake lock',
-d_cash:'Cashier',d_s1:'Picked up',d_s2:'Ringing',d_s3:'Preparing',d_done:'Picked up',d_wait:'Preparing',d_ring:'🔔 Ring pager',d_n1:'Sara',d_n2:'Ahmed',d_n3:'Khaled',d_date:'Monday, November 2',d_app:'🔔 Restaurant pager',c1:'Order #08 is ringing',c2:'Customer is on the way',
-s_waiting:['Your order is being prepared','We’ll ring the moment it’s ready','Preparing'],s_ringing:['Your order is ready! 🎉','Please head to the counter','Ready · Ringing'],s_onway:['Cashier notified','The cashier knows you’re coming','On the way'],s_done:['Picked up','Enjoy your meal!','Picked up'],
-e1:'FEATURES',h2a:'Everything a real pager does, and more.',s2a:'Built to work smoothly on customers’ phones with zero complicated setup.',
-a1t:'Instant alerts',a1p:'Live WebSocket connection with automatic reconnect and a polling fallback when the network drops.',
-a2t:'Real pager sound',a2p:'A dual-tone beep synthesized in the browser, with no audio files that could fail.',
-a3t:'Real vibration',a3p:'A custom vibration pattern that feels like a true pager on supported devices.',
-a4t:'Screen stays awake',a4p:'Prevents screen lock while waiting so customers never miss the alert.',
-a5t:'One-tap activation',a5p:'A single tap gets around the autoplay restrictions in iOS Safari and Android.',
-a6t:'Full cashier dashboard',a6p:'Create orders, ring, repeat the alert, and see who is on the way.',
-e2:'HOW IT WORKS',h2b:'Just three steps.',
-p1t:'Create the order',p1p:'Enter the order number in the cashier dashboard and a QR code appears instantly.',
-p2t:'Customer scans the code',p2p:'They open their pager in the browser or App Clip with one tap.',
-p3t:'Ring and collect',p3p:'Tap ring, the phone rings and vibrates, and the customer taps “I’m on my way”.',
-bt:'Ready to retire the plastic pagers?',bp:'Try the smart pager in your restaurant today and save thousands.',foot:'Made for smarter restaurants'}};
+  function renderDisplay() {
+    ui.display.innerHTML = value ? value : `<span class="ph">${t("demo.enter")}</span>`;
+    ui.issue.disabled = !value || (order && order.status !== "done");
+  }
+  function renderList() {
+    if (!order) { ui.list.innerHTML = `<p class="t-empty">${t("demo.none")}</p>`; return; }
+    const ready = order.status === "ready";
+    ui.list.innerHTML = `<div class="t-row${ready ? " is-ready" : ""}"><span class="num">${order.num}</span><span>Maison Café</span><span class="st">${t(ready ? "demo.stReady" : "demo.stPrep")}</span></div>`;
+    ui.status.innerHTML = ready
+      ? `<span>${t("demo.readyNow")}</span><small>${t("demo.readySub")}</small>`
+      : `<span>${t("demo.preparing")}</span><small>${t("demo.prepSub")}</small>`;
+  }
+  function setHint() { ui.hint.innerHTML = t("demo.h" + step); }
+  function renderSound() { ui.sound.textContent = t(soundOn ? "demo.soundOn" : "demo.soundOff"); ui.sound.setAttribute("aria-pressed", soundOn); }
 
-var lang='ar',state='waiting',$=function(s){return document.querySelector(s)};
-function render(){
-  var d=D[lang],s=d['s_'+state];
-  $('#st').textContent=s[0];$('#sb').textContent=s[1];$('#pill').textContent=s[2];
-  $('#mr').textContent=state==='ringing'?1:0;
-  var lv={waiting:1,ringing:2,onway:3,done:3}[state],b=$('#bars').children;
-  for(var i=0;i<3;i++)b[i].className=i<lv?'on':'';
-  $('#ch1').classList.toggle('on',state==='ringing');$('#ch2').classList.toggle('on',state==='onway');
-}
-function apply(l){
-  lang=l;var h=document.documentElement;h.lang=l;h.dir=l==='ar'?'rtl':'ltr';document.title=D[l].t;
-  [].forEach.call(document.querySelectorAll('[data-k]'),function(e){e.textContent=D[l][e.dataset.k]});
-  $('#lang').textContent=l==='ar'?'EN':'عربي';render();fit();
-}
-$('#lang').onclick=function(){apply(lang==='ar'?'en':'ar')};
+  ui.pad.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    const k = b.dataset.k;
+    if (k === "c") value = ""; else if (k === "b") value = value.slice(0, -1); else if (value.length < 4) value += k;
+    renderDisplay();
+  });
 
-/* demo loop */
-var seq=[['waiting',2600],['press',700],['ringing',3600],['onway',2200],['done',1800]];
-function run(i){var s=seq[i%seq.length];state=s[0]==='press'?'waiting':s[0];$('#scene').dataset.state=state;$('#rb').classList.toggle('press',s[0]==='press');render();setTimeout(function(){run(i+1)},s[1])}
+  ui.issue.addEventListener("click", () => {
+    stopRing();
+    order = { num: value, status: "preparing" };
+    value = ""; renderDisplay(); renderList();
+    ui.num.textContent = order.num;
+    ui.idle.hidden = true;
+    ui.activity.classList.remove("show"); void ui.activity.offsetWidth;
+    setTimeout(() => ui.activity.classList.add("show"), 450);
+    ui.bar.style.width = "18%"; setTimeout(() => (ui.bar.style.width = "46%"), 900);
+    ui.ready.disabled = false; ui.issue.disabled = true;
+    step = 2; setHint();
+    showPhone();
+  });
 
-/* 3D tilt + fit */
-var stage=$('#stage'),scene=$('#scene');
-function fit(){var w=stage.clientWidth||window.innerWidth;var k=Math.min(1,Math.max(0.42,(w-16)/610));scene.style.setProperty('--k',k);document.documentElement.style.setProperty('--k',k)}
-addEventListener('resize',fit);
-stage.addEventListener('pointermove',function(e){var r=stage.getBoundingClientRect();scene.style.setProperty('--ry',((e.clientX-r.left)/r.width-.5)*14+'deg');scene.style.setProperty('--rx',(-((e.clientY-r.top)/r.height-.5))*10+'deg')});
-stage.addEventListener('pointerleave',function(){scene.style.setProperty('--ry','0deg');scene.style.setProperty('--rx','0deg')});
+  ui.ready.addEventListener("click", () => {
+    if (!order) return;
+    order.status = "ready"; renderList();
+    ui.bar.style.width = "";
+    ui.phone.classList.add("ringing");
+    ui.ready.disabled = true;
+    step = 3; setHint();
+    showPhone();
+    beep();
+    ringTimer = setTimeout(() => { stopRing(); order.status = "done"; renderDisplay(); }, 4200);
+  });
 
-/* reveal */
-if('IntersectionObserver' in window){
-  var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.01,rootMargin:'150px 0px'});
-  [].forEach.call(document.querySelectorAll('.rv'),function(e,i){e.style.transitionDelay=(i%3)*70+'ms';io.observe(e)});
-}else{
-  [].forEach.call(document.querySelectorAll('.rv'),function(e){e.classList.add('in')});
-}
+  function showPhone() {
+    if (matchMedia("(max-width: 560px)").matches) ui.phone.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 
-apply('ar');run(0);
+  function stopRing() { clearTimeout(ringTimer); ui.phone.classList.remove("ringing"); }
+
+  ui.sound.addEventListener("click", () => { soundOn = !soundOn; renderSound(); });
+
+  function beep() {
+    if (!soundOn) return;
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const now = audioCtx.currentTime + 0.05;
+      const gain = audioCtx.createGain(); gain.gain.value = 0; gain.connect(audioCtx.destination);
+      const osc = audioCtx.createOscillator(); osc.type = "square"; osc.frequency.value = 3100; osc.connect(gain);
+      for (let g = 0; g < 2; g++) for (let i = 0; i < 8; i++) {
+        const s = now + g * 1.26 + i * 0.12;
+        gain.gain.setValueAtTime(0, s); gain.gain.linearRampToValueAtTime(0.08, s + 0.004);
+        gain.gain.setValueAtTime(0.08, s + 0.066); gain.gain.linearRampToValueAtTime(0, s + 0.07);
+      }
+      osc.start(now); osc.stop(now + 2.6);
+    } catch (_) {}
+  }
+
+  const clock = () => {
+    const d = new Date();
+    $("lockTime").textContent = `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+    $("lockDate").textContent = d.toLocaleDateString(lang === "ar" ? "ar-BH" : "en-GB", { weekday: "long", day: "numeric", month: "long" });
+  };
+  clock(); setInterval(clock, 20000);
+  renderDisplay();
 })();
 </script>
-</body>
-</html>
+{% endblock %}

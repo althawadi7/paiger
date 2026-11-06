@@ -52,3 +52,6 @@ Thumbs.db
 *.log
 scratch/
 
+# Restaurant logos uploaded at runtime
+app/static/uploads/
+

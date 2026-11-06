@@ -1,0 +1,22 @@
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a class="logo" href="/" aria-label="{{ t('nav.home') }}">
+      <svg class="logo-mark"><use href="#i-mark"/></svg>
+      <span class="logo-word">Paiger</span>
+    </a>
+    <nav class="nav-links" aria-label="{{ t('nav.main') }}">
+      <a href="/#how">{{ t('nav.how') }}</a>
+      <a href="/#features">{{ t('nav.features') }}</a>
+      <a href="/#pricing">{{ t('nav.pricing') }}</a>
+      <a href="/#faq">{{ t('nav.faq') }}</a>
+    </nav>
+    <div class="nav-end">
+      <a class="lang" href="/lang/{{ 'en' if lang == 'ar' else 'ar' }}" aria-label="{{ t('nav.langLabel') }}">{{ t('nav.langSwitch') }}</a>
+      <a class="login-link" href="/login">{{ t('nav.login') }}</a>
+      <a class="btn btn-primary" href="/signup">{{ t('cta.trial') }}</a>
+      <button class="menu-btn" id="menuBtn" type="button" aria-label="{{ t('nav.menu') }}" aria-expanded="false">
+        <svg width="22" height="22" viewBox="0 0 22 22"><path d="M3 7h16M3 15h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+</header>

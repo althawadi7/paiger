@@ -1,1555 +1,763 @@
-<!DOCTYPE html>
-<html id="htmlRoot" lang="ar" dir="rtl" data-theme="light">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>لوحة الكاشير - نظام البيجر الذكي</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="icon" href="/static/img/brand-logo.png">
+{% extends "base.html" %}
+{% block title %}{{ t('cash.title') }} · {{ restaurant.name }} · Paiger{% endblock %}
+{% block shell_nav %}{% endblock %}
+{% block shell_footer %}{% endblock %}
+{% block head %}
+<meta name="apple-mobile-web-app-capable" content="yes">
 <style>
-/* Pure Warm Espresso & Latte Theme (100% Light Mode) */
-:root{
-  --bg:#f6f3ed;
-  --s1:#ffffff;
-  --s2:#f0ebe1;
-  --s3:#e6ded2;
-  --line:rgba(58, 38, 28, 0.11);
-  --ink:#23150d;
-  --mute:#7a6656;
-  --primary:#3e2415;
-  --primary-hover:#2b190e;
-  --wait:#9c531d;
-  --ring:#b91c1c;
-  --go:#5b3829;
-  --done:#1e5647;
-  --shadow:0 18px 45px rgba(45, 30, 20, 0.07), 0 2px 10px rgba(45, 30, 20, 0.04);
-  color-scheme:light;
-}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html{height:100%}
-body{
-  background:
-    radial-gradient(1200px 700px at 50% -10%, rgba(190, 140, 98, 0.16), transparent 75%),
-    radial-gradient(900px 500px at 10% 30%, rgba(185, 28, 28, 0.05), transparent 75%),
-    radial-gradient(800px 600px at 90% 70%, rgba(110, 70, 45, 0.09), transparent 75%),
-    var(--bg);
-  color:var(--ink);
-  font-family:"Readex Pro",system-ui,-apple-system,sans-serif;
-  font-size:14px;
-  min-height:100vh;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:flex-start;
-  overflow-x:hidden;
-  position:relative;
-}
-button,input{font:inherit;color:inherit;border:0;background:none}
-button{cursor:pointer}
-:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
-
-/* Ambient Latte Crema Glow */
-.glow{
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  background:radial-gradient(circle at 50% 0%, rgba(215, 175, 140, 0.12), transparent 70%);
-  z-index:0;
-}
-
-/* Full-Width Responsive Workspace */
-.wrap{
-  position:relative;
-  z-index:1;
-  width:100%;
-  max-width:1800px;
-  min-height:100vh;
-  margin:0 auto;
-  padding:20px 24px 32px;
-  display:flex;
-  flex-direction:column;
-  gap:18px;
-}
-
-/* 1. Header Bar */
-.bar{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:18px;
-  background:rgba(255, 255, 255, 0.94);
-  -webkit-backdrop-filter:blur(24px);
-  backdrop-filter:blur(24px);
-  border:1px solid var(--line);
-  border-radius:24px;
-  padding:14px 22px;
-  box-shadow:var(--shadow);
-  flex-wrap:wrap;
-}
-.brand{
-  display:flex;
-  align-items:center;
-  gap:14px;
-}
-.mark{
-  width:46px;
-  height:46px;
-  border-radius:15px;
-  background:var(--primary);
-  display:grid;
-  place-items:center;
-  box-shadow:0 6px 16px rgba(62, 36, 21, 0.22);
-  color:#fff;
-}
-.mark img{
-  width:30px;
-  height:30px;
-  object-fit:contain;
-}
-.brand-text h1{
-  font-size:18px;
-  font-weight:700;
-  letter-spacing:-.3px;
-  line-height:1.2;
-  color:var(--ink);
-}
-.brand-text p{
-  color:var(--mute);
-  font-size:12px;
-  margin-top:2px;
-}
-.right{
-  display:flex;
-  gap:12px;
-  align-items:center;
-  flex-wrap:wrap;
-}
-.net{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  padding:8px 16px;
-  border-radius:999px;
-  background:var(--s2);
-  border:1px solid var(--line);
-  font-size:12.5px;
-  color:var(--mute);
-}
-.net b{color:var(--ink);font-weight:600;direction:ltr}
-.live{
-  width:8px;
-  height:8px;
-  border-radius:50%;
-  background:var(--done);
-  box-shadow:0 0 0 0 var(--done);
-  animation:live 2s infinite;
-}
-@keyframes live{70%{box-shadow:0 0 0 8px transparent}}
-.ib{
-  width:46px;
-  height:46px;
-  border-radius:16px;
-  background:var(--s2);
-  border:1px solid var(--line);
-  display:grid;
-  place-items:center;
-  font-size:18px;
-  transition:transform .15s, background .15s;
-}
-.ib:hover{background:color-mix(in srgb, var(--ink) 8%, var(--s2))}
-.add{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  background:linear-gradient(135deg, var(--ring), var(--go));
-  color:#fff;
-  font-weight:700;
-  font-size:14.5px;
-  padding:0 24px;
-  height:46px;
-  border-radius:16px;
-  box-shadow:0 8px 25px color-mix(in srgb, var(--ring) 40%, transparent);
-  transition:transform .15s, box-shadow .2s;
-}
-.add:active{transform:scale(.97)}
-.add:hover{box-shadow:0 10px 30px color-mix(in srgb, var(--ring) 55%, transparent)}
-
-/* 2. Full-Width Stats Row */
-.stats{
-  display:grid;
-  grid-template-columns:repeat(4, 1fr);
-  gap:16px;
-  width:100%;
-}
-.stat{
-  background:color-mix(in srgb, var(--s1) 90%, transparent);
-  -webkit-backdrop-filter:blur(20px);
-  backdrop-filter:blur(20px);
-  border:1px solid var(--line);
-  border-radius:24px;
-  padding:20px 22px;
-  position:relative;
-  overflow:hidden;
-  box-shadow:var(--shadow);
-  transition:transform .2s, border-color .2s;
-}
-.stat:hover{
-  transform:translateY(-2px);
-  border-color:color-mix(in srgb, var(--c) 40%, var(--line));
-}
-.stat:after{
-  content:"";
-  position:absolute;
-  inset-inline-end:-20px;
-  top:-20px;
-  width:95px;
-  height:95px;
-  border-radius:50%;
-  background:var(--c);
-  opacity:.16;
-  filter:blur(14px);
-}
-.stat span{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  color:var(--mute);
-  font-size:13px;
-  font-weight:500;
-}
-.stat span i{
-  width:9px;
-  height:9px;
-  border-radius:50%;
-  background:var(--c);
-  box-shadow:0 0 8px var(--c);
-}
-.stat strong{
-  display:block;
-  font-size:40px;
-  font-weight:800;
-  margin-top:10px;
-  line-height:1;
-  font-variant-numeric:tabular-nums;
-  color:var(--ink);
-}
-
-/* 3. Centered Navigation Filter Tabs */
-.tabs-wrap{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  width:100%;
-}
-.tabs{
-  display:inline-flex;
-  gap:8px;
-  padding:6px;
-  border-radius:999px;
-  background:color-mix(in srgb, var(--s1) 90%, transparent);
-  -webkit-backdrop-filter:blur(20px);
-  backdrop-filter:blur(20px);
-  border:1px solid var(--line);
-  box-shadow:0 8px 24px rgba(0,0,0,.2);
-  overflow-x:auto;
-  scrollbar-width:none;
-}
-.tabs::-webkit-scrollbar{display:none}
-.tabs button{
-  flex:none;
-  padding:10px 22px;
-  border-radius:999px;
-  color:var(--mute);
-  font-weight:600;
-  font-size:13.5px;
-  transition:all .2s;
-}
-.tabs button:hover{color:var(--ink)}
-.tabs button[aria-pressed="true"]{
-  background:linear-gradient(135deg, var(--ring), var(--go));
-  color:#fff;
-  box-shadow:0 4px 16px color-mix(in srgb, var(--ring) 35%, transparent);
-}
-
-/* 3-Column Layout: Full Screen Split */
-.tri-board{
-  display:grid;
-  grid-template-columns: 360px 1fr 1fr;
-  gap:20px;
-  width:100%;
-  flex:1;
-  align-items:stretch;
-}
-@media (max-width: 1200px){
-  .tri-board{
-    grid-template-columns: 330px 1fr 1fr;
-  }
-}
-@media (max-width: 980px){
-  .tri-board{
-    grid-template-columns: 1fr;
-  }
-}
-
-.board-col{
-  background:rgba(255, 255, 255, 0.95);
-  border:1px solid var(--line);
-  border-radius:26px;
-  padding:22px;
-  box-shadow:var(--shadow);
-  display:flex;
-  flex-direction:column;
-  gap:16px;
-  min-height:calc(100vh - 120px);
-  position:relative;
-}
-
-.col-header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding-bottom:14px;
-  border-bottom:1px solid var(--line);
-}
-.col-title{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  font-size:16.5px;
-  font-weight:700;
-  color:var(--ink);
-}
-.col-badge{
-  font-size:12px;
-  font-weight:700;
-  padding:5px 14px;
-  border-radius:999px;
-  background:var(--s2);
-  color:var(--ink);
-  border:1px solid var(--line);
-}
-
-/* Numpad Calculator Component (Right Column) */
-.numpad-container{
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  flex:1;
-}
-
-.numpad-screen{
-  background:var(--s2);
-  border:1.5px solid var(--line);
-  border-radius:20px;
-  padding:16px 20px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:4px;
-  position:relative;
-  box-shadow:inset 0 2px 6px rgba(45, 30, 20, 0.04);
-}
-.numpad-screen-label{
-  font-size:11.5px;
-  color:var(--mute);
-  font-weight:600;
-  letter-spacing:.5px;
-}
-.numpad-display-val{
-  font-size:52px;
-  font-weight:800;
-  color:var(--ink);
-  line-height:1.1;
-  font-variant-numeric:tabular-nums;
-  letter-spacing:-1px;
-}
-.numpad-screen-clear{
-  position:absolute;
-  inset-inline-end:14px;
-  top:50%;
-  transform:translateY(-50%);
-  width:36px;
-  height:36px;
-  border-radius:50%;
-  background:var(--s3);
-  color:var(--ink);
-  border:1px solid var(--line);
-  display:grid;
-  place-items:center;
-  cursor:pointer;
-  font-size:15px;
-  font-weight:700;
-  transition:all .15s;
-}
-.numpad-screen-clear:hover{
-  background:var(--primary);
-  color:#fff;
-}
-
-/* 3x4 Calculator Grid */
-.numpad-grid{
-  display:grid;
-  grid-template-columns:repeat(3, 1fr);
-  gap:10px;
-  flex:1;
-}
-.num-btn{
-  background:var(--s2);
-  border:1px solid var(--line);
-  border-radius:18px;
-  height:62px;
-  font-size:24px;
-  font-weight:700;
-  color:var(--ink);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-  transition:transform .1s, background .15s, border-color .15s;
-  box-shadow:0 3px 8px rgba(45, 30, 20, 0.03);
-}
-.num-btn:active{
-  transform:scale(.94);
-  background:var(--s3);
-}
-.num-btn:hover{
-  border-color:rgba(58, 38, 28, 0.25);
-  background:var(--s3);
-}
-.num-btn.action-del{
-  color:var(--ring);
-  font-size:20px;
-}
-.num-btn.action-plus{
-  color:var(--wait);
-  font-size:20px;
-}
-
-/* Issue Pager Button */
-.numpad-submit-btn{
-  height:56px;
-  border-radius:18px;
-  background:var(--primary);
-  color:#fff;
-  font-size:16.5px;
-  font-weight:700;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-  cursor:pointer;
-  box-shadow:0 8px 22px rgba(62, 36, 21, 0.25);
-  transition:transform .15s, background .2s, box-shadow .2s;
-  border:none;
-  margin-top:4px;
-}
-.numpad-submit-btn:active{
-  transform:scale(.97);
-}
-.numpad-submit-btn:hover{
-  background:var(--primary-hover);
-  box-shadow:0 10px 28px rgba(62, 36, 21, 0.35);
-}
-
-/* Orders List Inside Middle & Left Columns */
-.col-orders-list{
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-  overflow-y:auto;
-  max-height:calc(100vh - 210px);
-  padding-inline-end:6px;
-  flex:1;
-}
-.col-orders-list::-webkit-scrollbar{
-  width:6px;
-}
-.col-orders-list::-webkit-scrollbar-thumb{
-  background:var(--s3);
-  border-radius:10px;
-}
-
-/* Espresso Order Card (Number Only) */
-.card{
-  background:var(--s2);
-  border:1px solid var(--line);
-  border-radius:22px;
-  padding:16px 20px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  gap:10px;
-  position:relative;
-  transition:transform .2s, border-color .2s, box-shadow .2s;
-  box-shadow:0 4px 14px rgba(45, 30, 20, 0.04);
-}
-.card:hover{
-  transform:translateY(-2px);
-  border-color:rgba(58, 38, 28, 0.25);
-}
-.card.waiting{--c:var(--wait)}
-.card.ringing{--c:var(--ring)}
-.card.onway{--c:var(--go)}
-.card.done{--c:var(--done)}
-
-.card.ringing{
-  background:#fff5f5;
-  border-color:rgba(185, 28, 28, 0.45);
-  animation:ringcard 1.4s infinite;
-}
-@keyframes ringcard{
-  0%,100%{box-shadow:0 0 0 0 rgba(185, 28, 28, 0.25)}
-  50%{box-shadow:0 0 0 8px rgba(185, 28, 28, 0.08)}
-}
-.card.done{
-  opacity:.8;
-  background:#f4f6f4;
-}
-.card-num-huge{
-  font-size:46px;
-  font-weight:800;
-  color:var(--ink);
-  line-height:1;
-  font-variant-numeric:tabular-nums;
-  letter-spacing:-1px;
-}
-.card .acts{
-  width:100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:10px;
-}
-.card .acts .btn.main{
-  flex:1;
-}
-
-.pill{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  font-size:11.5px;
-  font-weight:700;
-  color:var(--c);
-  background:rgba(255, 255, 255, 0.85);
-  border:1px solid var(--line);
-  padding:4px 12px;
-  border-radius:999px;
-}
-.pill:before{
-  content:"";
-  width:6px;
-  height:6px;
-  border-radius:50%;
-  background:var(--c);
-}
-.ago{
-  font-size:11.5px;
-  color:var(--mute);
-  font-variant-numeric:tabular-nums;
-  font-weight:500;
-}
-
-.btn{
-  height:44px;
-  border-radius:14px;
-  font-weight:700;
-  font-size:13.5px;
-  background:#ffffff;
-  color:var(--ink);
-  border:1px solid var(--line);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  transition:all .15s;
-}
-.btn:hover{background:var(--s2)}
-.btn.main{
-  background:var(--primary);
-  color:#fff;
-  border-color:transparent;
-  box-shadow:0 4px 14px rgba(62, 36, 21, 0.2);
-}
-.btn.main:hover{
-  background:var(--primary-hover);
-  box-shadow:0 6px 18px rgba(62, 36, 21, 0.28);
-}
-.btn.sq{
-  flex:0 0 44px;
-  color:var(--mute);
-}
-.btn.sq:hover{color:var(--ink);border-color:var(--primary)}
-.btn.sq.qr-btn{
-  color:var(--primary);
-  background:#ffffff;
-  border-color:var(--line);
-}
-.btn.sq.qr-btn:hover{
-  background:var(--s2);
-}
-.btn.sq.del-btn:hover{
-  color:var(--ring);
-}
-
-.card-top-row, .row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-}
-.pill{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  font-size:12px;
-  font-weight:700;
-  color:var(--c);
-  background:color-mix(in srgb, var(--c) 16%, transparent);
-  border:1px solid color-mix(in srgb, var(--c) 30%, transparent);
-  padding:5px 12px;
-  border-radius:999px;
-}
-.pill:before{
-  content:"";
-  width:6px;
-  height:6px;
-  border-radius:50%;
-  background:var(--c);
-}
-.ago{
-  font-size:12px;
-  color:var(--mute);
-  font-variant-numeric:tabular-nums;
-  font-weight:500;
-}
-.num{
-  font-size:62px;
-  font-weight:800;
-  line-height:1;
-  letter-spacing:-2px;
-  direction:ltr;
-  text-align:right;
-  font-variant-numeric:tabular-nums;
-  color:var(--ink);
-  margin:2px 0;
-}
-.who{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  background:var(--s2);
-  border:1px solid var(--line);
-  padding:10px 14px;
-  border-radius:18px;
-}
-.av{
-  width:38px;
-  height:38px;
-  border-radius:50%;
-  flex:none;
-  display:grid;
-  place-items:center;
-  font-weight:700;
-  font-size:15px;
-  background:color-mix(in srgb, var(--c) 20%, var(--s1));
-  color:var(--c);
-}
-.who div{min-width:0;flex:1}
-.who b{display:block;font-weight:600;font-size:14px;line-height:1.3}
-.who small{color:var(--mute);font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-
-.acts{
-  display:flex;
-  gap:10px;
-  margin-top:auto;
-}
-.btn{
-  flex:1;
-  height:46px;
-  border-radius:15px;
-  font-weight:700;
-  font-size:13.5px;
-  background:var(--s2);
-  border:1px solid var(--line);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  transition:all .15s;
-}
-.btn:hover{background:color-mix(in srgb, var(--ink) 8%, var(--s2))}
-.btn.main{
-  background:linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 80%, #000));
-  color:#fff;
-  border-color:transparent;
-  box-shadow:0 6px 18px color-mix(in srgb, var(--c) 35%, transparent);
-}
-.btn.main:hover{box-shadow:0 8px 24px color-mix(in srgb, var(--c) 50%, transparent)}
-.btn.sq{
-  flex:0 0 46px;
-  color:var(--mute);
-}
-.btn.sq:hover{color:var(--ink);border-color:color-mix(in srgb, var(--ink) 25%, transparent)}
-.btn.sq.qr-btn{
-  color:var(--go);
-  background:color-mix(in srgb, var(--go) 14%, var(--s2));
-  border-color:color-mix(in srgb, var(--go) 30%, transparent);
-}
-.btn.sq.qr-btn:hover{
-  background:color-mix(in srgb, var(--go) 26%, var(--s2));
-  color:#fff;
-}
-.btn.sq.del-btn:hover{
-  color:var(--ring);
-  border-color:color-mix(in srgb, var(--ring) 40%, transparent);
-  background:color-mix(in srgb, var(--ring) 12%, var(--s2));
-}
-
-.empty{
-  grid-column:1/-1;
-  max-width:540px;
-  margin:20px auto 0;
-  padding:48px 24px;
-  text-align:center;
-  color:var(--mute);
-  background:color-mix(in srgb, var(--s1) 60%, transparent);
-  border:2px dashed var(--line);
-  border-radius:32px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:14px;
-}
-.empty-icon{
-  width:72px;
-  height:72px;
-  border-radius:50%;
-  background:var(--s2);
-  display:grid;
-  place-items:center;
-  font-size:32px;
-  border:1px solid var(--line);
-}
-.empty h3{font-size:18px;font-weight:700;color:var(--ink)}
-.empty p{font-size:13.5px;line-height:1.6}
-
-/* Modals */
-dialog{border:0;background:none;color:var(--ink);margin:auto;padding:0;max-width:100vw}
-dialog::backdrop{background:rgba(3,5,10,.75);backdrop-filter:blur(10px)}
-.sheet{
-  width:min(440px,94vw);
-  background:var(--s1);
-  border:1px solid var(--line);
-  border-radius:28px;
-  padding:26px;
-  box-shadow:var(--shadow);
-}
-.sheet h2{font-size:21px;font-weight:700;margin-bottom:4px}
-.sheet .sub{color:var(--mute);font-size:13px;margin-bottom:8px}
-.f{display:block;margin-top:14px;font-size:12.5px;color:var(--mute)}
-.f input{
-  display:block;
-  width:100%;
-  margin-top:7px;
-  height:48px;
-  padding:0 14px;
-  border-radius:14px;
-  background:var(--s2);
-  border:1px solid var(--line);
-  color:var(--ink);
-  font-size:15px;
-}
-.f input:focus{outline:2px solid var(--go);outline-offset:0}
-.go{
-  width:100%;
-  height:52px;
-  margin-top:20px;
-  border-radius:16px;
-  font-weight:700;
-  font-size:15px;
-  color:#fff;
-  background:linear-gradient(135deg,var(--ring),var(--go));
-  box-shadow:0 8px 24px color-mix(in srgb,var(--ring) 35%,transparent);
-}
-.go:active{transform:scale(.98)}
-
-/* Clean Espresso Dialogs */
-dialog{
-  border:none;
-  background:transparent;
-  max-width:100vw;
-  max-height:100vh;
-  padding:0;
-  margin:auto;
-}
-dialog::backdrop{
-  background:rgba(40, 25, 15, 0.45);
-  -webkit-backdrop-filter:blur(8px);
-  backdrop-filter:blur(8px);
-}
-.sheet{
-  width:min(440px, 92vw);
-  background:#ffffff;
-  border:1px solid var(--line);
-  border-radius:28px;
-  padding:30px 24px;
-  box-shadow:0 24px 60px rgba(45, 30, 20, 0.18);
-  display:flex;
-  flex-direction:column;
-}
-
-/* Dedicated QR Modal Box - Large & Customer Scannable */
-.qr-sheet{
-  width:min(460px, 94vw);
-  background:#ffffff;
-  border:1px solid var(--line);
-  border-radius:32px;
-  padding:30px 24px;
-  text-align:center;
-  box-shadow:0 24px 70px rgba(45, 30, 20, 0.2);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:12px;
-}
-.qr-order-badge{
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  font-size:26px;
-  font-weight:800;
-  color:var(--ink);
-  letter-spacing:-.5px;
-}
-.qr-subtitle{
-  color:var(--mute);
-  font-size:13.5px;
-  line-height:1.5;
-  max-width:390px;
-  margin:0 auto;
-}
-.qr-box-modal{
-  width:320px;
-  height:320px;
-  max-width:80vw;
-  max-height:80vw;
-  margin:8px auto;
-  padding:16px;
-  background:#ffffff;
-  border-radius:24px;
-  border:1.5px solid var(--line);
-  box-shadow:0 12px 36px rgba(45, 30, 20, 0.08);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-.qr-box-modal img{
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  image-rendering:pixelated;
-}
-
-/* Custom confirmation modal */
-.confirm-icon{
-  width:64px;
-  height:64px;
-  border-radius:50%;
-  background:rgba(185, 28, 28, 0.1);
-  display:grid;
-  place-items:center;
-  margin:0 auto;
-  border:1px solid rgba(185, 28, 28, 0.2);
-}
-
-.toast{
-  position:fixed;
-  left:50%;
-  top:calc(18px + env(safe-area-inset-top,0px));
-  transform:translate(-50%,-160%);
-  background:var(--primary);
-  color:#ffffff;
-  padding:12px 24px;
-  border-radius:18px;
-  font-weight:700;
-  font-size:13.5px;
-  z-index:100;
-  max-width:92vw;
-  transition:transform .35s cubic-bezier(.2,1,.3,1);
-  box-shadow:var(--shadow);
-}
-.toast.show{transform:translate(-50%,0)}
-
-@media (max-width:880px){
-  .stats{grid-template-columns:repeat(2,1fr)}
-  .wrap{padding:20px 16px 40px}
-}
-@media (max-width:540px){
-  .stats{grid-template-columns:1fr 1fr}
-  .brand p{display:none}
-  .net{display:none}
-  .num{font-size:52px}
-  .orders{grid-template-columns:1fr}
-}
+:root {
+  --ink: #111111; --ink-2: #1c1c1e;
+  --paper: #ffffff; --paper-2: #f6f6f7; --paper-3: #ececee;
+  --grey: #5f6368; --grey-2: #8e8e93; --line: #e6e6e8;
+  --ready: #22c55e; --ready-deep: #15803d; --ready-soft: #e7f8ee;
+  --late: #b45309; --late-soft: #fdf2e3;
+  --danger: #c2410c;
+  --display: "Fraunces", Georgia, serif;
+  --sans: "IBM Plex Sans", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", sans-serif;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --r: 18px;
+}
+html[lang="ar"] { --sans: "IBM Plex Sans Arabic", "IBM Plex Sans", -apple-system, sans-serif; }
+html, body { height: 100%; }
+body { font-family: var(--sans); color: var(--ink); background: var(--paper-2); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; overflow: hidden; font-size: 16px; line-height: 1.45; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; touch-action: manipulation; }
+input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.num-font { font-family: var(--display); font-variant-numeric: lining-nums tabular-nums; direction: ltr; unicode-bidi: isolate; }
+.bar { height: 64px; display: flex; align-items: center; gap: 18px; padding: 0 20px; background: var(--paper); border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand-logo { width: 38px; height: 38px; border-radius: 11px; background: var(--ink); color: #fff; display: grid; place-items: center; font-family: var(--display); font-weight: 600; font-size: 18px; flex: none; overflow: hidden; }
+.brand-logo img { width: 100%; height: 100%; object-fit: cover; }
+.brand b { font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.live { display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--paper-2); font-size: 13px; color: var(--grey); white-space: nowrap; }
+.live i { width: 8px; height: 8px; border-radius: 50%; background: var(--ready); box-shadow: 0 0 0 3px rgba(34,197,94,.18); }
+.live.off { background: var(--late-soft); color: var(--late); }
+.live.off i { background: var(--late); box-shadow: none; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: .2; } }
+.stats { display: flex; gap: 22px; margin-inline-start: auto; font-size: 13px; color: var(--grey); white-space: nowrap; }
+.stats b { display: block; font-size: 20px; font-weight: 500; color: var(--ink); line-height: 1.1; }
+.stats small { font-size: 13px; font-weight: 500; color: var(--grey); }
+.bar-actions { display: flex; align-items: center; gap: 6px; }
+.icon-btn { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; color: var(--grey); }
+.icon-btn:hover { background: var(--paper-2); color: var(--ink); }
+.icon-btn svg { width: 22px; height: 22px; }
+.lang-btn { display: inline-flex; align-items: center; height: 44px; padding: 0 12px; border-radius: 12px; font-size: 14px; font-weight: 500; color: var(--grey); text-decoration: none; }
+.lang-btn:hover { background: var(--paper-2); color: var(--ink); }
+.menu { position: absolute; top: 58px; inset-inline-end: 16px; z-index: 30; width: 230px; background: #fff; border-radius: 16px; padding: 6px; box-shadow: 0 0 0 1px var(--line), 0 20px 40px -12px rgba(0,0,0,.18); }
+.menu a, .menu button { display: flex; width: 100%; align-items: center; gap: 10px; padding: 12px 12px; border-radius: 10px; text-decoration: none; font-size: 15px; text-align: start; }
+.menu a:hover, .menu button:hover { background: var(--paper-2); }
+.menu hr { border: 0; border-top: 1px solid var(--line); margin: 6px; }
+.layout { height: calc(100% - 64px); display: grid; grid-template-columns: minmax(0, 1fr) 340px; direction: ltr; }
+.layout > *, .cols > * { direction: ltr; }
+html[dir="rtl"] .layout > *, html[dir="rtl"] .cols > * { direction: rtl; }
+.entry { order: 2; }
+.board { order: 1; }
+.entry { background: var(--paper); border-left: 1px solid var(--line); padding: 20px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+.board { display: grid; grid-template-rows: 1fr auto; min-height: 0; min-width: 0; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 0; direction: ltr; }
+.col-called { order: 1; border-right: 1px solid var(--line); }
+.col-prep { order: 2; }
+.col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.col-head { display: flex; align-items: center; gap: 10px; padding: 18px 20px 10px; }
+.col-head h2 { font-size: 17px; font-weight: 600; }
+.count { min-width: 28px; height: 28px; padding: 0 9px; border-radius: 999px; background: var(--paper-3); display: inline-grid; place-items: center; font-size: 14px; font-weight: 600; }
+.col-called .count { background: var(--ready-soft); color: var(--ready-deep); }
+.col-head .sub { margin-inline-start: auto; font-size: 13px; color: var(--grey-2); }
+.list { flex: 1; overflow-y: auto; padding: 6px 20px 20px; display: grid; gap: 10px; align-content: start; -webkit-overflow-scrolling: touch; }
+.empty { margin: 30px 20px; padding: 26px 18px; border-radius: var(--r); border: 1.5px dashed var(--line); text-align: center; color: var(--grey); font-size: 15px; }
+.empty b { display: block; color: var(--ink); font-weight: 600; margin-bottom: 4px; }
+.entry h1 { font-size: 15px; font-weight: 600; color: var(--grey); }
+.display { position: relative; height: 92px; border-radius: var(--r); background: var(--paper-2); display: flex; align-items: center; justify-content: center; font-size: 60px; font-weight: 500; letter-spacing: .02em; transition: box-shadow .2s; }
+.display.has { background: #fff; box-shadow: 0 0 0 2px var(--ink) inset; }
+.display.dup { box-shadow: 0 0 0 2px var(--late) inset; }
+.display .ph { font-family: var(--sans); font-size: 16px; color: var(--grey-2); letter-spacing: 0; }
+.caret { width: 2px; height: 46px; background: var(--ink); margin-inline-start: 4px; animation: caret 1s steps(2) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+.hint { min-height: 22px; font-size: 14px; color: var(--grey); }
+.hint.warn { color: var(--late); font-weight: 500; }
+.hint button { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; direction: ltr; }
+.pad button { height: 66px; border-radius: 16px; background: var(--paper-2); font-family: var(--display); font-size: 30px; font-weight: 500; transition: background .1s, transform .1s; }
+.pad button:active { background: var(--paper-3); transform: scale(.96); }
+.pad .key-soft { background: transparent; font-family: var(--sans); font-size: 15px; color: var(--grey); }
+.pad .key-soft svg { width: 26px; height: 26px; margin: auto; }
+.extra-toggle { align-self: flex-start; font-size: 14px; color: var(--grey); text-decoration: underline; text-underline-offset: 3px; padding: 4px 0; }
+.extra { display: grid; gap: 8px; }
+.extra input { height: 48px; border-radius: 12px; border: 0; background: var(--paper-2); padding: 0 14px; outline: none; font-size: 15px; }
+.extra input:focus { background: #fff; box-shadow: 0 0 0 2px var(--ink) inset; }
+.issue { margin-top: auto; height: 68px; border-radius: 18px; background: var(--ink); color: #fff; font-size: 18px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 12px; transition: opacity .2s, transform .12s; flex: none; }
+.issue:active { transform: scale(.98); }
+.issue:disabled { opacity: .18; cursor: not-allowed; }
+.issue kbd { font-family: var(--sans); font-size: 12px; font-weight: 500; padding: 2px 7px; border-radius: 6px; background: rgba(255,255,255,.16); }
+.card { position: relative; background: var(--paper); border-radius: var(--r); padding: 14px; display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "no info more" "act act act"; gap: 12px 14px; align-items: center; box-shadow: 0 0 0 1px var(--line); animation: cardIn .35s var(--ease); }
+@keyframes cardIn { from { opacity: 0; transform: translateY(6px); } }
+.card.leaving { animation: cardOut .28s var(--ease) forwards; }
+@keyframes cardOut { to { opacity: 0; transform: scale(.97); } }
+.card .no { grid-area: no; font-size: 46px; font-weight: 500; line-height: 1; min-width: 70px; padding-inline-start: 4px; }
+.info { grid-area: info; display: grid; gap: 4px; min-width: 0; }
+.card .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 14px; color: var(--grey); min-width: 0; }
+.timer { font-variant-numeric: tabular-nums; font-weight: 500; color: var(--ink); direction: ltr; unicode-bidi: isolate; }
+.card.late .timer { color: var(--late); }
+.card.late { box-shadow: 0 0 0 1.5px #f1c48a; }
+.card.late .late-tag { display: inline-flex; }
+.late-tag { display: none; font-size: 12px; font-weight: 600; color: var(--late); background: var(--late-soft); padding: 2px 8px; border-radius: 999px; }
+.scan { display: inline-flex; align-items: center; gap: 5px; }
+.scan svg { width: 15px; height: 15px; }
+.scan-yes { color: var(--ready-deep); }
+.scan-no { color: var(--late); }
+.who { font-size: 14px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.who:empty { display: none; }
+.who span { color: var(--grey); }
+.actions { grid-area: act; display: flex; gap: 8px; }
+.actions .btn { flex: 1; }
+.btn { height: 54px; padding: 0 18px; border-radius: 14px; font-size: 16px; font-weight: 600; white-space: nowrap; transition: transform .1s, background .15s; }
+.btn:active { transform: scale(.97); }
+.btn-ready { background: var(--ready-deep); color: #fff; }
+.btn-ink { background: var(--ink); color: #fff; }
+.btn-line { box-shadow: 0 0 0 1.5px var(--line) inset; }
+.btn-line:hover { box-shadow: 0 0 0 1.5px var(--ink) inset; }
+.more { grid-area: more; align-self: start; width: 44px; height: 44px; border-radius: 12px; color: var(--grey); display: grid; place-items: center; }
+.more:hover { background: var(--paper-2); color: var(--ink); }
+.more svg { width: 20px; height: 20px; }
+.card.ringing { box-shadow: 0 0 0 2px var(--ready); }
+.card.ringing::before { content: ""; position: absolute; inset: -2px; border-radius: inherit; box-shadow: 0 0 0 0 rgba(34,197,94,.45); animation: pulse 1.8s var(--ease) infinite; pointer-events: none; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,.45); } 100% { box-shadow: 0 0 0 12px rgba(34,197,94,0); } }
+.state { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; padding: 3px 10px; border-radius: 999px; }
+.state-ring { background: var(--ready-soft); color: var(--ready-deep); }
+.state-ring i { width: 7px; height: 7px; border-radius: 50%; background: var(--ready); }
+.state-way { background: var(--ink); color: #fff; }
+.state-way svg { width: 14px; height: 14px; }
+.card.onway { box-shadow: 0 0 0 2px var(--ink); }
+.pop { position: absolute; z-index: 20; width: 200px; background: #fff; border-radius: 14px; padding: 6px; box-shadow: 0 0 0 1px var(--line), 0 18px 36px -12px rgba(0,0,0,.2); }
+.pop button { display: flex; width: 100%; gap: 10px; align-items: center; padding: 12px; border-radius: 10px; font-size: 15px; text-align: start; }
+.pop button:hover { background: var(--paper-2); }
+.pop .danger { color: var(--danger); }
+.pop svg { width: 18px; height: 18px; }
+.done { min-width: 0; border-top: 1px solid var(--line); background: var(--paper); padding: 12px 20px; display: flex; align-items: center; gap: 14px; min-height: 68px; }
+.done h3 { font-size: 14px; font-weight: 600; color: var(--grey); white-space: nowrap; }
+.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; flex: 1; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 14px; border-radius: 12px; background: var(--paper-2); font-size: 14px; color: var(--grey); }
+.chip b { font-family: var(--display); font-weight: 500; font-size: 19px; color: var(--ink); }
+.chip:hover { background: var(--paper-3); }
+.chip svg { width: 15px; height: 15px; }
+.done .none { font-size: 14px; color: var(--grey-2); }
+.overlay { position: fixed; inset: 0; z-index: 50; background: rgba(17,17,17,.5); display: grid; place-items: center; padding: 20px; animation: fade .2s var(--ease); }
+@keyframes fade { from { opacity: 0; } }
+.sheet { width: min(520px, 100%); background: #fff; border-radius: 28px; padding: 26px 28px 22px; text-align: center; animation: pop .3s var(--ease); }
+@keyframes pop { from { opacity: 0; transform: translateY(12px) scale(.98); } }
+.sheet-lines { display: grid; gap: 2px; }
+.sheet-lines p { font-size: 18px; font-weight: 600; }
+.sheet-lines p + p { font-family: "IBM Plex Sans Arabic", sans-serif; }
+.qr { position: relative; width: min(300px, 70vw); aspect-ratio: 1; margin: 18px auto 12px; padding: 14px; border-radius: 20px; box-shadow: 0 0 0 1px var(--line); }
+.qr img, .qr svg { width: 100%; height: 100%; }
+.qr .scanned { position: absolute; inset: 0; border-radius: inherit; background: rgba(255,255,255,.94); display: grid; place-items: center; align-content: center; gap: 10px; color: var(--ready-deep); font-weight: 600; font-size: 18px; animation: fade .25s var(--ease); }
+.qr .scanned svg { width: 64px; height: 64px; }
+.sheet .order-label { font-size: 14px; color: var(--grey); }
+.sheet .order-no { font-size: 76px; font-weight: 500; line-height: 1; }
+.qr-wait { margin-top: 12px; display: inline-flex; align-items: center; gap: 10px; font-size: 14px; color: var(--grey); }
+.spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--ink); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.sheet-actions { margin-top: 18px; display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+.sheet-actions .btn { width: 100%; }
+.toast { position: fixed; z-index: 60; bottom: 86px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 16px; padding: 0 8px 0 18px; height: 52px; border-radius: 14px; background: var(--ink); color: #fff; font-size: 15px; box-shadow: 0 16px 40px -12px rgba(0,0,0,.4); animation: toastIn .25s var(--ease); white-space: nowrap; }
+@keyframes toastIn { from { opacity: 0; transform: translate(-50%, 8px); } }
+.toast button { height: 38px; padding: 0 14px; border-radius: 10px; font-weight: 600; color: #fff; background: rgba(255,255,255,.14); }
+.toast .bar-time { position: absolute; inset-inline: 10px; bottom: 5px; height: 2px; border-radius: 2px; background: rgba(255,255,255,.35); transform-origin: left; animation: shrink 5s linear forwards; }
+html[dir="rtl"] .toast .bar-time { transform-origin: right; }
+@keyframes shrink { to { transform: scaleX(0); } }
+@media (max-width: 1100px) { .stats { display: none; } }
+@media (max-width: 980px) {
+  body { overflow: auto; }
+  .layout { height: auto; grid-template-columns: minmax(0, 1fr); }
+  .entry { order: 0; border-left: 0; border-bottom: 1px solid var(--line); }
+  .col-prep { order: 1; }
+  .col-called { order: 2; border-right: 0; }
+  .issue { margin-top: 4px; }
+  .cols { grid-template-columns: minmax(0, 1fr); }
+  .col-called { border-top: 1px solid var(--line); }
+  .list { overflow: visible; }
+}
+@media (max-width: 560px) {
+  .bar { padding: 0 12px; gap: 10px; }
+  .live span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; } }
 </style>
-</head>
-<body>
-<div class="glow"></div>
-<div class="wrap">
-
-  <!-- 1. Top Bar -->
-  <header class="bar">
-    <div class="brand">
-      <div class="mark" style="background: {{ restaurant.brand_color if restaurant else 'var(--primary)' }};">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
-          <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
-        </svg>
+{% endblock %}
+{% block content %}
+{% if restaurant_brand is defined %}
+  {% set brand = restaurant_brand(restaurant) %}
+{% else %}
+  {% set brand = {"name": restaurant.name or "Paiger", "logo_url": (restaurant.logo_url or "")|trim or none, "initial": (restaurant.name or "P")[:1], "brand": restaurant.brand_color or "#111111", "brand_ink": "#ffffff"} %}
+{% endif %}
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 20 20"><circle cx="4" cy="10" r="1.7" fill="currentColor"/><circle cx="10" cy="10" r="1.7" fill="currentColor"/><circle cx="16" cy="10" r="1.7" fill="currentColor"/></symbol>
+  <symbol id="i-back" viewBox="0 0 26 26"><path d="M9 6h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6-7 6-7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10l5 6M17 10l-5 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-phone-ok" viewBox="0 0 16 16"><rect x="4" y="1.5" width="8" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.3 8.2l1.3 1.3 2.3-2.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-phone-no" viewBox="0 0 16 16"><rect x="4" y="1.5" width="8" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 5.5v3.2M8 10.8v.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-walk" viewBox="0 0 16 16"><circle cx="9" cy="2.8" r="1.5" fill="currentColor"/><path d="M8 5.5L6 9l2.5 1.5L7.5 14M8 5.5l2.5 3H13M6 9l-2 1" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-qr" viewBox="0 0 20 20"><path d="M3 3h5v5H3zM12 3h5v5h-5zM3 12h5v5H3z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 12h2v2h-2zM15 15h2v2h-2zM12 16h1M16 12h1" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 20 20"><path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 16 16"><path d="M5 4L2 7l3 3M2.5 7H10a4 4 0 0 1 0 8H7" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-check-big" viewBox="0 0 64 64"><circle cx="32" cy="32" r="29" fill="none" stroke="currentColor" stroke-width="3"/><path d="M20 33l8 8 16-17" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+<header class="bar">
+  <div class="brand">
+    <div class="brand-logo" style="background: {{ brand.brand }}; color: {{ brand.brand_ink }}" aria-hidden="true">{% if brand.logo_url %}<img src="{{ brand.logo_url }}" alt="">{% else %}{{ brand.initial }}{% endif %}</div>
+    <b>{{ brand.name }}</b>
+  </div>
+  <span class="live off" id="live" role="status"><i></i><span>{{ t('cash.offline') }}</span></span>
+  <div class="stats" aria-label="{{ t('cash.today') }}">
+    <div><b class="num-font" id="stToday">0</b><span>{{ t('cash.stToday') }}</span></div>
+    <div><b><span class="num-font" id="stAvg">{{ restaurant.avg_prep_time or 5 }}</span> <small id="stAvgUnit">{{ t('cash.minLong') }}</small></b><span>{{ t('cash.stAvg') }}</span></div>
+  </div>
+  <div class="bar-actions">
+    <a class="lang-btn" href="/lang/{{ 'en' if lang == 'ar' else 'ar' }}">{{ t('nav.langSwitch') }}</a>
+    <button class="icon-btn" id="menuBtn" type="button" aria-label="{{ t('cash.menu') }}" aria-haspopup="true" aria-expanded="false"><svg><use href="#i-menu"/></svg></button>
+  </div>
+  <div class="menu" id="menu" hidden role="menu">
+    <a href="/dashboard" role="menuitem">{{ t('cash.mDash') }}</a>
+    <a href="/r/{{ restaurant.slug }}/print" role="menuitem">{{ t('cash.mStand') }}</a>
+    <button type="button" role="menuitem" id="soundBtn">{{ t('cash.mSoundOn') }}</button>
+    <hr>
+    <a href="/logout" role="menuitem">{{ t('cash.mLogout') }}</a>
+  </div>
+</header>
+<main class="layout">
+  <section class="entry" aria-labelledby="entryTitle">
+    <h1 id="entryTitle">{{ t('cash.newOrder') }}</h1>
+    <div class="display num-font" id="display" aria-live="polite"><span class="ph">{{ t('cash.typeNumber') }}</span></div>
+    <p class="hint" id="hint"></p>
+    <div class="pad" id="pad" aria-label="{{ t('cash.keypad') }}">
+      <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
+      <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button>
+      <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>
+      <button type="button" class="key-soft" data-k="c">{{ t('cash.clear') }}</button>
+      <button type="button" data-k="0">0</button>
+      <button type="button" class="key-soft" data-k="b" aria-label="{{ t('cash.deleteDigit') }}"><svg><use href="#i-back"/></svg></button>
+    </div>
+    <button type="button" class="extra-toggle" id="extraToggle">{{ t('cash.addExtra') }}</button>
+    <div class="extra" id="extra" hidden>
+      <input id="fName" type="text" autocomplete="off" placeholder="{{ t('cash.name') }}">
+      <input id="fNote" type="text" autocomplete="off" placeholder="{{ t('cash.note') }}">
+    </div>
+    <button type="button" class="issue" id="issue" disabled><span>{{ t('cash.issue') }}</span><kbd>Enter</kbd></button>
+  </section>
+  <section class="board">
+    <div class="cols">
+      <div class="col col-prep">
+        <div class="col-head"><h2>{{ t('cash.colPrep') }}</h2><span class="count num-font" id="cPrep">0</span><span class="sub">{{ t('cash.oldest') }}</span></div>
+        <div class="list" id="listPrep"></div>
       </div>
-      <div class="brand-text">
-        <h1>{{ restaurant.name if restaurant else 'لوحة تحكم الكاشير' }}</h1>
-        <p>{{ restaurant.name if restaurant else 'نظام البيجر الذكي' }} | شاشة الكاشير المباشرة</p>
+      <div class="col col-called">
+        <div class="col-head"><h2>{{ t('cash.colCalled') }}</h2><span class="count num-font" id="cCalled">0</span></div>
+        <div class="list" id="listCalled"></div>
       </div>
     </div>
-    <div class="right" style="display: flex; align-items: center; gap: 10px;">
-      <a href="/dashboard" style="display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 12px; background: #fff; border: 1px solid var(--line); font-size: 12.5px; font-weight: 700; color: var(--ink); text-decoration: none;">
-        <span>📊 لوحة المتجر</span>
-      </a>
-      <div class="net"><span class="live"></span><b>{{ restaurant.slug if restaurant else 'live' }}</b></div>
+    <div class="done">
+      <h3>{{ t('cash.pickedUp') }}</h3>
+      <div class="chips" id="chips"></div>
     </div>
-  </header>
-
-  <!-- 2. Tri-Board Dashboard: Right (Create), Middle (Calling/Ringing & Waiting), Left (Done & History) -->
-  <main class="tri-board">
-    
-    <!-- Right Column: Create Order via Calculator Numpad -->
-    <section class="board-col col-create">
-      <div class="col-header">
-        <div class="col-title">
-          <span>🔢</span>
-          <span>إصدار بيجر الطلب</span>
-        </div>
-        <span class="col-badge" style="--badge-c:var(--go);">لوحة أرقام سريعة</span>
-      </div>
-
-      <div class="numpad-container">
-        <!-- Display Screen -->
-        <div class="numpad-screen">
-          <span class="numpad-screen-label">رقم الطلب (ORDER NUMBER)</span>
-          <div class="numpad-display-val" id="numpadDisplay">42</div>
-          <button class="numpad-screen-clear" id="numpadClearBtn" title="مسح الرقم">✕</button>
-        </div>
-
-        <!-- 3x4 Calculator Grid -->
-        <div class="numpad-grid">
-  <button type="button" class="num-btn" data-key="1">1</button>
-  <button type="button" class="num-btn" data-key="2">2</button>
-  <button type="button" class="num-btn" data-key="3">3</button>
-
-  <button type="button" class="num-btn" data-key="4">4</button>
-  <button type="button" class="num-btn" data-key="5">5</button>
-  <button type="button" class="num-btn" data-key="6">6</button>
-
-  <button type="button" class="num-btn" data-key="7">7</button>
-  <button type="button" class="num-btn" data-key="8">8</button>
-  <button type="button" class="num-btn" data-key="9">9</button>
-
-  <button type="button" class="num-btn action-del" data-key="backspace" title="حذف رقم">⌫</button>
-  <button type="button" class="num-btn" data-key="0">0</button>
-  <button type="button" class="num-btn action-plus" data-key="inc" title="الطلب التالي (+1)">+1</button>
-        </div>
-
-        <!-- Issue Pager Button -->
-        <button class="numpad-submit-btn" id="numpadSubmitBtn" type="button">
-          <span>🚀</span>
-          <span>إصدار البيجر (ENTER)</span>
-        </button>
-      </div>
-
-      <div style="font-size:11.5px; color:var(--mute); text-align:center; line-height:1.5;">
-        اضغط على الأرقام أو استخدم لوحة المفاتيح ثم اضغط <b>Enter</b> لإصدار البيجر فوراً.
-      </div>
-    </section>
-
-    <!-- Middle Column: Calling & Active Orders (Waiting / Ringing / On Way) -->
-    <section class="board-col col-call">
-      <div class="col-header">
-        <div class="col-title">
-          <span>🔔</span>
-          <span>استدعاء الطلبات والتحضير</span>
-        </div>
-        <span class="col-badge" id="badgeActiveCount" style="--badge-c:var(--ring);">0 نشط</span>
-      </div>
-
-      <div class="col-orders-list" id="activeOrdersList">
-        <!-- Injected via JavaScript -->
-      </div>
-    </section>
-
-    <!-- Left Column: Done & Completed Orders -->
-    <section class="board-col col-done">
-      <div class="col-header">
-        <div class="col-title">
-          <span>✅</span>
-          <span>الطلبات المستلمة والمنتهية</span>
-        </div>
-        <span class="col-badge" id="badgeDoneCount" style="--badge-c:var(--done);">0 تم الاستلام</span>
-      </div>
-
-      <div class="col-orders-list" id="doneOrdersList">
-        <!-- Injected via JavaScript -->
-      </div>
-    </section>
-
-  </main>
+  </section>
+</main>
+<div class="overlay" id="qrOverlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="qrNo">
+    <div class="sheet-lines"><p>{{ t('cash.sheetEn') }}</p><p>{{ t('cash.sheetAr') }}</p></div>
+    <div class="qr" id="qrBox"></div>
+    <p class="order-label">{{ t('cash.orderNo') }}</p>
+    <p class="order-no num-font" id="qrNo">--</p>
+    <p class="qr-wait" id="qrWait"><span class="spinner"></span><span>{{ t('cash.waitScan') }}</span></p>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-line" id="qrPrint">{{ t('cash.print') }}</button>
+      <button type="button" class="btn btn-ink" id="qrDone">{{ t('cash.done') }}</button>
+    </div>
+  </div>
 </div>
-
-<!-- Modal 1: Create New Order -->
-<dialog id="dlg">
-  <form class="sheet" method="dialog" id="form">
-    <h2>طلب جديد</h2>
-    <div class="sub">أدخل تفاصيل الطلب لإصدار البيجر ورمز الـ QR فوراً</div>
-    <label class="f">رقم الطلب (Order #)<input id="fnum" inputmode="numeric" required></label>
-    <label class="f">اسم العميل (اختياري)<input id="fname" placeholder="مثال: أحمد"></label>
-    <label class="f">ملاحظات / الوجبة<input id="fnote" placeholder="مثال: 2 برجر لحم + بطاطس"></label>
-    <button class="go" id="issue" type="button">إصدار البيجر والـ QR</button>
-  </form>
-</dialog>
-
-<!-- Modal 2: QR Code Viewer - High-Res & Scannable -->
-<dialog id="qrDlg">
-  <div class="qr-sheet">
-    <div class="qr-order-badge">
-      <span>📟</span>
-      <span id="modalQrTitle">بيجر الطلب #42</span>
-    </div>
-    <p class="qr-subtitle">امسح الرمز بكاميرا الجوال (iPhone أو Android) لفتح بيجر طلبك ومتابعة دورك:</p>
-
-    <div class="qr-box-modal">
-      <img id="modalQrImg" src="" alt="QR Code">
-    </div>
-
-    <label style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:12.5px; color:var(--mute); cursor:pointer; background:var(--s2); padding:9px 16px; border-radius:14px; border:1px solid var(--line); width:100%;">
-      <input type="checkbox" id="httpsQrToggle" checked style="accent-color:var(--primary); width:18px; height:18px;">
-      <span>🔒 رابط آمن مشفر (HTTPS) لإشعارات الويب وشاشة القفل</span>
-    </label>
-
-    <div style="display:flex; flex-direction:column; gap:10px; width:100%; margin-top:4px;">
-      <a id="modalQrOpenLink" class="btn main" target="_blank" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; height:48px; font-size:14.5px; border-radius:14px;">
-        <span>🚀</span> فتح البيجر للتجربة المباشرة
-      </a>
-      <div style="display:flex; gap:10px;">
-        <button class="btn" id="modalQrCopyBtn" style="flex:1; height:46px; border-radius:14px; font-weight:700;">
-          📋 نسخ الرابط
-        </button>
-        <button class="btn" id="modalQrCloseBtn" style="flex:1; height:46px; border-radius:14px; font-weight:700;">
-          إغلاق
-        </button>
-      </div>
-    </div>
-  </div>
-</dialog>
-
-<!-- Modal 3: Custom Confirm Modal -->
-<dialog id="confirmDlg">
-  <div class="sheet" style="max-width:390px; text-align:center;">
-    <div class="confirm-icon">
-      <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--ring)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="3 6 5 6 21 6"></polyline>
-        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-        <line x1="10" y1="11" x2="10" y2="17"></line>
-        <line x1="14" y1="11" x2="14" y2="17"></line>
-      </svg>
-    </div>
-    <h2 id="confirmTitle" style="font-size:20px; font-weight:700; margin-top:14px; color:var(--ink);">حذف هذا الطلب؟</h2>
-    <p id="confirmDesc" style="color:var(--mute); font-size:13px; margin:8px 0 22px; line-height:1.6;">
-      هل أنت متأكد من حذف هذا الطلب نهائياً من شاشة الكاشير؟
-    </p>
-    <div style="display:flex; gap:10px;">
-      <button class="btn" id="confirmOkBtn" style="flex:1; background:var(--ring); color:#fff; border-radius:14px; height:48px; font-weight:700;">
-        تأكيد الحذف
-      </button>
-      <button class="btn" id="confirmCancelBtn" style="flex:1; border-radius:14px; height:48px; font-weight:600;">
-        إلغاء
-      </button>
-    </div>
-  </div>
-</dialog>
-
-<!-- Toast -->
-<div class="toast" id="toast" role="status"></div>
-
+<div class="pop" id="pop" hidden role="menu">
+  <button type="button" data-act="qr"><svg><use href="#i-qr"/></svg><span>{{ t('cash.showQr') }}</span></button>
+  <button type="button" data-act="delete" class="danger"><svg><use href="#i-trash"/></svg><span>{{ t('cash.delete') }}</span></button>
+</div>
+<div class="toast" id="toast" hidden role="status"><span id="toastText"></span><button type="button" id="toastUndo">{{ t('cash.undo') }}</button><i class="bar-time"></i></div>
+{% endblock %}
+{% block scripts %}
 <script>
-(function(){
-var BASE_URL = "{{ base_url }}";
-var $ = function(s){return document.querySelector(s)};
-var orders = [], filter = 'all', nextNum = 1, ws = null;
-var pendingDeleteId = null;
-var hasUserManuallyEditedNumpad = false;
-var L = {waiting:'قيد التحضير', ringing:'جاهز - يرن', onway:'في الطريق', done:'تم الاستلام'};
+window.PAIGER_I18N = {{ {
+  "typeNumber": t("cash.typeNumber"),
+  "addExtra": t("cash.addExtra"),
+  "hideExtra": t("cash.hideExtra"),
+  "emptyPrepT": t("cash.emptyPrepT"),
+  "emptyPrepP": t("cash.emptyPrepP"),
+  "emptyCalledT": t("cash.emptyCalledT"),
+  "emptyCalledP": t("cash.emptyCalledP"),
+  "noneDone": t("cash.noneDone"),
+  "ready": t("cash.ready"),
+  "ringAgain": t("cash.ringAgain"),
+  "picked": t("cash.picked"),
+  "ringing": t("cash.ringing"),
+  "onway": t("cash.onway"),
+  "rang": t("cash.rang"),
+  "scanned": t("cash.scanned"),
+  "notScanned": t("cash.notScanned"),
+  "late": t("cash.late"),
+  "calledAgo": t("cash.calledAgo"),
+  "dup": t("cash.dup"),
+  "dupRing": t("cash.dupRing"),
+  "toastPicked": t("cash.toastPicked"),
+  "toastDeleted": t("cash.toastDeleted"),
+  "toastReturned": t("cash.toastReturned"),
+  "waitScan": t("cash.waitScan"),
+  "scannedOk": t("cash.scannedOk"),
+  "returnIt": t("cash.returnIt"),
+  "sec": t("cash.sec"),
+  "min": t("cash.min"),
+  "minLong": t("cash.minLong"),
+  "live": t("cash.live"),
+  "offline": t("cash.offline"),
+  "mSoundOn": t("cash.mSoundOn"),
+  "mSoundOff": t("cash.mSoundOff"),
+  "more": t("cash.more")
+}|tojson }};
+window.PAIGER_CASHIER = {{ {
+  "restaurantId": restaurant.id,
+  "avgPrep": restaurant.avg_prep_time or 5,
+  "tz": tz_offset|default("", true),
+  "todayCount": today_count|default(0),
+  "calledCount": called_count|default(0),
+  "avgSeconds": avg_seconds|default("", true)
+}|tojson }};
+</script>
+<script>
+(() => {
+  "use strict";
+  const I = window.PAIGER_I18N || {};
+  const BOOT = window.PAIGER_CASHIER || {};
+  const t = (k, vars) => {
+    let s = I[k] == null ? k : I[k];
+    if (vars) Object.keys(vars).forEach((key) => { s = String(s).split("{" + key + "}").join(String(vars[key])); });
+    return s;
+  };
+  const $ = (id) => document.getElementById(id);
+  const el = {
+    display: $("display"), hint: $("hint"), pad: $("pad"), issue: $("issue"), extra: $("extra"), extraToggle: $("extraToggle"),
+    fName: $("fName"), fNote: $("fNote"), listPrep: $("listPrep"), listCalled: $("listCalled"), cPrep: $("cPrep"), cCalled: $("cCalled"),
+    chips: $("chips"), qrOverlay: $("qrOverlay"), qrBox: $("qrBox"), qrNo: $("qrNo"), qrWait: $("qrWait"),
+    pop: $("pop"), toast: $("toast"), toastText: $("toastText"), toastUndo: $("toastUndo"),
+    menu: $("menu"), menuBtn: $("menuBtn"), live: $("live"), stToday: $("stToday"), stAvg: $("stAvg"),
+  };
+  const AVG = Number(BOOT.avgPrep) || 5;
+  const tzMatch = /^([+-])(\d{2}):(\d{2})$/.exec(BOOT.tz || "");
+  const tzMinutes = tzMatch ? (tzMatch[1] === "-" ? -1 : 1) * (Number(tzMatch[2]) * 60 + Number(tzMatch[3])) : -new Date().getTimezoneOffset();
+  let orders = [];
+  const scannedIds = new Set();
+  let value = "";
+  let soundOn = true;
+  try { if (localStorage.getItem("paiger.cashierSound") === "0") soundOn = false; } catch (_) {}
+  let todayCount = 0;
+  let calledN = 0;
+  let calledSum = 0;
 
-function computeNextOrderNumber(){
-  if(!orders || !orders.length){
-    nextNum = 1;
-    return;
+  const active = () => orders.filter((o) => o.status !== "done");
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const fmtElapsed = (ms) => {
+    const s = Math.max(0, Math.floor(ms / 1000)), m = Math.floor(s / 60);
+    return m >= 60 ? `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}` : `${m}:${String(s % 60).padStart(2, "0")}`;
+  };
+  const ago = (ms) => { const m = Math.floor(ms / 60e3); return m < 1 ? `${Math.floor(ms / 1000)} ${t("sec")}` : `${m} ${t("min")}`; };
+  const dayKey = (ms) => new Date(ms + tzMinutes * 60000).toISOString().slice(0, 10);
+  const todayKey = () => dayKey(Date.now());
+  function parseStamp(iso) {
+    if (!iso) return null;
+    if (/[zZ]|[+-]\d\d:\d\d$/.test(iso)) return Date.parse(iso);
+    if (BOOT.tz) return Date.parse(String(iso).replace(" ", "T") + BOOT.tz);
+    return Date.parse(String(iso).replace(" ", "T"));
   }
-  // Find the latest created order by id that has a positive numeric order number
-  var sorted = orders.slice().sort(function(a, b){ return (b.id || 0) - (a.id || 0); });
-  for(var i = 0; i < sorted.length; i++){
-    var val = parseInt(sorted[i].num, 10);
-    if(!isNaN(val) && val > 0 && val < 999999){
-      nextNum = val + 1;
-      return;
-    }
+  function norm(raw) {
+    if (!raw) return null;
+    return {
+      id: Number(raw.id),
+      number: String(raw.order_number ?? raw.number ?? ""),
+      status: raw.status,
+      created: parseStamp(raw.created_at) || Date.now(),
+      called: parseStamp(raw.called_at),
+      done: parseStamp(raw.completed_at),
+      scanned: !!raw.scanned || scannedIds.has(Number(raw.id)),
+      calls: Number(raw.call_count || raw.calls || 0),
+      name: raw.customer_name || raw.name || "",
+      note: raw.notes || raw.note || "",
+      token: raw.token || "",
+      restaurant_id: Number(raw.restaurant_id || BOOT.restaurantId),
+    };
   }
-  nextNum = 1;
-}
-
-function esc(t){return String(t||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-function ago(created){
-  if(!created) return 'الآن';
-  var ts = typeof created === 'number' ? created : new Date(created).getTime();
-  var m = Math.max(0, Math.round((Date.now() - ts)/60000));
-  return m < 1 ? 'الآن' : 'منذ ' + m + ' د';
-}
-
-function toast(m){
-  var t = $('#toast');
-  t.textContent = m;
-  t.classList.add('show');
-  clearTimeout(toast.t);
-  toast.t = setTimeout(function(){t.classList.remove('show')}, 2800);
-}
-
-function playDing(){
-  try {
-    var a = new Audio("/static/audio/chime.wav");
-    a.play().catch(function(){});
-  } catch(e){}
-}
-
-var currentRestaurantId = {{ restaurant.id if restaurant else 1 }};
-
-async function loadOrders(){
-  try {
-    var res = await fetch("/api/orders?restaurant_id=" + currentRestaurantId);
-    if(res.ok){
-      var list = await res.json();
-      orders = list.filter(function(item){
-        return String(item.restaurant_id) === String(currentRestaurantId);
-      }).map(function(item){
-        return {
-          id: item.id,
-          num: item.order_number,
-          name: item.customer_name,
-          note: item.notes,
-          status: item.status,
-          token: item.token,
-          rings: item.call_count || 0,
-          created: item.created_at
-        };
-      });
-      computeNextOrderNumber();
-      if(!hasUserManuallyEditedNumpad || !numpadValue || numpadValue === '42' || numpadValue === '0'){
-        numpadValue = String(nextNum);
-        updateNumpadDisplay();
+  function mine(o) { return !o.restaurant_id || Number(o.restaurant_id) === Number(BOOT.restaurantId); }
+  function recompute() {
+    todayCount = 0; calledN = 0; calledSum = 0;
+    orders.forEach((o) => {
+      if (dayKey(o.created) === todayKey()) todayCount++;
+      if (o.called && dayKey(o.called) === todayKey()) {
+        calledN++;
+        calledSum += Math.max(0, (o.called - o.created) / 1000);
       }
-      render();
-    }
-  } catch(e){
-    console.error("Load orders error", e);
-  }
-}
-
-function buildCard(o){
-  var main = o.status === 'waiting' ? '<button type="button" class="btn main" data-a="ring" data-id="'+o.id+'">🔔 رنين البيجر</button>'
-    : o.status === 'ringing' ? '<button type="button" class="btn main" data-a="ring" data-id="'+o.id+'">↻ تكرار</button><button type="button" class="btn" data-a="done" data-id="'+o.id+'">✓ استلم</button>'
-    : o.status === 'onway' ? '<button type="button" class="btn main" data-a="done" data-id="'+o.id+'">✓ تم الاستلام</button>'
-    : '<button type="button" class="btn" data-a="wait" data-id="'+o.id+'">↩️ إعادة</button>';
-
-  return '<article class="card '+o.status+'" data-id="'+o.id+'">'
-    +'<div class="row" style="width:100%;"><span class="pill">'+(L[o.status]||o.status)+'</span><span class="ago">'+ago(o.created)+(o.rings?' · '+o.rings+'×':'')+'</span></div>'
-    +'<div class="card-num-huge">#'+esc(o.num)+'</div>'
-    +'<div class="acts">'
-      +main
-      +'<button type="button" class="btn sq qr-btn" data-a="qr" data-token="'+o.token+'" data-num="'+esc(o.num)+'" title="عرض رمز QR للعميل">'
-        +'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
-          +'<rect x="3" y="3" width="7" height="7"></rect>'
-          +'<rect x="14" y="3" width="7" height="7"></rect>'
-          +'<rect x="14" y="14" width="7" height="7"></rect>'
-          +'<rect x="3" y="14" width="7" height="7"></rect>'
-          +'<line x1="7" y1="7" x2="7.01" y2="7"></line>'
-          +'<line x1="17" y1="7" x2="17.01" y2="7"></line>'
-          +'<line x1="7" y1="17" x2="7.01" y2="7"></line>'
-          +'<line x1="17" y1="17" x2="17.01" y2="17"></line>'
-        +'</svg>'
-      +'</button>'
-      +'<button type="button" class="btn sq del-btn" data-a="del" data-id="'+o.id+'" data-num="'+esc(o.num)+'" title="حذف الطلب">'
-        +'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
-          +'<polyline points="3 6 5 6 21 6"></polyline>'
-          +'<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>'
-        +'</svg>'
-      +'</button>'
-    +'</div></article>';
-}
-
-var numpadValue = "";
-
-function updateNumpadDisplay(){
-  var el = $('#numpadDisplay');
-  if(el){
-    el.textContent = numpadValue || '0';
-  }
-}
-
-function handleNumpadKey(key){
-  hasUserManuallyEditedNumpad = true;
-  if(key === 'backspace'){
-    numpadValue = numpadValue.slice(0, -1);
-    if(!numpadValue) numpadValue = '';
-  } else if(key === 'clear'){
-    numpadValue = '';
-  } else if(key === 'inc'){
-    var cur = parseInt(numpadValue, 10) || 0;
-    numpadValue = String(cur + 1);
-  } else {
-    if(numpadValue.length < 5){
-      // If was 0, replace
-      if(numpadValue === '0') numpadValue = key;
-      else numpadValue += key;
-    }
-  }
-  updateNumpadDisplay();
-}
-
-function render(){
-  var rank = {ringing:0, onway:1, waiting:2, done:3};
-  var activeList = orders.filter(function(o){ return o.status !== 'done'; })
-                         .sort(function(a,b){ return (rank[a.status] - rank[b.status]) || (b.id - a.id); });
-
-  var doneList = orders.filter(function(o){ return o.status === 'done'; })
-                       .sort(function(a,b){ return b.id - a.id; });
-
-  // Update Badges
-  if($('#badgeActiveCount')) $('#badgeActiveCount').textContent = activeList.length + ' نشط';
-  if($('#badgeDoneCount')) $('#badgeDoneCount').textContent = doneList.length + ' تم الاستلام';
-
-  // Middle Column: Active & Ringing Orders
-  var activeEl = $('#activeOrdersList');
-  if(activeEl){
-    activeEl.innerHTML = activeList.length ? activeList.map(buildCard).join('') :
-      '<div class="col-empty">'
-        +'<div class="col-empty-icon">🔔</div>'
-        +'<h4>لا توجد طلبات نشطة حالياً</h4>'
-        +'<p>أدخل رقم الطلب من لوحة الآلة الحاسبة لإصدار البيجر واستدعاء العميل فور جهوزيته.</p>'
-      +'</div>';
-  }
-
-  // Left Column: Done Orders
-  var doneEl = $('#doneOrdersList');
-  if(doneEl){
-    doneEl.innerHTML = doneList.length ? doneList.map(buildCard).join('') :
-      '<div class="col-empty">'
-        +'<div class="col-empty-icon">📦</div>'
-        +'<h4>سجل الاستلام فارغ</h4>'
-        +'<p>عند تسليم الطلب للزبون، سيظهر هنا في السجل مع إمكانية إعادته أو حذفه.</p>'
-      +'</div>';
-  }
-
-  if(!numpadValue || !hasUserManuallyEditedNumpad){
-    numpadValue = String(nextNum);
-    updateNumpadDisplay();
-  }
-}
-
-function getTargetBaseUrl(){
-  var isHttps = $('#httpsQrToggle') && $('#httpsQrToggle').checked;
-  var u = new URL(BASE_URL);
-  if (isHttps) {
-    u.protocol = "https:";
-    if (u.port === "8000") u.port = "8443";
-  } else {
-    u.protocol = "http:";
-    if (u.port === "8443") u.port = "8000";
-  }
-  return u.origin;
-}
-
-function showQrModal(token, num){
-  function updateQr(){
-    var targetBase = getTargetBaseUrl();
-    var pagerUrl = targetBase + "/pager/" + token;
-    var qrUrl = "/api/qr/" + token + "?host=" + encodeURIComponent(pagerUrl) + "&t=" + Date.now();
-
-    $('#modalQrTitle').textContent = "بيجر الطلب #" + num;
-    $('#modalQrImg').src = qrUrl;
-    $('#modalQrOpenLink').href = pagerUrl;
-
-    $('#modalQrCopyBtn').onclick = function(){
-      navigator.clipboard.writeText(pagerUrl);
-      toast("📋 تم نسخ الرابط بنجاح!");
-    };
-  }
-
-  updateQr();
-
-  if ($('#httpsQrToggle')) {
-    $('#httpsQrToggle').onchange = updateQr;
-  }
-
-  $('#qrDlg').showModal();
-}
-
-$('#modalQrCloseBtn').onclick = function(){
-  $('#qrDlg').close();
-};
-
-async function issueOrderWithValues(n, name, note){
-  if(!n) return;
-  try {
-    var res = await fetch("/api/orders", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({
-        order_number: n,
-        customer_name: name,
-        notes: note,
-        restaurant_id: currentRestaurantId
-      })
     });
-
-    if(res.ok){
-      var created = await res.json();
-      var parsedN = parseInt(n, 10);
-      nextNum = (!isNaN(parsedN) && parsedN > 0) ? (parsedN + 1) : 1;
-      
-      // Auto-fill next sequential order number on calculator
-      numpadValue = String(nextNum);
-      hasUserManuallyEditedNumpad = false;
-      updateNumpadDisplay();
-      
-      // Reset inputs
-      if($('#fnum')) $('#fnum').value = nextNum;
-      if($('#fname')) $('#fname').value = '';
-      if($('#fnote')) $('#fnote').value = '';
-      if($('#qnum')) $('#qnum').value = nextNum;
-      if($('#qname')) $('#qname').value = '';
-      if($('#qnote')) $('#qnote').value = '';
-      
-      // Close modal if open
-      if($('#dlg') && $('#dlg').open) $('#dlg').close();
-
-      await loadOrders();
-      // Show QR Code modal immediately for customer scanning
-      showQrModal(created.token, created.order_number);
-      toast("✨ تم إصدار بيجر الطلب #" + created.order_number);
+    if (orders.length >= 150 && Number(BOOT.todayCount) > todayCount) todayCount = Number(BOOT.todayCount);
+    if (orders.length >= 150 && Number(BOOT.calledCount) > calledN && Number(BOOT.calledCount) >= 3) {
+      calledN = Number(BOOT.calledCount);
+      calledSum = (BOOT.avgSeconds === "" || BOOT.avgSeconds == null ? 0 : Number(BOOT.avgSeconds)) * calledN;
     }
-  } catch(e){
-    toast("⚠️ خطأ أثناء إنشاء الطلب: " + e.message);
   }
-}
 
-async function issueNumpadOrder(){
-  var n = numpadValue.trim();
-  if(!n || n === '0'){
-    toast("⚠️ الرجاء إدخال رقم الطلب أولاً");
-    return;
+  function duplicate() { return value && active().find((o) => o.number === value); }
+  function renderDisplay() {
+    el.display.innerHTML = value ? `<span>${esc(value)}</span><span class="caret"></span>` : `<span class="ph">${esc(t("typeNumber"))}</span>`;
+    const dup = duplicate();
+    el.display.classList.toggle("has", !!value && !dup);
+    el.display.classList.toggle("dup", !!dup);
+    el.issue.disabled = !value || !!dup;
+    if (dup) {
+      el.hint.className = "hint warn";
+      el.hint.innerHTML = `${esc(t("dup", { n: dup.number }))} ${dup.status === "waiting" ? `<button type="button" id="dupRing">${esc(t("dupRing"))}</button>` : ""}`;
+      const b = $("dupRing");
+      if (b) b.addEventListener("click", () => { ring(dup.id); value = ""; renderDisplay(); });
+    } else { el.hint.className = "hint"; el.hint.textContent = ""; }
   }
-  await issueOrderWithValues(n, '', '');
-}
-
-// Calculator Click Listeners
-var numpadGrid = document.querySelector('.numpad-grid');
-if(numpadGrid){
-  numpadGrid.onclick = function(e){
-    var btn = e.target.closest('.num-btn');
-    if(!btn) return;
-    var k = btn.dataset.key;
-    if(k) handleNumpadKey(k);
-  };
-}
-
-if($('#numpadClearBtn')){
-  $('#numpadClearBtn').onclick = function(){
-    handleNumpadKey('clear');
-  };
-}
-
-if($('#numpadSubmitBtn')){
-  $('#numpadSubmitBtn').onclick = issueNumpadOrder;
-}
-
-// Physical Keyboard input listener for Numpad
-window.addEventListener('keydown', function(e){
-  // If a modal dialog is open, skip global shortcuts
-  if(($('#dlg') && $('#dlg').open) || ($('#qrDlg') && $('#qrDlg').open) || ($('#confirmDlg') && $('#confirmDlg').open)){
-    return;
+  function press(k) {
+    if (k === "c") value = "";
+    else if (k === "b") value = value.slice(0, -1);
+    else if (/^\d$/.test(k) && value.length < 5) value += k;
+    renderDisplay();
   }
-  
-  if(e.key >= '0' && e.key <= '9'){
-    handleNumpadKey(e.key);
-  } else if(e.key === 'Backspace'){
-    handleNumpadKey('backspace');
-  } else if(e.key === 'Enter'){
-    e.preventDefault();
-    issueNumpadOrder();
-  } else if(e.key === '+' || e.key === '='){
-    handleNumpadKey('inc');
-  } else if(e.key === 'Escape' || e.key === 'c' || e.key === 'C'){
-    handleNumpadKey('clear');
+  el.pad.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) press(b.dataset.k); });
+  el.extraToggle.addEventListener("click", () => {
+    el.extra.hidden = !el.extra.hidden;
+    el.extraToggle.textContent = t(el.extra.hidden ? "addExtra" : "hideExtra");
+    if (!el.extra.hidden) el.fName.focus();
+  });
+  const AR_DIGITS = "٠١٢٣٤٥٦٧٨٩";
+  document.addEventListener("keydown", (e) => {
+    if (!el.qrOverlay.hidden) { if (e.key === "Enter" || e.key === "Escape") { e.preventDefault(); closeQr(); } return; }
+    if (e.target.matches("input")) { if (e.key === "Enter") { e.preventDefault(); issue(); } return; }
+    const k = AR_DIGITS.includes(e.key) ? String(AR_DIGITS.indexOf(e.key)) : e.key;
+    if (/^\d$/.test(k)) { e.preventDefault(); press(k); }
+    else if (e.key === "Backspace") { e.preventDefault(); press("b"); }
+    else if (e.key === "Escape") press("c");
+    else if (e.key === "Enter") { e.preventDefault(); issue(); }
+  });
+  el.issue.addEventListener("click", issue);
+
+  function cardHTML(o) {
+    const elapsed = Date.now() - o.created;
+    const late = o.status === "waiting" && elapsed > AVG * 60e3;
+    const who = [o.name && esc(o.name), o.note && `<span>${esc(o.note)}</span>`].filter(Boolean).join(" ");
+    let meta = "", actions = "";
+    if (o.status === "waiting") {
+      meta = `<span class="timer" data-since="${o.created}">${fmtElapsed(elapsed)}</span>
+        <span class="late-tag">${esc(t("late"))}</span>
+        <span class="scan ${o.scanned ? "scan-yes" : "scan-no"}"><svg><use href="#${o.scanned ? "i-phone-ok" : "i-phone-no"}"/></svg>${esc(t(o.scanned ? "scanned" : "notScanned"))}</span>`;
+      actions = `<button type="button" class="btn btn-ready" data-act="ring">${esc(t("ready"))}</button>`;
+    } else if (o.status === "ringing") {
+      const since = o.called || o.created;
+      meta = `<span class="state state-ring"><i></i>${esc(t("ringing"))}</span><span class="timer" data-since="${since}" data-ago="1">${esc(t("calledAgo", { m: ago(Date.now() - since) }))}</span>${o.calls > 1 ? `<span>${esc(t("rang", { n: o.calls }))}</span>` : ""}`;
+      actions = `<button type="button" class="btn btn-line" data-act="ring">${esc(t("ringAgain"))}</button><button type="button" class="btn btn-ink" data-act="pick">${esc(t("picked"))}</button>`;
+    } else if (o.status === "onway") {
+      const since = o.called || o.created;
+      meta = `<span class="state state-way"><svg><use href="#i-walk"/></svg>${esc(t("onway"))}</span><span class="timer" data-since="${since}" data-ago="1">${esc(t("calledAgo", { m: ago(Date.now() - since) }))}</span>`;
+      actions = `<button type="button" class="btn btn-ink" data-act="pick">${esc(t("picked"))}</button>`;
+    }
+    return `<article class="card ${o.status}${late ? " late" : ""}" data-id="${o.id}">
+      <div class="no num-font">${esc(o.number)}</div>
+      <div class="info"><div class="meta">${meta}</div><div class="who">${who}</div></div>
+      <button type="button" class="more" data-act="more" aria-label="${esc(t("more"))}"><svg><use href="#i-dots"/></svg></button>
+      <div class="actions">${actions}</div>
+    </article>`;
   }
-});
-
-async function issue(){
-  var n = $('#fnum').value.trim();
-  if(!n){ $('#fnum').focus(); return; }
-  var name = $('#fname').value.trim();
-  var note = $('#fnote').value.trim();
-  await issueOrderWithValues(n, name, note);
-}
-
-function openCreateDlg(){
-  computeNextOrderNumber();
-  $('#fnum').value = nextNum;
-  $('#fname').value = '';
-  $('#fnote').value = '';
-  $('#dlg').showModal();
-  setTimeout(function(){ $('#fname').focus() }, 50);
-}
-
-if($('#open')){
-  $('#open').onclick = openCreateDlg;
-}
-if($('#issue')){
-  $('#issue').onclick = issue;
-}
-
-if($('#form')){
-  $('#form').onkeydown = function(e){
-    if(e.key === 'Enter'){ e.preventDefault(); issue(); }
-  };
-}
-
-// Close modals on clicking overlay backdrop
-[$('#dlg'), $('#qrDlg'), $('#confirmDlg')].forEach(function(d){
-  d.onclick = function(e){ if(e.target === this) this.close(); };
-});
-
-// Custom Confirm Delete Implementation
-function promptDelete(id, num){
-  pendingDeleteId = id;
-  $('#confirmTitle').textContent = "حذف الطلب #" + num + "؟";
-  $('#confirmDlg').showModal();
-}
-
-$('#confirmCancelBtn').onclick = function(){
-  pendingDeleteId = null;
-  $('#confirmDlg').close();
-};
-
-$('#confirmOkBtn').onclick = async function(){
-  if(!pendingDeleteId) return;
-  var id = pendingDeleteId;
-  $('#confirmDlg').close();
-
-  try {
-    await fetch("/api/orders/" + id, {method: "DELETE"});
-    toast("🗑️ تم حذف الطلب بنجاح");
-    await loadOrders();
-  } catch(err){
-    toast("⚠️ حدث خطأ أثناء الحذف");
-  } finally {
-    pendingDeleteId = null;
+  function renderStats() {
+    el.stToday.textContent = todayCount;
+    const minutes = calledN >= 3 ? Math.max(0, Math.round(calledSum / calledN / 60)) : AVG;
+    el.stAvg.textContent = minutes;
+    $("stAvgUnit").textContent = t("minLong");
   }
-};
-
-async function handleOrderAction(e){
-  var b = e.target.closest('button');
-  if(!b) return;
-
-  var id = +b.dataset.id, a = b.dataset.a;
-  var o = orders.find(function(x){return x.id === id});
-
-  if(a === 'ring'){
-    try {
-      await fetch("/api/orders/" + id + "/ring", {method: "POST"});
-      toast('🔔 تم تشغيل الرنين للطلب #' + (o ? o.num : id));
-      await loadOrders();
-    } catch(err){}
+  function render() {
+    const prep = orders.filter((o) => o.status === "waiting").sort((a, b) => a.created - b.created);
+    const called = orders.filter((o) => o.status === "ringing" || o.status === "onway").sort((a, b) => (a.status === "onway") - (b.status === "onway") || (a.called || 0) - (b.called || 0));
+    const done = orders.filter((o) => o.status === "done").sort((a, b) => (b.done || 0) - (a.done || 0)).slice(0, 12);
+    el.listPrep.innerHTML = prep.length ? prep.map(cardHTML).join("") : `<div class="empty"><b>${esc(t("emptyPrepT"))}</b>${esc(t("emptyPrepP"))}</div>`;
+    el.listCalled.innerHTML = called.length ? called.map(cardHTML).join("") : `<div class="empty"><b>${esc(t("emptyCalledT"))}</b>${esc(t("emptyCalledP"))}</div>`;
+    el.cPrep.textContent = prep.length;
+    el.cCalled.textContent = called.length;
+    el.chips.innerHTML = done.length ? done.map((o) => `<button type="button" class="chip" data-id="${o.id}" title="${esc(t("returnIt"))}"><b class="num-font">${esc(o.number)}</b><span>${ago(Date.now() - (o.done || Date.now()))}</span><svg><use href="#i-undo"/></svg></button>`).join("") : `<span class="none">${esc(t("noneDone"))}</span>`;
+    recompute();
+    renderStats();
   }
-  if(a === 'done'){
-    try {
-      await fetch("/api/orders/" + id + "/done", {method: "POST"});
-      toast('✅ تم تسليم الطلب #' + (o ? o.num : id));
-      await loadOrders();
-    } catch(err){}
-  }
-  if(a === 'wait'){
-    try {
-      await fetch("/api/orders/" + id + "/waiting", {method: "POST"});
-      toast('⏳ تمت إعادة الطلب للانتظار');
-      await loadOrders();
-    } catch(err){}
-  }
-  if(a === 'del'){
-    promptDelete(id, b.dataset.num || id);
-  }
-  if(a === 'qr'){
-    showQrModal(b.dataset.token, b.dataset.num);
-  }
-}
-
-if($('#activeOrdersList')){
-  $('#activeOrdersList').onclick = handleOrderAction;
-}
-if($('#doneOrdersList')){
-  $('#doneOrdersList').onclick = handleOrderAction;
-}
-if($('#orders')){
-  $('#orders').onclick = handleOrderAction;
-}
-
-if($('#tabs')){
-  $('#tabs').onclick = function(e){
-    var b = e.target.closest('button');
-    if(!b) return;
-    filter = b.dataset.f;
-    [].forEach.call($('#tabs').children, function(x){
-      x.setAttribute('aria-pressed', x === b);
+  setInterval(() => {
+    document.querySelectorAll(".timer[data-since]").forEach((n) => {
+      const ms = Date.now() - Number(n.dataset.since);
+      n.textContent = n.dataset.ago ? t("calledAgo", { m: ago(ms) }) : fmtElapsed(ms);
+      const card = n.closest(".card");
+      if (!n.dataset.ago && card) card.classList.toggle("late", ms > AVG * 60e3);
     });
+  }, 1000);
+
+  function upsert(raw, chimeOnway) {
+    const o = norm(raw);
+    if (!o || !mine(o)) return;
+    if (pending.has(o.id)) return;
+    const prev = orders.find((x) => x.id === o.id);
+    const prevStatus = prev && prev.status;
+    if (prev) Object.assign(prev, o);
+    else orders.push(o);
+    if (chimeOnway && o.status === "onway" && prevStatus !== "onway") chime();
     render();
-  };
-}
-
-function connectWS(){
-  var protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-  var wsUrl = protocol + "//" + window.location.host + "/ws/cashier";
-  try {
-    ws = new WebSocket(wsUrl);
-    ws.onmessage = function(event){
-      try {
-        var data = JSON.parse(event.data);
-        if(data.event === "customer_onway"){
-          playDing();
-          toast('🏃 صاحب الطلب #' + (data.order ? data.order.order_number : '') + ' في طريقه للاستلام الآن!');
-        }
-        loadOrders();
-      } catch(e){}
-    };
-    ws.onclose = function(){ setTimeout(connectWS, 3000) };
-  } catch(e){
-    setTimeout(connectWS, 4000);
   }
-}
+  function bounceLogin() {
+    location.href = "/login?next=" + encodeURIComponent(location.pathname + location.search);
+  }
+  async function reload() {
+    const res = await fetch("/api/orders", { credentials: "same-origin" });
+    if (res.status === 401) { bounceLogin(); return; }
+    if (!res.ok) return;
+    const rows = await res.json();
+    const fresh = (Array.isArray(rows) ? rows : []).map(norm).filter((o) => o && mine(o) && !pending.has(o.id));
+    const locals = [];
+    pending.forEach((job, id) => {
+      const cur = orders.find((o) => o.id === id);
+      if (job.kind !== "delete" && cur) locals.push(cur);
+    });
+    orders = fresh.concat(locals.filter((o) => !fresh.some((f) => f.id === o.id)));
+    render();
+  }
 
-loadOrders();
-connectWS();
+  async function issue() {
+    if (!value || duplicate() || el.issue.disabled) return;
+    const number = value, name = el.fName.value.trim(), note = el.fNote.value.trim();
+    el.issue.disabled = true;
+    const res = await fetch("/api/orders", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order_number: number, customer_name: name, notes: note, restaurant_id: Number(BOOT.restaurantId) }),
+    });
+    if (res.status === 401) { bounceLogin(); return; }
+    if (res.status === 409) { await reload(); value = number; renderDisplay(); return; }
+    if (!res.ok) { renderDisplay(); return; }
+    const raw = await res.json();
+    value = ""; el.fName.value = ""; el.fNote.value = ""; el.extra.hidden = true; el.extraToggle.textContent = t("addExtra");
+    upsert(raw, false);
+    renderDisplay();
+    openQr(orders.find((o) => o.id === Number(raw.id)));
+  }
+  async function ring(id) {
+    const res = await fetch(`/api/orders/${id}/ring`, { method: "POST", credentials: "same-origin" });
+    if (res.status === 401) { bounceLogin(); return; }
+    if (res.ok) upsert(await res.json(), false);
+    else await reload();
+  }
+  async function resetOrder(id) {
+    const o = orders.find((x) => x.id === id); if (!o) return;
+    const snapshot = Object.assign({}, o);
+    o.status = "waiting";
+    render();
+    const res = await fetch(`/api/orders/${id}/waiting`, { method: "POST", credentials: "same-origin" });
+    if (res.ok) upsert(await res.json(), false);
+    toast(t("toastReturned", { n: snapshot.number }), async () => {
+      const back = await fetch(`/api/orders/${id}/done`, { method: "POST", credentials: "same-origin" });
+      if (back.ok) upsert(await back.json(), false);
+      else { Object.assign(o, snapshot); render(); }
+    });
+  }
+
+  const pending = new Map();
+  const leaving = new Map();
+  let toastTimer = null, undoFn = null;
+  function toast(msg, undo) {
+    el.toastText.textContent = msg;
+    undoFn = undo || null;
+    el.toastUndo.hidden = !undo;
+    el.toast.hidden = true; void el.toast.offsetWidth; el.toast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.toast.hidden = true; undoFn = null; }, 5000);
+  }
+  el.toastUndo.addEventListener("click", () => { if (undoFn) undoFn(); undoFn = null; el.toast.hidden = true; });
+  function leave(id, then) {
+    const card = document.querySelector(`.card[data-id="${id}"]`);
+    if (!card) return then();
+    card.classList.add("leaving");
+    const timer = setTimeout(() => { leaving.delete(id); then(); }, 260);
+    leaving.set(id, timer);
+  }
+  function cancelLeave(id) {
+    const timer = leaving.get(id);
+    if (!timer) return;
+    clearTimeout(timer);
+    leaving.delete(id);
+  }
+  function schedule(id, kind, snapshot) {
+    const prev = pending.get(id);
+    if (prev) clearTimeout(prev.timer);
+    const timer = setTimeout(() => { flush(id); }, 5000);
+    pending.set(id, { kind, snapshot, timer });
+  }
+  async function flush(id) {
+    const job = pending.get(id);
+    if (!job) return;
+    pending.delete(id);
+    const url = job.kind === "delete" ? `/api/orders/${id}` : `/api/orders/${id}/done`;
+    const method = job.kind === "delete" ? "DELETE" : "POST";
+    try {
+      const res = await fetch(url, { method, credentials: "same-origin" });
+      if (!res.ok) { await reload(); return; }
+      if (job.kind === "done") upsert(await res.json(), false);
+      else { orders = orders.filter((o) => o.id !== id); render(); }
+    } catch (_) { await reload(); }
+  }
+  function undoPending(id) {
+    const job = pending.get(id);
+    if (!job) return false;
+    clearTimeout(job.timer);
+    pending.delete(id);
+    cancelLeave(id);
+    if (job.kind === "delete") {
+      if (!orders.some((o) => o.id === id)) orders.push(job.snapshot);
+    } else {
+      const o = orders.find((x) => x.id === id);
+      if (o) Object.assign(o, job.snapshot);
+      else orders.push(job.snapshot);
+    }
+    render();
+    return true;
+  }
+  function pickUp(id) {
+    const o = orders.find((x) => x.id === id); if (!o) return;
+    const snapshot = Object.assign({}, o);
+    leave(id, () => { o.status = "done"; o.done = Date.now(); render(); });
+    schedule(id, "done", snapshot);
+    toast(t("toastPicked", { n: o.number }), () => undoPending(id));
+  }
+  function remove(id) {
+    const i = orders.findIndex((x) => x.id === id); if (i < 0) return;
+    const snapshot = Object.assign({}, orders[i]);
+    leave(id, () => { orders = orders.filter((x) => x.id !== id); render(); });
+    schedule(id, "delete", snapshot);
+    toast(t("toastDeleted", { n: snapshot.number }), () => undoPending(id));
+  }
+  addEventListener("pagehide", () => {
+    pending.forEach((job, id) => {
+      const url = job.kind === "delete" ? `/api/orders/${id}` : `/api/orders/${id}/done`;
+      fetch(url, { method: job.kind === "delete" ? "DELETE" : "POST", credentials: "same-origin", keepalive: true });
+      clearTimeout(job.timer);
+    });
+    pending.clear();
+  });
+
+  document.querySelector(".board").addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (chip) return resetOrder(Number(chip.dataset.id));
+    const b = e.target.closest("[data-act]");
+    if (!b) return;
+    const id = Number(b.closest(".card").dataset.id);
+    if (b.dataset.act === "ring") ring(id);
+    if (b.dataset.act === "pick") pickUp(id);
+    if (b.dataset.act === "more") openPop(b, id);
+  });
+
+  let popId = null;
+  function openPop(anchor, id) {
+    popId = id;
+    const r = anchor.getBoundingClientRect();
+    el.pop.hidden = false;
+    const w = el.pop.offsetWidth;
+    const left = document.documentElement.dir === "rtl" ? r.left : r.right - w;
+    el.pop.style.left = Math.max(8, Math.min(left, innerWidth - w - 8)) + "px";
+    el.pop.style.top = Math.min(r.bottom + 6, innerHeight - el.pop.offsetHeight - 8) + "px";
+  }
+  el.pop.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    const o = orders.find((x) => x.id === popId);
+    el.pop.hidden = true;
+    if (!o) return;
+    if (b.dataset.act === "qr") openQr(o);
+    if (b.dataset.act === "delete") remove(o.id);
+  });
+  document.addEventListener("click", (e) => {
+    if (!el.pop.hidden && !e.target.closest("#pop") && !e.target.closest('[data-act="more"]')) el.pop.hidden = true;
+    if (!el.menu.hidden && !e.target.closest("#menu") && !e.target.closest("#menuBtn")) { el.menu.hidden = true; el.menuBtn.setAttribute("aria-expanded", "false"); }
+  });
+  el.menuBtn.addEventListener("click", () => { el.menu.hidden = !el.menu.hidden; el.menuBtn.setAttribute("aria-expanded", String(!el.menu.hidden)); });
+  $("soundBtn").textContent = t(soundOn ? "mSoundOn" : "mSoundOff");
+  $("soundBtn").addEventListener("click", () => {
+    soundOn = !soundOn;
+    try { localStorage.setItem("paiger.cashierSound", soundOn ? "1" : "0"); } catch (_) {}
+    $("soundBtn").textContent = t(soundOn ? "mSoundOn" : "mSoundOff");
+  });
+
+  let qrOrder = null, qrTimer = null;
+  function openQr(o) {
+    if (!o) return;
+    qrOrder = o;
+    el.qrBox.innerHTML = `<img alt="QR code" src="/api/qr/${encodeURIComponent(o.token)}">`;
+    el.qrNo.textContent = o.number;
+    el.qrWait.hidden = false;
+    el.qrWait.innerHTML = `<span class="spinner"></span><span>${esc(t("waitScan"))}</span>`;
+    el.qrOverlay.hidden = false;
+    $("qrDone").focus();
+  }
+  function qrScanned() {
+    if (el.qrBox.querySelector(".scanned")) return;
+    el.qrBox.insertAdjacentHTML("beforeend", `<div class="scanned"><svg><use href="#i-check-big"/></svg>${esc(t("scannedOk"))}</div>`);
+    el.qrWait.innerHTML = "";
+    clearTimeout(qrTimer);
+    qrTimer = setTimeout(closeQr, 1000);
+  }
+  function closeQr() { clearTimeout(qrTimer); el.qrOverlay.hidden = true; qrOrder = null; }
+  $("qrDone").addEventListener("click", closeQr);
+  $("qrPrint").addEventListener("click", () => window.print());
+  el.qrOverlay.addEventListener("click", (e) => { if (e.target === el.qrOverlay) closeQr(); });
+
+  let ctx = null;
+  function chime() {
+    if (!soundOn) return;
+    try {
+      ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+      [880, 1320].forEach((f, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain(), s = ctx.currentTime + i * 0.14;
+        o.type = "sine"; o.frequency.value = f; o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(0.12, s + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, s + 0.5);
+        o.start(s); o.stop(s + 0.55);
+      });
+    } catch (_) {}
+  }
+  function setLive(ok) {
+    el.live.classList.toggle("off", !ok);
+    el.live.querySelector("span").textContent = t(ok ? "live" : "offline");
+  }
+
+  let socket = null, retry = 1000, opened = false;
+  function connect() {
+    const proto = location.protocol === "https:" ? "wss" : "ws";
+    socket = new WebSocket(`${proto}://${location.host}/ws/cashier`);
+    socket.addEventListener("open", () => { setLive(true); retry = 1000; if (opened) reload(); opened = true; });
+    socket.addEventListener("message", (ev) => {
+      let msg; try { msg = JSON.parse(ev.data); } catch (_) { return; }
+      const rid = msg.restaurant_id || (msg.order && msg.order.restaurant_id);
+      if (rid && Number(rid) !== Number(BOOT.restaurantId)) return;
+      if (msg.event === "customer_connected") {
+        scannedIds.add(Number(msg.order_id));
+        const o = orders.find((x) => x.id === Number(msg.order_id));
+        if (o) o.scanned = true;
+        render();
+        if (qrOrder && qrOrder.id === Number(msg.order_id)) qrScanned();
+      } else if (msg.event === "order_deleted") {
+        const id = Number(msg.order_id);
+        if (!pending.has(id)) { orders = orders.filter((o) => o.id !== id); render(); }
+      } else if (msg.event === "customer_onway") upsert(msg.order, true);
+      else if (msg.order) upsert(msg.order, false);
+    });
+    socket.addEventListener("close", () => { setLive(false); setTimeout(connect, retry); retry = Math.min(retry * 2, 10000); });
+  }
+
+  $("soundBtn").textContent = t(soundOn ? "mSoundOn" : "mSoundOff");
+  reload().then(connect);
 })();
 </script>
-</body>
-</html>
+{% endblock %}

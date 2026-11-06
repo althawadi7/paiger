@@ -6,6 +6,7 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import serialization
 from pywebpush import webpush, WebPushException
 from . import database as db
+from . import i18n
 
 VAPID_FILE = Path(__file__).parent / "vapid_keys.json"
 
@@ -78,23 +79,23 @@ async def notify_order_push(order: dict):
     if not subs:
         return
 
-    order_num = order.get("order_number", "")
-    cust_name = order.get("customer_name") or ""
-    cust_text = f" ({cust_name})" if cust_name else ""
-
-    payload = {
-        "title": f"طلبك جاهز للاستلام! 🔔",
-        "body": f"طلب رقم #{order_num}{cust_text} - تفضل للاستلام الآن",
-        "icon": "/static/img/brand-logo.png?v=dawrak",
-        "badge": "/static/img/brand-logo.png?v=dawrak",
-        "url": f"/pager/{token}",
-        "token": token,
-        "order_id": order.get("id"),
-        "order_number": order_num,
-        "status": order.get("status")
-    }
-
+    order_num = str(order.get("order_number", ""))
     loop = asyncio.get_event_loop()
     for sub in subs:
+        lang = sub.get("lang") if sub.get("lang") in ("en", "ar") else "en"
+        table = i18n.AR if lang == "ar" else i18n.EN
+        title = table.get("pager.pushTitle") or i18n.EN.get("pager.pushTitle") or "Your order is ready"
+        body = (table.get("pager.pushBody") or i18n.EN.get("pager.pushBody") or "Order #{n} is ready.").replace("{n}", order_num)
+        payload = {
+            "title": title,
+            "body": body,
+            "icon": "/static/img/brand-logo.png?v=dawrak",
+            "badge": "/static/img/brand-logo.png?v=dawrak",
+            "url": f"/pager/{token}",
+            "token": token,
+            "order_id": order.get("id"),
+            "order_number": order_num,
+            "status": order.get("status")
+        }
         loop.run_in_executor(None, send_push_to_subscription, sub, payload)
 
