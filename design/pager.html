@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<!-- iPhone: offer the App Clip (production keeps app-id + app-clip-bundle-id) -->
+<meta name="apple-itunes-app" content="app-id=6829547522, app-clip-bundle-id=com.dawrak.app.Clip">
+<title>Order 47 · Maison Café</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   PAIGER · Customer order page (phone first)
+   The restaurant's brand colour drives --brand (restaurants.brand_color).
+   Green stays reserved for "ready".
+   ===================================================================== */
+:root {
+  --brand: #7a4b2a;           /* from restaurant settings */
+  --brand-ink: #ffffff;       /* text on brand, computed server-side for contrast */
+  --ink: #111111; --grey: #5f6368; --grey-2: #8e8e93; --line: #e6e6e8;
+  --paper: #ffffff; --paper-2: #f6f6f7;
+  --ready: #22c55e; --ready-deep: #15803d; --ready-soft: #e7f8ee;
+  --warn: #b45309; --warn-soft: #fdf2e3;
+  --display: "Fraunces", Georgia, serif;
+  --sans: "IBM Plex Sans", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", sans-serif;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+html[lang="ar"] { --sans: "IBM Plex Sans Arabic", "IBM Plex Sans", -apple-system, sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: var(--paper); -webkit-text-size-adjust: 100%; }
+body { min-height: 100svh; font-family: var(--sans); color: var(--ink); background: var(--paper); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; transition: background .5s var(--ease); }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; touch-action: manipulation; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 8px; }
+[hidden] { display: none !important; }
+.num { font-family: var(--display); font-variant-numeric: lining-nums tabular-nums; direction: ltr; unicode-bidi: isolate; }
+
+.page { max-width: 460px; min-height: 100svh; margin: 0 auto; padding: max(18px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; }
+
+/* ---------- header ---------- */
+.head { display: flex; align-items: center; gap: 12px; }
+.logo { width: 44px; height: 44px; border-radius: 13px; background: var(--brand); color: var(--brand-ink); display: grid; place-items: center; font-family: var(--display); font-weight: 600; font-size: 20px; flex: none; overflow: hidden; }
+.logo img { width: 100%; height: 100%; object-fit: cover; }
+.shop b { display: block; font-size: 17px; font-weight: 600; line-height: 1.25; }
+.shop span { font-size: 13px; color: var(--grey); }
+.lang { margin-inline-start: auto; height: 38px; padding: 0 12px; border-radius: 999px; font-size: 14px; color: var(--grey); }
+.lang:hover { background: var(--paper-2); color: var(--ink); }
+
+/* ---------- connection banner ---------- */
+.conn { margin-top: 14px; display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: var(--warn-soft); color: var(--warn); font-size: 14px; }
+.conn i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: .2; } }
+
+/* ---------- ticket ---------- */
+.ticket { margin-top: 22px; border-radius: 28px; background: var(--paper-2); padding: 26px 22px 22px; text-align: center; position: relative; overflow: hidden; transition: background .5s var(--ease), color .5s; }
+.ticket .label { font-size: 14px; color: var(--grey); }
+.ticket .order { font-size: clamp(96px, 34vw, 132px); font-weight: 500; line-height: .95; letter-spacing: -.02em; margin-top: 6px; }
+.ticket .who { margin-top: 6px; font-size: 15px; color: var(--grey); min-height: 1.4em; }
+.status { margin-top: 18px; display: inline-flex; align-items: center; gap: 9px; height: 40px; padding: 0 16px; border-radius: 999px; background: #fff; font-size: 16px; font-weight: 600; box-shadow: 0 0 0 1px var(--line); }
+.status i { width: 9px; height: 9px; border-radius: 50%; background: var(--brand); animation: breathe 2s ease-in-out infinite; }
+@keyframes breathe { 50% { opacity: .35; } }
+
+/* progress: 3 real steps */
+.steps { margin-top: 22px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.steps div { height: 5px; border-radius: 5px; background: #dedee2; position: relative; overflow: hidden; }
+.steps div.on { background: var(--brand); }
+.steps div.now::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.6), transparent); animation: sweep 1.6s linear infinite; }
+html[dir="rtl"] .steps div.now::after { animation-direction: reverse; }
+@keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+.step-labels { margin-top: 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 12.5px; color: var(--grey-2); }
+.step-labels span.on { color: var(--ink); font-weight: 500; }
+
+/* queue facts */
+.facts { margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; border-radius: 20px; box-shadow: 0 0 0 1px var(--line); }
+.facts div { padding: 14px 16px; }
+.facts div + div { border-inline-start: 1px solid var(--line); }
+.facts b { display: block; font-size: 26px; font-weight: 500; line-height: 1.1; }
+.facts span { font-size: 13.5px; color: var(--grey); }
+
+/* ---------- alert card ---------- */
+.alert { margin-top: 16px; border-radius: 20px; padding: 18px; background: #fff; box-shadow: 0 0 0 1px var(--line); }
+.alert h2 { font-size: 17px; font-weight: 600; }
+.alert p { margin-top: 4px; font-size: 14.5px; color: var(--grey); }
+.alert.on { display: flex; gap: 14px; align-items: center; }
+.alert.on .bars { display: flex; gap: 3px; align-items: flex-end; height: 22px; flex: none; }
+.alert.on .bars i { width: 3px; border-radius: 2px; background: var(--ready-deep); animation: bars 1s ease-in-out infinite; }
+.alert.on .bars i:nth-child(2) { animation-delay: -.3s; } .alert.on .bars i:nth-child(3) { animation-delay: -.6s; } .alert.on .bars i:nth-child(4) { animation-delay: -.15s; }
+@keyframes bars { 0%, 100% { height: 25%; } 50% { height: 100%; } }
+.alert.on h2 { color: var(--ready-deep); }
+.alert.off h2 { color: var(--warn); }
+
+.cta { margin-top: 14px; width: 100%; height: 58px; border-radius: 16px; background: var(--ink); color: #fff; font-size: 17px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform .12s, opacity .2s; }
+.cta:active { transform: scale(.98); }
+.cta svg { width: 20px; height: 20px; }
+.cta-ghost { background: transparent; color: var(--ink); box-shadow: 0 0 0 1.5px var(--line) inset; }
+.link { margin-top: 10px; width: 100%; height: 44px; font-size: 14.5px; color: var(--grey); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---------- READY: the whole screen changes ---------- */
+body.ready { background: var(--ready-deep); }
+body.ready .shop b, body.ready .lang { color: #fff; }
+body.ready .shop span { color: rgba(255,255,255,.75); }
+body.ready .ticket { background: #fff; animation: nudge 1.4s var(--ease) infinite; }
+@keyframes nudge { 0%, 100% { transform: none; } 6% { transform: rotate(-1.2deg); } 12% { transform: rotate(1.2deg); } 18% { transform: rotate(-.6deg); } 24% { transform: none; } }
+body.ready .status { background: var(--ready-soft); color: var(--ready-deep); box-shadow: none; }
+body.ready .status i { background: var(--ready); animation-duration: .7s; }
+body.ready .steps div { background: #dedee2; }
+body.ready .steps div.on { background: var(--ready-deep); }
+.ready-title { margin-top: 22px; text-align: center; color: #fff; }
+.ready-title h1 { font-family: var(--display); font-weight: 500; font-size: 36px; line-height: 1.05; letter-spacing: -.01em; }
+html[lang="ar"] .ready-title h1 { font-family: var(--sans); font-weight: 600; line-height: 1.3; }
+.ready-title p { margin-top: 6px; font-size: 16px; color: rgba(255,255,255,.85); }
+body.ready .cta { background: #fff; color: var(--ready-deep); height: 62px; font-size: 18px; }
+body.ready .cta-ghost { background: transparent; color: #fff; box-shadow: 0 0 0 1.5px rgba(255,255,255,.45) inset; }
+body.ready .link { color: rgba(255,255,255,.85); }
+.onway-note { margin-top: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; height: 58px; border-radius: 16px; background: rgba(255,255,255,.14); color: #fff; font-size: 16px; font-weight: 600; }
+.onway-note svg { width: 20px; height: 20px; }
+
+/* ---------- DONE ---------- */
+body.done .ticket { background: var(--paper-2); }
+body.done .ticket .order { color: var(--grey-2); }
+body.done .status i { background: var(--grey-2); animation: none; }
+.thanks { margin-top: 22px; text-align: center; }
+.thanks h1 { font-family: var(--display); font-weight: 500; font-size: 32px; }
+html[lang="ar"] .thanks h1 { font-family: var(--sans); font-weight: 600; }
+.thanks p { margin-top: 6px; color: var(--grey); }
+
+/* ---------- footer ---------- */
+.foot { margin-top: auto; padding-top: 26px; text-align: center; font-size: 12.5px; color: var(--grey-2); }
+.foot a { color: inherit; }
+body.ready .foot { color: rgba(255,255,255,.6); }
+
+/* ---------- sheet: alert setup explained ---------- */
+.sheet-bg { position: fixed; inset: 0; z-index: 40; background: rgba(17,17,17,.45); display: flex; align-items: flex-end; justify-content: center; animation: fade .2s var(--ease); }
+@keyframes fade { from { opacity: 0; } }
+.sheet { width: min(460px, 100%); background: #fff; border-radius: 26px 26px 0 0; padding: 22px 20px max(20px, env(safe-area-inset-bottom)); animation: up .3s var(--ease); }
+@keyframes up { from { transform: translateY(30px); opacity: 0; } }
+.sheet h2 { font-size: 20px; font-weight: 600; }
+.sheet ol { margin-top: 14px; padding-inline-start: 22px; display: grid; gap: 10px; color: var(--grey); font-size: 15.5px; }
+.sheet ol b { color: var(--ink); font-weight: 600; }
+
+/* prototype switcher (remove in production) */
+.proto { position: fixed; z-index: 60; inset-inline: 0; bottom: 0; display: flex; gap: 6px; justify-content: center; padding: 8px; background: rgba(255,255,255,.92); border-top: 1px solid var(--line); font-size: 12px; backdrop-filter: blur(8px); }
+.proto button { padding: 6px 10px; border-radius: 8px; background: var(--paper-2); }
+.proto button.on { background: var(--ink); color: #fff; }
+body.has-proto .page { padding-bottom: 70px; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; } }
+</style>
+</head>
+<body class="waiting has-proto">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-bell" viewBox="0 0 20 20"><path d="M10 3a5 5 0 0 0-5 5v3l-1.5 2.5h13L15 11V8a5 5 0 0 0-5-5zM8 15.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+  <symbol id="i-walk" viewBox="0 0 20 20"><circle cx="11.5" cy="3.5" r="1.8" fill="currentColor"/><path d="M10 7l-2.5 4.5 3 2L9.5 18M10 7l3 3.5h3.5M7.5 11.5 5 13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 20 20"><path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="page">
+  <header class="head">
+    <div class="logo" aria-hidden="true">M</div>
+    <div class="shop"><b>Maison Café</b><span data-t="shopSub">Your order</span></div>
+    <button class="lang" id="langBtn" type="button">العربية</button>
+  </header>
+
+  <div class="conn" id="conn" hidden role="status"><i></i><span data-t="reconnecting">Connection lost. Reconnecting…</span></div>
+
+  <div class="ready-title" id="readyTitle" hidden aria-live="assertive">
+    <h1 data-t="readyH">Your order is ready</h1>
+    <p data-t="readyP">Please collect it from the counter.</p>
+  </div>
+
+  <section class="ticket" aria-live="polite">
+    <p class="label" data-t="orderNo">Order number</p>
+    <p class="order num">47</p>
+    <p class="who">Sara</p>
+    <div class="status" id="status"><i></i><span id="statusText" data-t="sPrep">Preparing</span></div>
+    <div class="steps" aria-hidden="true"><div id="st1"></div><div id="st2"></div><div id="st3"></div></div>
+    <div class="step-labels" aria-hidden="true"><span id="sl1" data-t="sPrep">Preparing</span><span id="sl2" data-t="sReady">Ready</span><span id="sl3" data-t="sDone">Picked up</span></div>
+  </section>
+
+  <!-- WAITING -->
+  <div id="vWaiting">
+    <div class="facts">
+      <div><b class="num" id="ahead">2</b><span data-t="ahead">orders before yours</span></div>
+      <div><b><span class="num" id="eta">4</span> <small style="font-size:15px" data-t="minShort">min</small></b><span data-t="eta">estimated wait</span></div>
+    </div>
+
+    <!-- Alerts not set up yet -->
+    <div id="aOff">
+      <div class="alert">
+        <h2 data-t="aOffH">Get alerted when it’s ready</h2>
+        <p id="aOffP" data-t="aOffP">We’ll ring this phone, even with the screen off. You can sit anywhere.</p>
+      </div>
+      <button class="cta" id="enableBtn" type="button"><svg><use href="#i-bell"/></svg><span data-t="enable">Turn on alerts</span></button>
+      <button class="link" id="howBtn" type="button" data-t="how">How does this work?</button>
+    </div>
+
+    <!-- Alerts on -->
+    <div id="aOn" hidden>
+      <div class="alert on">
+        <div class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div><h2 data-t="aOnH">Alerts are on</h2><p id="aOnP" data-t="aOnP">You can lock your phone. Keep the volume up.</p></div>
+      </div>
+    </div>
+
+    <!-- Alerts blocked -->
+    <div id="aBlocked" hidden>
+      <div class="alert off">
+        <h2 data-t="aBlockH">Notifications are blocked</h2>
+        <p data-t="aBlockP">Keep this page open and we’ll ring here. To allow alerts, open your browser’s site settings for this page.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- READY -->
+  <div id="vReady" hidden>
+    <button class="cta" id="onwayBtn" type="button"><svg><use href="#i-walk"/></svg><span data-t="onway">I’m on my way</span></button>
+    <div class="onway-note" id="onwayNote" hidden><svg><use href="#i-check"/></svg><span data-t="onwaySent">The counter knows you’re coming</span></div>
+    <button class="link" id="muteBtn" type="button" data-t="mute">Stop the sound</button>
+  </div>
+
+  <!-- DONE -->
+  <div id="vDone" hidden>
+    <div class="thanks"><h1 data-t="doneH">Enjoy</h1><p data-t="doneP">Thanks for visiting Maison Café.</p></div>
+  </div>
+
+  <footer class="foot"><span data-t="powered">Order alerts by</span> <a href="/">Paiger</a></footer>
+</div>
+
+<!-- How it works sheet -->
+<div class="sheet-bg" id="howSheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="howH">
+    <h2 id="howH" data-t="howH">How it works</h2>
+    <ol>
+      <li data-th="how1"><b>Turn on alerts</b> and allow notifications when your phone asks.</li>
+      <li data-th="how2"><b>Sit anywhere.</b> You can lock your phone or use other apps.</li>
+      <li data-th="how3"><b>Your phone rings</b> when your order is ready. Tap “I’m on my way”.</li>
+    </ol>
+    <button class="cta" id="howClose" type="button" data-t="gotIt">Got it</button>
+  </div>
+</div>
+
+<div class="proto" aria-label="Prototype states">
+  <button type="button" data-s="waiting" class="on">Waiting</button>
+  <button type="button" data-s="ringing">Ready</button>
+  <button type="button" data-s="onway">On the way</button>
+  <button type="button" data-s="done">Picked up</button>
+  <button type="button" data-s="offline">Offline</button>
+  <button type="button" data-s="ios">iPhone Safari</button>
+</div>
+
+<script>
+/* =====================================================================
+   PROTOTYPE. Production wiring:
+   - initial state from the template, then WS /ws/pager/{token} + polling fallback
+     (keep the existing every-1s poll only while the socket is down)
+   - events: order_ringing, order_onway, order_done, order_waiting, order_deleted
+   - "I'm on my way": POST /api/orders/{token}/onway (+ WS {action:"onway"})
+   - Turn on alerts: Notification.requestPermission() + pushManager.subscribe
+     (/api/push/public_key, /api/push/subscribe) AND unlock audio in the same tap.
+   - queue: orders_ahead + estimated_wait_minutes from the API (numbers, not Arabic text)
+   ===================================================================== */
+(() => {
+  "use strict";
+  const T = {
+    en: {
+      shopSub: "Your order", reconnecting: "Connection lost. Reconnecting…", orderNo: "Order number",
+      sPrep: "Preparing", sReady: "Ready", sDone: "Picked up", sOnway: "On your way",
+      ahead: "orders before yours", eta: "estimated wait", minShort: "min",
+      aOffH: "Get alerted when it’s ready", aOffP: "We’ll ring this phone, even with the screen off. You can sit anywhere.",
+      aOffPiOS: "Keep this page open and we’ll ring here when it’s ready. Turn the volume up.",
+      enable: "Turn on alerts", enableiOS: "Turn on sound", how: "How does this work?",
+      aOnH: "Alerts are on", aOnP: "You can lock your phone. Keep the volume up.", aOnPiOS: "Keep this page open and the volume up.",
+      aBlockH: "Notifications are blocked", aBlockP: "Keep this page open and we’ll ring here. To allow alerts, open your browser’s site settings for this page.",
+      readyH: "Your order is ready", readyP: "Please collect it from the counter.",
+      onway: "I’m on my way", onwaySent: "The counter knows you’re coming", mute: "Stop the sound", muted: "Sound stopped",
+      doneH: "Enjoy", doneP: "Thanks for visiting Maison Café.", powered: "Order alerts by",
+      howH: "How it works", gotIt: "Got it",
+      how1: "<b>Turn on alerts</b> and allow notifications when your phone asks.",
+      how2: "<b>Sit anywhere.</b> You can lock your phone or use other apps.",
+      how3: "<b>Your phone rings</b> when your order is ready. Tap “I’m on my way”.",
+    },
+    ar: {
+      shopSub: "طلبك", reconnecting: "انقطع الاتصال. جاري إعادة الاتصال…", orderNo: "رقم الطلب",
+      sPrep: "قيد التحضير", sReady: "جاهز", sDone: "تم الاستلام", sOnway: "في الطريق",
+      ahead: "طلبات قبلك", eta: "الانتظار المتوقع", minShort: "دقائق",
+      aOffH: "خلّنا ننبهك لما يجهز", aOffP: "بنرنّ تلفونك حتى لو الشاشة مقفلة. تقدر تقعد وين ما تبي.",
+      aOffPiOS: "خلّ هالصفحة مفتوحة وبنرنّ هني لما يجهز. ارفع الصوت.",
+      enable: "فعّل التنبيه", enableiOS: "شغّل الصوت", how: "شلون يشتغل؟",
+      aOnH: "التنبيه مفعّل", aOnP: "تقدر تقفل تلفونك. خلّ الصوت مرتفع.", aOnPiOS: "خلّ الصفحة مفتوحة والصوت مرتفع.",
+      aBlockH: "الإشعارات مقفلة", aBlockP: "خلّ هالصفحة مفتوحة وبنرنّ هني. عشان تسمح بالتنبيهات، افتح إعدادات الموقع في المتصفح.",
+      readyH: "طلبك جاهز", readyP: "تفضّل استلمه من الكاونتر.",
+      onway: "أنا في الطريق", onwaySent: "الكاونتر يعرف إنك جاي", mute: "أوقف الصوت", muted: "تم إيقاف الصوت",
+      doneH: "بالعافية", doneP: "شكراً لزيارتك Maison Café.", powered: "تنبيهات الطلبات من",
+      howH: "شلون يشتغل", gotIt: "فهمت",
+      how1: "<b>فعّل التنبيه</b> واسمح بالإشعارات لما يسألك تلفونك.",
+      how2: "<b>اقعد وين ما تبي.</b> تقدر تقفل تلفونك أو تستخدم تطبيقات ثانية.",
+      how3: "<b>تلفونك يرن</b> لما يجهز طلبك. اضغط «أنا في الطريق».",
+    },
+  };
+  // Default: the phone's language (customers), unless they chose one.
+  let lang = (navigator.language || "en").toLowerCase().startsWith("ar") ? "ar" : "en";
+  try { lang = localStorage.getItem("paiger.lang") || lang; } catch (_) {}
+  const t = (k) => (T[lang] && T[lang][k]) ?? T.en[k] ?? k;
+
+  const $ = (id) => document.getElementById(id);
+  let state = "waiting", alerts = "off", ios = false, onwaySent = false, muted = false, ringTimer = null, ctx = null;
+
+  function applyLang() {
+    document.documentElement.lang = lang; document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    document.querySelectorAll("[data-t]").forEach((n) => (n.textContent = t(n.dataset.t)));
+    document.querySelectorAll("[data-th]").forEach((n) => (n.innerHTML = t(n.dataset.th)));
+    $("langBtn").textContent = lang === "ar" ? "English" : "العربية";
+    render();
+  }
+  $("langBtn").addEventListener("click", () => { lang = lang === "ar" ? "en" : "ar"; try { localStorage.setItem("paiger.lang", lang); } catch (_) {} applyLang(); });
+
+  function render() {
+    document.body.classList.remove("waiting", "ready", "done");
+    const ready = state === "ringing" || state === "onway";
+    document.body.classList.add(ready ? "ready" : state === "done" ? "done" : "waiting");
+    document.querySelector('meta[name="theme-color"]').content = ready ? "#15803d" : "#ffffff";
+    $("vWaiting").hidden = state !== "waiting";
+    $("vReady").hidden = !ready;
+    $("vDone").hidden = state !== "done";
+    $("readyTitle").hidden = !ready;
+    // status pill + steps
+    const label = state === "waiting" ? "sPrep" : state === "done" ? "sDone" : (state === "onway" || onwaySent) ? "sOnway" : "sReady";
+    $("statusText").textContent = t(label);
+    const step = state === "waiting" ? 1 : state === "done" ? 3 : 2;
+    [1, 2, 3].forEach((i) => { $("st" + i).className = i < step ? "on" : i === step ? "on now" : ""; $("sl" + i).className = i <= step ? "on" : ""; });
+    if (state === "done") $("st3").className = "on";
+    // alerts
+    $("aOff").hidden = alerts !== "off"; $("aOn").hidden = alerts !== "on"; $("aBlocked").hidden = alerts !== "blocked";
+    $("aOffP").textContent = t(ios ? "aOffPiOS" : "aOffP");
+    $("enableBtn").querySelector("span").textContent = t(ios ? "enableiOS" : "enable");
+    $("aOnP").textContent = t(ios ? "aOnPiOS" : "aOnP");
+    // ready
+    const sent = onwaySent || state === "onway";
+    $("onwayBtn").hidden = sent; $("onwayNote").hidden = !sent;
+    $("muteBtn").textContent = t(muted ? "muted" : "mute"); $("muteBtn").disabled = muted;
+  }
+
+  /* --- alerts: one tap asks for notifications AND unlocks audio --- */
+  $("enableBtn").addEventListener("click", async () => {
+    unlockAudio();
+    if (ios || !("Notification" in window)) { alerts = "on"; return render(); }
+    try {
+      const p = await Notification.requestPermission();
+      alerts = p === "granted" ? "on" : p === "denied" ? "blocked" : "off";
+    } catch (_) { alerts = "on"; }
+    render();
+  });
+  $("howBtn").addEventListener("click", () => ($("howSheet").hidden = false));
+  $("howClose").addEventListener("click", () => ($("howSheet").hidden = true));
+  $("howSheet").addEventListener("click", (e) => { if (e.target.id === "howSheet") $("howSheet").hidden = true; });
+
+  $("onwayBtn").addEventListener("click", () => { onwaySent = true; stopRing(); render(); });
+  $("muteBtn").addEventListener("click", () => { muted = true; stopRing(); render(); });
+
+  /* --- ringing: the classic pager beep, repeated until on-way / mute --- */
+  function unlockAudio() { try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); ctx.resume(); } catch (_) {} }
+  function beepBurst() {
+    if (!ctx || muted) return;
+    const now = ctx.currentTime + 0.03, g = ctx.createGain(), o = ctx.createOscillator();
+    g.gain.value = 0; g.connect(ctx.destination); o.type = "square"; o.frequency.value = 3100; o.connect(g);
+    for (let i = 0; i < 8; i++) { const s = now + i * 0.12; g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(0.1, s + 0.004); g.gain.setValueAtTime(0.1, s + 0.066); g.gain.linearRampToValueAtTime(0, s + 0.07); }
+    o.start(now); o.stop(now + 1);
+  }
+  function startRing() { stopRing(); if (navigator.vibrate) navigator.vibrate([300, 120, 300, 120, 600]); beepBurst(); ringTimer = setInterval(beepBurst, 2200); setTimeout(stopRing, 3 * 60e3); }
+  function stopRing() { clearInterval(ringTimer); ringTimer = null; }
+
+  function setState(s) {
+    const prev = state; state = s;
+    if (s === "ringing" && prev !== "ringing") { onwaySent = false; muted = false; startRing(); }
+    if (s !== "ringing") stopRing();
+    render();
+  }
+
+  /* --- prototype switcher --- */
+  document.querySelector(".proto").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    const s = b.dataset.s;
+    if (s === "offline") { $("conn").hidden = !$("conn").hidden; b.classList.toggle("on"); return; }
+    if (s === "ios") { ios = !ios; b.classList.toggle("on"); alerts = "off"; return render(); }
+    document.querySelectorAll('.proto [data-s="waiting"],.proto [data-s="ringing"],.proto [data-s="onway"],.proto [data-s="done"]').forEach((x) => x.classList.toggle("on", x === b));
+    unlockAudio(); setState(s);
+  });
+
+  applyLang();
+})();
+</script>
+</body>
+</html>

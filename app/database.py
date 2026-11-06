@@ -1,7 +1,8 @@
+import hashlib
 import os
 import re
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 import pymysql
@@ -174,14 +175,240 @@ def init_db():
                     INDEX idx_page_published (is_published)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
             """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    restaurant_id INT NOT NULL,
+                    token_hash CHAR(64) NOT NULL,
+                    expires_at DATETIME NOT NULL,
+                    used_at DATETIME NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_reset_hash (token_hash),
+                    INDEX idx_reset_rest (restaurant_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            """)
             conn.commit()
     finally:
         conn.close()
     ensure_column("orders", "scanned_at", "DATETIME NULL")
     ensure_column("push_subscriptions", "lang", "VARCHAR(8) NULL")
+    ensure_column("restaurants", "plan_code", "VARCHAR(20) NULL")
+    ensure_column("restaurants", "subscription_status", "VARCHAR(20) NULL")
+    ensure_column("restaurants", "trial_ends_at", "DATETIME NULL")
+    ensure_column("restaurants", "onboarded_at", "DATETIME NULL")
+    _backfill_legacy_subscriptions()
 
 
 _IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _backfill_legacy_subscriptions() -> None:
+    """Restaurants that existed before trials stay on the legacy plan."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE restaurants
+                SET subscription_status = 'legacy'
+                WHERE subscription_status IS NULL OR subscription_status = ''
+                """
+            )
+            conn.commit()
+    finally:
+        conn.close()
+
+
+def _parse_dt(value: Any) -> Optional[datetime]:
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str) and value:
+        try:
+            return datetime.fromisoformat(value)
+        except ValueError:
+            return None
+    return None
+
+
+def access_state(restaurant: Optional[Dict[str, Any]]) -> str:
+    """trialing, active, or expired. Legacy accounts stay active. Nothing is blocked yet."""
+    if not restaurant:
+        return "expired"
+    status = (restaurant.get("subscription_status") or "legacy").strip()
+    if status == "trialing":
+        ends = _parse_dt(restaurant.get("trial_ends_at"))
+        if ends and ends <= datetime.now():
+            return "expired"
+        return "trialing"
+    if status in ("past_due", "expired"):
+        return "expired"
+    return "active"
+
+
+RESERVED_SLUGS = {
+    "admin", "api", "app", "login", "signup", "dashboard", "static", "pager",
+    "order", "r", "p", "docs", "www", "main", "support", "billing",
+}
+_SLUG_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+
+
+def slug_problem(slug: str) -> Optional[str]:
+    """None when the slug can be registered. Otherwise 'invalid' or 'taken'."""
+    value = (slug or "").strip().lower()
+    if not (3 <= len(value) <= 40) or not _SLUG_RE.match(value) or value in RESERVED_SLUGS:
+        return "invalid" if value not in RESERVED_SLUGS else "taken"
+    if len(value) < 3 or len(value) > 40 or not _SLUG_RE.match(value):
+        return "invalid"
+    if get_restaurant_by_slug(value):
+        return "taken"
+    return None
+
+
+def start_restaurant_trial(restaurant_id: int, plan_code: str) -> None:
+    ends = datetime.now() + timedelta(days=3)
+    chosen = plan_code if plan_code in ("monthly", "yearly", "points") else "monthly"
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE restaurants
+                SET plan_code = %s, subscription_status = 'trialing', trial_ends_at = %s
+                WHERE id = %s
+                """,
+                (chosen, ends, restaurant_id),
+            )
+            conn.commit()
+    finally:
+        conn.close()
+
+
+def set_restaurant_password(restaurant_id: int, password_hash: str) -> None:
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE restaurants SET password_hash = %s WHERE id = %s",
+                (password_hash, restaurant_id),
+            )
+            conn.commit()
+    finally:
+        conn.close()
+
+
+def set_restaurant_brand(restaurant_id: int, brand_color: str) -> None:
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE restaurants
+                SET brand_color = %s, onboarded_at = COALESCE(onboarded_at, %s)
+                WHERE id = %s
+                """,
+                (brand_color, datetime.now(), restaurant_id),
+            )
+            conn.commit()
+    finally:
+        conn.close()
+
+
+def email_in_use(email: str) -> bool:
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id FROM restaurants WHERE email = %s LIMIT 1", (email.strip().lower(),))
+            return cur.fetchone() is not None
+    finally:
+        conn.close()
+
+
+def _token_hash(raw_token: str) -> str:
+    return hashlib.sha256(raw_token.encode("utf-8")).hexdigest()
+
+
+def create_password_reset(restaurant_id: int, raw_token: str) -> None:
+    digest = _token_hash(raw_token)
+    expires = datetime.now() + timedelta(hours=1)
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE password_reset_tokens
+                SET used_at = %s
+                WHERE restaurant_id = %s AND used_at IS NULL
+                """,
+                (datetime.now(), restaurant_id),
+            )
+            cur.execute(
+                """
+                INSERT INTO password_reset_tokens (restaurant_id, token_hash, expires_at)
+                VALUES (%s, %s, %s)
+                """,
+                (restaurant_id, digest, expires),
+            )
+            conn.commit()
+    finally:
+        conn.close()
+
+
+def reset_token_restaurant(raw_token: str) -> Optional[int]:
+    """Return the restaurant id when the token is unused and unexpired."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT restaurant_id, expires_at, used_at
+                FROM password_reset_tokens
+                WHERE token_hash = %s
+                LIMIT 1
+                """,
+                (_token_hash(raw_token),),
+            )
+            row = cur.fetchone()
+            if not row or row.get("used_at"):
+                return None
+            expires = row.get("expires_at")
+            if not isinstance(expires, datetime) or expires <= datetime.now():
+                return None
+            return int(row["restaurant_id"])
+    finally:
+        conn.close()
+
+
+def consume_password_reset(raw_token: str) -> Optional[int]:
+    conn = get_db_connection()
+    try:
+        conn.begin()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id, restaurant_id, expires_at, used_at
+                FROM password_reset_tokens
+                WHERE token_hash = %s
+                LIMIT 1
+                FOR UPDATE
+                """,
+                (_token_hash(raw_token),),
+            )
+            row = cur.fetchone()
+            if not row or row.get("used_at"):
+                conn.rollback()
+                return None
+            expires = row.get("expires_at")
+            if not isinstance(expires, datetime) or expires <= datetime.now():
+                conn.rollback()
+                return None
+            cur.execute(
+                "UPDATE password_reset_tokens SET used_at = %s WHERE id = %s",
+                (datetime.now(), row["id"]),
+            )
+            conn.commit()
+            return int(row["restaurant_id"])
+    finally:
+        conn.close()
 
 
 def ensure_column(table: str, column: str, definition: str) -> None:
@@ -667,6 +894,27 @@ def get_order_by_number_and_restaurant(order_number: str, restaurant_id: int) ->
             return _serialize_row(row)
     finally:
         conn.close()
+
+def get_recent_public_orders(restaurant_id: int, since: datetime) -> List[Dict[str, Any]]:
+    """Order tokens for the shipped Dawrak app. Nothing else is selected."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT token FROM orders
+                WHERE restaurant_id = %s
+                  AND status IN ('waiting', 'ringing', 'onway')
+                  AND created_at >= %s
+                ORDER BY id DESC
+                LIMIT 150
+                """,
+                (restaurant_id, since),
+            )
+            return [{"token": row["token"]} for row in cur.fetchall()]
+    finally:
+        conn.close()
+
 
 def get_all_orders(limit: int = 150, restaurant_id: Optional[int] = None) -> List[Dict[str, Any]]:
     conn = get_db_connection()

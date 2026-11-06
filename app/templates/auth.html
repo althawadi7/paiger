@@ -1,0 +1,469 @@
+{% extends "base.html" %}
+{% set errors = errors if errors is defined else {} %}
+{% set values = values if values is defined else {} %}
+{% set screen = screen if screen is defined else "login" %}
+{% set plan = plan if plan is defined else "monthly" %}
+{% set plan_key = "auth.planYearly" if plan == "yearly" else "auth.planPoints" if plan == "points" else "auth.planMonthly" %}
+{% block title %}Paiger · {{ t('auth.suH') if screen == 'signup' else t('auth.brH') if screen == 'brand' else t('auth.fpH') if screen in ['forgot', 'sent'] else t('auth.resetH') if screen in ['reset', 'reset_bad'] else t('auth.login') }}{% endblock %}
+{% block body_class %}auth{% endblock %}
+{% block head %}
+<style>
+:root {
+  --ink: #111111; --ink-2: #1c1c1e; --grey: #5f6368; --grey-2: #8e8e93; --line: #e6e6e8;
+  --paper: #ffffff; --paper-2: #f6f6f7; --paper-3: #ececee;
+  --ready: #22c55e; --ready-deep: #15803d; --ready-soft: #e7f8ee;
+  --error: #b42318; --error-soft: #fdecea;
+  --display: "Fraunces", Georgia, serif;
+  --sans: "IBM Plex Sans", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", sans-serif;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+html[lang="ar"] { --display: "IBM Plex Sans Arabic", serif; --sans: "IBM Plex Sans Arabic", "IBM Plex Sans", -apple-system, sans-serif; }
+body.auth { min-height: 100svh; font-family: var(--sans); color: var(--ink); background: var(--paper); font-size: 16px; line-height: 1.5; }
+.shell { min-height: 100svh; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.side-form { display: flex; flex-direction: column; padding: 28px clamp(20px, 5vw, 64px) 28px; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.side-form .logo { display: inline-flex; align-items: center; gap: 9px; text-decoration: none; color: var(--ink); }
+.side-form .logo svg { width: 26px; height: 26px; }
+.side-form .logo span { font-family: "Fraunces", serif; font-weight: 600; font-size: 22px; }
+.side-form .lang { height: 38px; padding: 0 12px; border-radius: 999px; font-size: 14px; color: var(--grey); text-decoration: none; display: inline-flex; align-items: center; min-height: 0; font-weight: 400; }
+.side-form .lang:hover { background: var(--paper-2); color: var(--ink); }
+.form-wrap { width: 100%; max-width: 420px; margin: auto; padding-block: 40px; }
+h1 { font-family: var(--display); font-weight: 500; font-size: clamp(30px, 3.6vw, 40px); line-height: 1.08; letter-spacing: -.015em; }
+html[lang="ar"] h1 { font-weight: 600; line-height: 1.3; letter-spacing: 0; }
+.sub { margin-top: 8px; color: var(--grey); }
+.plan-chip { margin-top: 20px; display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--paper-2); font-size: 14.5px; }
+.plan-chip b { font-weight: 600; }
+.plan-chip .free { margin-inline-start: auto; font-size: 13px; font-weight: 600; color: var(--ready-deep); background: var(--ready-soft); padding: 3px 10px; border-radius: 999px; white-space: nowrap; }
+.plan-chip a { font-size: 13.5px; color: var(--grey); }
+form.auth-form { margin-top: 24px; display: grid; gap: 16px; }
+.field label { display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+.field label span { font-weight: 400; color: var(--grey-2); font-size: 13px; }
+.field label .lbl { color: var(--ink); font-weight: 500; font-size: 14px; }
+.field label a, .field label button.linkish { font-weight: 400; font-size: 13.5px; color: var(--grey); }
+.input { position: relative; }
+.input input, .prefix input { font: inherit; color: inherit; }
+.input input { width: 100%; height: 52px; border-radius: 12px; border: 0; background: var(--paper-2); padding: 0 14px; outline: none; font-size: 16px; transition: box-shadow .15s, background .15s; }
+.input input:focus { background: #fff; box-shadow: 0 0 0 2px var(--ink) inset; }
+.field.invalid input { background: #fff; box-shadow: 0 0 0 2px var(--error) inset; }
+.field .err { margin-top: 6px; font-size: 13.5px; color: var(--error); display: none; }
+.field.invalid .err { display: block; }
+.field .help { margin-top: 6px; font-size: 13.5px; color: var(--grey); }
+.input .eye { position: absolute; inset-inline-end: 6px; top: 6px; height: 40px; padding: 0 10px; border-radius: 9px; font-size: 13.5px; color: var(--grey); }
+.input .eye:hover { background: var(--paper-3); }
+.prefix { display: flex; align-items: center; height: 52px; border-radius: 12px; background: var(--paper-2); overflow: hidden; direction: ltr; }
+.prefix span { padding: 0 2px 0 14px; color: var(--grey-2); font-size: 15px; white-space: nowrap; }
+.prefix input { flex: 1; min-width: 0; height: 100%; border: 0; outline: none; background: transparent; padding: 0 14px 0 2px; font-size: 16px; box-shadow: none !important; }
+.prefix:focus-within { background: #fff; box-shadow: 0 0 0 2px var(--ink) inset; }
+.field.invalid .prefix { background: #fff; box-shadow: 0 0 0 2px var(--error) inset; }
+.strength { margin-top: 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.strength i { height: 4px; border-radius: 4px; background: var(--paper-3); transition: background .2s; }
+.strength[data-s="1"] i:nth-child(-n+1) { background: var(--error); }
+.strength[data-s="2"] i:nth-child(-n+2) { background: #d97706; }
+.strength[data-s="3"] i { background: var(--ready-deep); }
+.btn { height: 54px; border-radius: 14px; font-size: 16.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 10px; transition: transform .1s, opacity .2s, background .15s; text-decoration: none; }
+.btn:active { transform: scale(.99); }
+.btn-primary { background: var(--ink); color: #fff; width: 100%; }
+.btn-primary:hover { background: #333336; }
+.btn-primary[aria-busy="true"] { opacity: .6; pointer-events: none; }
+.btn-ghost { box-shadow: 0 0 0 1.5px var(--line) inset; padding: 0 20px; color: var(--ink); background: transparent; }
+.spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; animation: spin .8s linear infinite; display: none; }
+.btn[aria-busy="true"] .spin { display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.form-alert { padding: 12px 14px; border-radius: 12px; background: var(--error-soft); color: var(--error); font-size: 14.5px; }
+.legal { font-size: 13px; color: var(--grey); }
+.legal a { text-decoration: underline; text-underline-offset: 3px; }
+.switch { margin-top: 22px; font-size: 15px; color: var(--grey); text-align: center; }
+.switch a, .switch button { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.sent-icon { width: 56px; height: 56px; border-radius: 16px; background: var(--paper-2); display: grid; place-items: center; margin-bottom: 18px; }
+.sent-icon svg { width: 28px; height: 28px; }
+.steps-top { display: flex; gap: 6px; margin-bottom: 18px; }
+.steps-top i { height: 4px; flex: 1; border-radius: 4px; background: var(--paper-3); }
+.steps-top i.on { background: var(--ink); }
+.step-count { font-size: 13.5px; color: var(--grey); margin-bottom: 6px; }
+.drop { display: flex; align-items: center; gap: 16px; padding: 16px; border-radius: 16px; border: 1.5px dashed var(--line); transition: border-color .15s, background .15s; cursor: pointer; }
+.drop:hover, .drop.over { border-color: var(--ink); background: var(--paper-2); }
+.drop .thumb { width: 64px; height: 64px; border-radius: 16px; background: var(--brand, #111); color: var(--brand-ink, #fff); display: grid; place-items: center; font-family: "Fraunces", serif; font-weight: 600; font-size: 28px; overflow: hidden; flex: none; }
+.drop .thumb img { width: 100%; height: 100%; object-fit: cover; }
+.drop b { display: block; font-weight: 600; font-size: 15px; }
+.drop span { font-size: 13.5px; color: var(--grey); }
+.drop-actions { display: flex; gap: 14px; margin-top: 8px; font-size: 14px; }
+.drop-actions button { color: var(--grey); text-decoration: underline; text-underline-offset: 3px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+.swatch { width: 40px; height: 40px; border-radius: 12px; background: var(--c); box-shadow: 0 0 0 1px rgba(0,0,0,.08) inset; position: relative; }
+.swatch[aria-checked="true"]::after { content: ""; position: absolute; inset: -4px; border-radius: 15px; box-shadow: 0 0 0 2px var(--ink); }
+.swatch.custom { background: conic-gradient(#ef4444, #f59e0b, #22c55e, #3b82f6, #a855f7, #ef4444); overflow: hidden; }
+.swatch.custom input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.row-actions { display: grid; grid-template-columns: auto 1fr; gap: 10px; margin-top: 6px; }
+.side-show { position: relative; background: var(--ink); color: #fff; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 48px; }
+.side-show::before { content: ""; position: absolute; width: 760px; height: 760px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,255,255,.07), transparent 70%); }
+.show { position: relative; width: min(100%, 420px); }
+.quote { font-family: var(--display); font-weight: 500; font-size: 30px; line-height: 1.15; letter-spacing: -.01em; }
+html[lang="ar"] .quote { font-weight: 600; line-height: 1.4; }
+.points { margin-top: 26px; display: grid; gap: 14px; list-style: none; color: #c7c7cc; font-size: 15.5px; }
+.points li { display: grid; grid-template-columns: 22px 1fr; gap: 12px; }
+.points svg { width: 18px; height: 18px; margin-top: 3px; color: #fff; }
+.preview { margin: 0 auto; width: 270px; border-radius: 38px; background: #000; padding: 9px; box-shadow: 0 0 0 1px #2c2c2e, 0 40px 80px -30px rgba(0,0,0,.8); }
+.pv { border-radius: 30px; background: #fff; color: var(--ink); padding: 16px 14px 18px; min-height: 470px; }
+.pv-head { display: flex; align-items: center; gap: 10px; }
+.pv-logo { width: 36px; height: 36px; border-radius: 11px; background: var(--brand, #111); color: var(--brand-ink, #fff); display: grid; place-items: center; font-family: "Fraunces", serif; font-weight: 600; font-size: 17px; overflow: hidden; flex: none; }
+.pv-logo img { width: 100%; height: 100%; object-fit: cover; }
+.pv-head b { font-size: 14px; display: block; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pv-head span { font-size: 11px; color: var(--grey); }
+.pv-ticket { margin-top: 14px; border-radius: 20px; background: var(--paper-2); padding: 16px 12px 14px; text-align: center; }
+.pv-ticket small { font-size: 11px; color: var(--grey); }
+.pv-ticket .n { font-family: "Fraunces", serif; font-size: 78px; font-weight: 500; line-height: 1; }
+.pv-pill { margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: 999px; background: #fff; font-size: 12px; font-weight: 600; box-shadow: 0 0 0 1px var(--line); }
+.pv-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--brand, #111); }
+.pv-bar { margin-top: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.pv-bar i { height: 4px; border-radius: 4px; background: #dedee2; }
+.pv-bar i:first-child { background: var(--brand, #111); }
+.pv-btn { margin-top: 14px; height: 42px; border-radius: 12px; background: var(--ink); color: #fff; font-size: 13px; font-weight: 600; display: grid; place-items: center; }
+.pv-cap { margin-top: 18px; text-align: center; font-size: 14px; color: #a1a1a6; }
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  .side-show { display: none; }
+  .shell.brand-step .side-show { display: flex; padding: 28px 16px 70px; }
+  .shell.brand-step .side-show::before { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; } }
+</style>
+{% endblock %}
+{% block shell_nav %}{% endblock %}
+{% block shell_footer %}{% endblock %}
+{% block content %}
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-mark" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14.2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16" cy="16" r="8.4" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".55"/><circle cx="16" cy="16" r="3" fill="currentColor"/></symbol>
+  <symbol id="i-check" viewBox="0 0 18 18"><path d="M3.5 9.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 28 28"><rect x="3.5" y="6.5" width="21" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 8l9.5 7 9.5-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+</svg>
+<div class="shell {{ 'brand-step' if screen == 'brand' else '' }}" id="shell" {% if screen == 'brand' %}style="--brand: {{ brand.brand }}; --brand-ink: {{ brand.brand_ink }}"{% endif %}>
+  <main class="side-form">
+    <div class="top">
+      <a class="logo" href="/"><svg><use href="#i-mark"/></svg><span>Paiger</span></a>
+      <a class="lang" href="/lang/{{ 'en' if lang == 'ar' else 'ar' }}">{{ t('nav.langSwitch') }}</a>
+    </div>
+
+    {% if screen == 'signup' %}
+    <section class="form-wrap">
+      <h1>{{ t('auth.suH') }}</h1>
+      <p class="sub">{{ t('auth.suSub') }}</p>
+      <div class="plan-chip"><span>{{ t('auth.plan') }} <b>{{ t(plan_key) }}</b></span><span class="free">{{ t('auth.free3') }}</span><a href="/#pricing">{{ t('auth.change') }}</a></div>
+      {% if rate_limited %}<div class="form-alert">{{ t('auth.tooMany') }}</div>{% endif %}
+      <form class="auth-form" id="fSignup" method="post" action="/signup" novalidate>
+        <input type="hidden" name="plan" value="{{ plan }}">
+        <div class="field {{ 'invalid' if errors.name else '' }}" id="fRest">
+          <label for="rest"><span class="lbl">{{ t('auth.restName') }}</span></label>
+          <div class="input"><input id="rest" name="name" autocomplete="organization" required value="{{ values.name or '' }}"></div>
+          <p class="err">{{ t('auth.eRest') }}</p>
+        </div>
+        <div class="field {{ 'invalid' if errors.slug else '' }}" id="fSlug">
+          <label for="slug"><span class="lbl">{{ t('auth.link') }}</span><span>{{ t('auth.editable') }}</span></label>
+          <div class="prefix"><span>{{ link_host }}/r/</span><input id="slug" name="slug" autocomplete="off" spellcheck="false" value="{{ values.slug or '' }}"></div>
+          <p class="help" id="slugHelp" {% if not errors.slug and values.slug %}style="color:var(--ready-deep)"{% endif %}>{% if not errors.slug and values.slug %}{{ t('auth.slugOk') }}{% endif %}</p>
+          <p class="err" id="slugErr">{{ t(errors.slug) if errors.slug else t('auth.eSlug') }}</p>
+        </div>
+        <div class="field {{ 'invalid' if errors.email else '' }}" id="fEmail">
+          <label for="email"><span class="lbl">{{ t('auth.email') }}</span></label>
+          <div class="input"><input id="email" name="email" type="email" autocomplete="email" inputmode="email" required value="{{ values.email or '' }}"></div>
+          <p class="err" id="emailErr">{{ t(errors.email) if errors.email else t('auth.eEmail') }}</p>
+        </div>
+        <div class="field {{ 'invalid' if errors.password else '' }}" id="fPass">
+          <label for="pass"><span class="lbl">{{ t('auth.password') }}</span></label>
+          <div class="input"><input id="pass" name="password" type="password" autocomplete="new-password" required minlength="8"><button type="button" class="eye" data-eye="pass">{{ t('auth.show') }}</button></div>
+          <div class="strength" id="strength" data-s="0" aria-hidden="true"><i></i><i></i><i></i></div>
+          <p class="err">{{ t('auth.ePass') }}</p>
+        </div>
+        <div class="field {{ 'invalid' if errors.phone else '' }}" id="fPhone">
+          <label for="phone"><span class="lbl">{{ t('auth.phone') }}</span></label>
+          <div class="prefix"><span>+973</span><input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="3XXX XXXX" required value="{{ values.phone or '' }}"></div>
+          <p class="err">{{ t('auth.ePhone') }}</p>
+        </div>
+        <button class="btn btn-primary" id="suBtn" type="submit"><span class="spin"></span><span>{{ t('auth.suBtn') }}</span></button>
+        <p class="legal">{{ t('auth.legal')|safe }}</p>
+      </form>
+      <p class="switch">{{ t('auth.haveAcc') }} <a href="/login">{{ t('auth.login') }}</a></p>
+    </section>
+    {% elif screen == 'login' %}
+    <section class="form-wrap">
+      <h1>{{ t('auth.liH') }}</h1>
+      <p class="sub">{{ t('auth.liSub') }}</p>
+      <form class="auth-form" id="fLogin" method="post" action="/login" novalidate>
+        <input type="hidden" name="next" value="{{ next or '' }}">
+        <div class="form-alert" id="loginAlert" {% if not alert %}hidden{% endif %}>{{ t(alert) if alert else t('auth.eLogin') }}</div>
+        <div class="field {{ 'invalid' if errors.identifier else '' }}" id="fLEmail">
+          <label for="lemail"><span class="lbl">{{ t('auth.email') }}</span></label>
+          <div class="input"><input id="lemail" name="identifier" type="text" autocomplete="username" inputmode="email" required value="{{ values.identifier or '' }}"></div>
+          <p class="err">{{ t('auth.eEmail') }}</p>
+        </div>
+        <div class="field {{ 'invalid' if errors.password else '' }}" id="fLPass">
+          <label for="lpass"><span class="lbl">{{ t('auth.password') }}</span><a href="/forgot-password">{{ t('auth.forgot') }}</a></label>
+          <div class="input"><input id="lpass" name="password" type="password" autocomplete="current-password" required><button type="button" class="eye" data-eye="lpass">{{ t('auth.show') }}</button></div>
+          <p class="err">{{ t('auth.ePassReq') }}</p>
+        </div>
+        <button class="btn btn-primary" id="liBtn" type="submit"><span class="spin"></span><span>{{ t('auth.login') }}</span></button>
+      </form>
+      <p class="switch">{{ t('auth.noAcc') }} <a href="/signup">{{ t('auth.startTrial') }}</a></p>
+    </section>
+    {% elif screen in ['forgot', 'sent'] %}
+    <section class="form-wrap">
+      <div id="forgotForm" {% if screen == 'sent' %}hidden{% endif %}>
+        <h1>{{ t('auth.fpH') }}</h1>
+        <p class="sub">{{ t('auth.fpSub') }}</p>
+        {% if rate_limited %}<div class="form-alert">{{ t('auth.tooMany') }}</div>{% endif %}
+        <form class="auth-form" id="fForgot" method="post" action="/forgot-password" novalidate>
+          <div class="field {{ 'invalid' if errors.email else '' }}" id="fFEmail">
+            <label for="femail"><span class="lbl">{{ t('auth.email') }}</span></label>
+            <div class="input"><input id="femail" name="email" type="email" autocomplete="email" inputmode="email" required value="{{ values.email or '' }}"></div>
+            <p class="err">{{ t('auth.eEmail') }}</p>
+          </div>
+          <button class="btn btn-primary" id="fpBtn" type="submit"><span class="spin"></span><span>{{ t('auth.fpBtn') }}</span></button>
+        </form>
+      </div>
+      <div id="forgotSent" {% if screen != 'sent' %}hidden{% endif %}>
+        <div class="sent-icon"><svg><use href="#i-mail"/></svg></div>
+        <h1>{{ t('auth.sentH') }}</h1>
+        <p class="sub">{{ t('auth.sentP') }} <b id="sentTo">{{ sent_email or '' }}</b>{{ t('auth.sentP2') }}</p>
+        <form method="post" action="/forgot-password" style="margin-top:22px">
+          <input type="hidden" name="email" value="{{ sent_email or '' }}">
+          <button class="btn btn-ghost" type="submit" id="resend">{{ t('auth.resend') }}</button>
+        </form>
+      </div>
+      <p class="switch"><a href="/login">{{ t('auth.backLogin') }}</a></p>
+    </section>
+    {% elif screen == 'reset_bad' %}
+    <section class="form-wrap">
+      <h1>{{ t('auth.resetH') }}</h1>
+      <p class="sub">{{ t('auth.resetBad') }}</p>
+      <p class="switch"><a href="/forgot-password">{{ t('auth.resetNew') }}</a></p>
+    </section>
+    {% elif screen == 'reset' %}
+    <section class="form-wrap">
+      <h1>{{ t('auth.resetH') }}</h1>
+      <p class="sub">{{ t('auth.resetSub') }}</p>
+      {% if rate_limited %}<div class="form-alert">{{ t('auth.tooMany') }}</div>{% endif %}
+      <form class="auth-form" id="fReset" method="post" action="/reset-password/{{ token }}" novalidate>
+        <div class="field {{ 'invalid' if errors.password else '' }}" id="fPass">
+          <label for="pass"><span class="lbl">{{ t('auth.password') }}</span></label>
+          <div class="input"><input id="pass" name="password" type="password" autocomplete="new-password" required minlength="8"><button type="button" class="eye" data-eye="pass">{{ t('auth.show') }}</button></div>
+          <div class="strength" id="strength" data-s="0" aria-hidden="true"><i></i><i></i><i></i></div>
+          <p class="err">{{ t('auth.ePass') }}</p>
+        </div>
+        <div class="field {{ 'invalid' if errors.confirm else '' }}" id="fConfirm">
+          <label for="confirm"><span class="lbl">{{ t('auth.confirm') }}</span></label>
+          <div class="input"><input id="confirm" name="confirm" type="password" autocomplete="new-password" required><button type="button" class="eye" data-eye="confirm">{{ t('auth.show') }}</button></div>
+          <p class="err">{{ t(errors.confirm) if errors.confirm else t('auth.eMatch') }}</p>
+        </div>
+        <button class="btn btn-primary" id="resetBtn" type="submit"><span class="spin"></span><span>{{ t('auth.resetBtn') }}</span></button>
+      </form>
+    </section>
+    {% elif screen == 'brand' %}
+    <section class="form-wrap">
+      <div class="steps-top" aria-hidden="true"><i class="on"></i><i class="on"></i></div>
+      <p class="step-count">{{ t('auth.step2') }}</p>
+      <h1>{{ t('auth.brH') }}</h1>
+      <p class="sub">{{ t('auth.brSub') }}</p>
+      <form class="auth-form" id="fBrand" method="post" action="/onboarding/brand" novalidate>
+        <input type="hidden" name="brand_color" id="brandColor" value="{{ brand.brand }}">
+        <div class="field">
+          <label><span class="lbl">{{ t('auth.logo') }}</span><span>{{ t('auth.optional') }}</span></label>
+          <label class="drop" id="drop" for="logoFile">
+            <div class="thumb" id="thumb">{% if brand.logo_url %}<img src="{{ brand.logo_url }}" alt="">{% else %}{{ brand.initial }}{% endif %}</div>
+            <div><b id="logoLabel">{% if brand.logo_url %}{{ t('auth.replace') }}{% else %}{{ t('auth.upload') }}{% endif %}</b><span>{{ t('auth.uploadHint') }}</span></div>
+            <input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+          </label>
+          <div class="drop-actions" id="logoActions" {% if not brand.logo_url %}hidden{% endif %}><button type="button" id="logoRemove">{{ t('auth.remove') }}</button></div>
+          <p class="err" id="logoErr" style="display:none"></p>
+        </div>
+        <div class="field">
+          <label><span class="lbl">{{ t('auth.color') }}</span></label>
+          <div class="swatches" id="swatches" role="radiogroup" aria-label="{{ t('auth.color') }}">
+            {% for color, label in [('#111111','auth.cBlack'),('#7a4b2a','auth.cCoffee'),('#b91c1c','auth.cRed'),('#c2410c','auth.cOrange'),('#166534','auth.cGreen'),('#1d4ed8','auth.cBlue'),('#6d28d9','auth.cPurple')] %}
+            <button type="button" class="swatch" role="radio" style="--c:{{ color }}" data-c="{{ color }}" aria-checked="{{ 'true' if brand.brand|lower == color else 'false' }}" aria-label="{{ t(label) }}"></button>
+            {% endfor %}
+            <label class="swatch custom" aria-label="{{ t('auth.cCustom') }}" aria-checked="{{ 'false' if brand.brand|lower in ['#111111','#7a4b2a','#b91c1c','#c2410c','#166534','#1d4ed8','#6d28d9'] else 'true' }}"><input type="color" id="customColor" value="{{ brand.brand if brand.brand|lower not in ['#111111','#7a4b2a','#b91c1c','#c2410c','#166534','#1d4ed8','#6d28d9'] else '#0f766e' }}"></label>
+          </div>
+        </div>
+        <div class="row-actions">
+          <a class="btn btn-ghost" href="/dashboard">{{ t('auth.skip') }}</a>
+          <button class="btn btn-primary" type="submit" id="brBtn"><span class="spin"></span><span>{{ t('auth.brBtn') }}</span></button>
+        </div>
+      </form>
+    </section>
+    {% endif %}
+  </main>
+  <aside class="side-show" aria-hidden="true">
+    <div class="show" id="showPitch" {% if screen == 'brand' %}hidden{% endif %}>
+      <p class="quote">{{ t('auth.quote') }}</p>
+      <ul class="points">
+        <li><svg><use href="#i-check"/></svg><span>{{ t('auth.p1') }}</span></li>
+        <li><svg><use href="#i-check"/></svg><span>{{ t('auth.p2') }}</span></li>
+        <li><svg><use href="#i-check"/></svg><span>{{ t('auth.p3') }}</span></li>
+      </ul>
+    </div>
+    <div class="show" id="showPreview" {% if screen != 'brand' %}hidden{% endif %}>
+      <div class="preview">
+        <div class="pv">
+          <div class="pv-head"><div class="pv-logo" id="pvLogo">{% if brand and brand.logo_url %}<img src="{{ brand.logo_url }}" alt="">{% else %}{{ brand.initial if brand else 'P' }}{% endif %}</div><div><b id="pvName">{{ brand.name if brand else '' }}</b><span>{{ t('auth.pvSub') }}</span></div></div>
+          <div class="pv-ticket"><small>{{ t('auth.pvOrder') }}</small><div class="n">47</div><div class="pv-pill"><i></i><span>{{ t('auth.pvPrep') }}</span></div><div class="pv-bar"><i></i><i></i><i></i></div></div>
+          <div class="pv-btn">{{ t('auth.pvBtn') }}</div>
+        </div>
+      </div>
+      <p class="pv-cap">{{ t('auth.pvCap') }}</p>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(() => {
+  "use strict";
+  const T = {{ {
+    "show": t("auth.show"), "hide": t("auth.hide"), "eSlug": t("auth.eSlug"), "slugTaken": t("auth.slugTaken"),
+    "slugOk": t("auth.slugOk"), "eEmail": t("auth.eEmail"), "eType": t("auth.eType"), "eSize": t("auth.eSize"),
+    "upload": t("auth.upload"), "replace": t("auth.replace"), "eMatch": t("auth.eMatch")
+  }|tojson }};
+  const $ = (id) => document.getElementById(id);
+  const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
+  const AR = "٠١٢٣٤٥٦٧٨٩";
+  function setInvalid(fieldId, bad) { const f = $(fieldId); if (f) f.classList.toggle("invalid", bad); return !bad; }
+  function busy(btn, on) { if (btn) btn.setAttribute("aria-busy", on ? "true" : "false"); }
+  document.querySelectorAll("[data-eye]").forEach((b) => b.addEventListener("click", () => {
+    const i = $(b.dataset.eye); if (!i) return;
+    i.type = i.type === "password" ? "text" : "password";
+    b.textContent = T[i.type === "password" ? "show" : "hide"];
+    i.focus();
+  }));
+  function strengthOf(v) {
+    let s = 0;
+    if (v.length >= 8) s = 1;
+    if (s && /[0-9]/.test(v) && /[a-zA-Z]/.test(v)) s = 2;
+    if (s === 2 && (v.length >= 12 || /[^a-zA-Z0-9]/.test(v))) s = 3;
+    return v ? Math.max(s, 1) : 0;
+  }
+  const pass = $("pass");
+  if (pass && $("strength")) pass.addEventListener("input", () => { $("strength").dataset.s = strengthOf(pass.value); });
+
+  const slugify = (s) => s.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+  let slugTouched = {{ 'true' if values.get('slug') else 'false' }};
+  let slugTimer = null;
+  async function slugCheck() {
+    const input = $("slug"); if (!input) return true;
+    const v = input.value.trim();
+    const help = $("slugHelp");
+    if (!v) { if (help) help.textContent = ""; return setInvalid("fSlug", false); }
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(v) || v.length < 3) {
+      if (help) help.textContent = "";
+      $("slugErr").textContent = T.eSlug;
+      return setInvalid("fSlug", true);
+    }
+    try {
+      const res = await fetch("/api/signup/slug-available?slug=" + encodeURIComponent(v));
+      const data = await res.json();
+      if (!data.available) {
+        if (help) help.textContent = "";
+        $("slugErr").textContent = data.reason === "invalid" ? T.eSlug : T.slugTaken;
+        return setInvalid("fSlug", true);
+      }
+    } catch (e) { return true; }
+    setInvalid("fSlug", false);
+    if (help) { help.textContent = T.slugOk; help.style.color = "var(--ready-deep)"; }
+    return true;
+  }
+  if ($("rest") && $("slug")) {
+    $("rest").addEventListener("input", () => { if (!slugTouched) { $("slug").value = slugify($("rest").value); clearTimeout(slugTimer); slugTimer = setTimeout(slugCheck, 250); } });
+    $("slug").addEventListener("input", () => { slugTouched = true; clearTimeout(slugTimer); slugTimer = setTimeout(slugCheck, 250); });
+  }
+  const phoneOk = () => {
+    const raw = ($("phone").value || "").replace(/[\s-]/g, "").replace(/[٠-٩]/g, (d) => String(AR.indexOf(d)));
+    const local = raw.startsWith("+973") ? raw.slice(4) : raw.startsWith("973") && raw.length === 11 ? raw.slice(3) : raw;
+    return /^[0-9]{8}$/.test(local);
+  };
+  const signup = $("fSignup");
+  if (signup) signup.addEventListener("submit", async (e) => {
+    const checks = [
+      setInvalid("fRest", !$("rest").value.trim()),
+      $("slug").value.trim() ? await slugCheck() : ( $("slugErr").textContent = T.eSlug, setInvalid("fSlug", true) ),
+      setInvalid("fEmail", !emailOk($("email").value)),
+      setInvalid("fPass", $("pass").value.length < 8),
+      setInvalid("fPhone", !phoneOk()),
+    ];
+    if (checks.includes(false)) { e.preventDefault(); const bad = signup.querySelector(".invalid input"); if (bad) bad.focus(); return; }
+    busy($("suBtn"), true);
+  });
+  const login = $("fLogin");
+  if (login) login.addEventListener("submit", (e) => {
+    const ident = $("lemail").value.trim();
+    const identBad = !ident || (ident.includes("@") && !emailOk(ident));
+    const ok = [setInvalid("fLEmail", identBad), setInvalid("fLPass", !$("lpass").value)];
+    if (ok.includes(false)) { e.preventDefault(); return; }
+    busy($("liBtn"), true);
+  });
+  const forgot = $("fForgot");
+  if (forgot) forgot.addEventListener("submit", (e) => {
+    if (!setInvalid("fFEmail", !emailOk($("femail").value))) { e.preventDefault(); return; }
+    busy($("fpBtn"), true);
+  });
+  const reset = $("fReset");
+  if (reset) reset.addEventListener("submit", (e) => {
+    const short = $("pass").value.length < 8;
+    const mismatch = $("pass").value !== $("confirm").value;
+    const ok = [setInvalid("fPass", short), setInvalid("fConfirm", !short && mismatch)];
+    if (ok.includes(false)) { e.preventDefault(); return; }
+    busy($("resetBtn"), true);
+  });
+
+  function contrastInk(hex) {
+    const n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    return (0.299 * r + 0.587 * g + 0.114 * b) > 170 ? "#111111" : "#ffffff";
+  }
+  function setBrand(hex) {
+    const shell = $("shell");
+    shell.style.setProperty("--brand", hex);
+    shell.style.setProperty("--brand-ink", contrastInk(hex));
+    if ($("brandColor")) $("brandColor").value = hex;
+  }
+  const swatches = $("swatches");
+  if (swatches) {
+    swatches.addEventListener("click", (e) => {
+      const s = e.target.closest(".swatch[data-c]"); if (!s) return;
+      swatches.querySelectorAll(".swatch").forEach((x) => x.setAttribute("aria-checked", x === s ? "true" : "false"));
+      setBrand(s.dataset.c);
+    });
+    $("customColor").addEventListener("input", (e) => {
+      swatches.querySelectorAll(".swatch").forEach((x) => x.setAttribute("aria-checked", "false"));
+      e.target.parentElement.setAttribute("aria-checked", "true");
+      setBrand(e.target.value);
+    });
+    let hasLogo = !!document.querySelector("#thumb img");
+    function showLogoError(key) { const el = $("logoErr"); el.textContent = T[key]; el.style.display = "block"; }
+    async function takeFile(file) {
+      $("logoErr").style.display = "none";
+      if (!file) return;
+      if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) return showLogoError("eType");
+      if (file.size > 2 * 1024 * 1024) return showLogoError("eSize");
+      const body = new FormData(); body.append("file", file);
+      const res = await fetch("/api/merchant/logo", { method: "POST", body, credentials: "same-origin" });
+      if (res.status === 413) return showLogoError("eSize");
+      if (!res.ok) return showLogoError("eType");
+      const data = await res.json();
+      const img = `<img src="${data.logo_url}" alt="">`;
+      $("thumb").innerHTML = img; $("pvLogo").innerHTML = img;
+      hasLogo = true; $("logoLabel").textContent = T.replace; $("logoActions").hidden = false;
+    }
+    $("logoFile").addEventListener("change", (e) => takeFile(e.target.files[0]));
+    ["dragenter", "dragover"].forEach((ev) => $("drop").addEventListener(ev, (e) => { e.preventDefault(); $("drop").classList.add("over"); }));
+    ["dragleave", "drop"].forEach((ev) => $("drop").addEventListener(ev, (e) => { e.preventDefault(); $("drop").classList.remove("over"); }));
+    $("drop").addEventListener("drop", (e) => takeFile(e.dataTransfer.files[0]));
+    $("logoRemove").addEventListener("click", async () => {
+      await fetch("/api/merchant/logo", { method: "DELETE", credentials: "same-origin" });
+      hasLogo = false; $("logoFile").value = ""; $("logoActions").hidden = true; $("logoLabel").textContent = T.upload;
+      const ch = ($("pvName").textContent || "P").trim().charAt(0);
+      $("thumb").textContent = ch; $("pvLogo").textContent = ch;
+    });
+    $("fBrand").addEventListener("submit", () => busy($("brBtn"), true));
+    const current = $("brandColor") && $("brandColor").value;
+    if (current) setBrand(current);
+  }
+})();
+</script>
+{% endblock %}

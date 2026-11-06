@@ -6,7 +6,10 @@ import logging
 import secrets
 import socket
 import asyncio
-from datetime import datetime
+import time
+from collections import defaultdict
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 from decimal import Decimal
 from urllib.parse import quote
 from typing import Any, Dict, List, Optional
@@ -23,6 +26,7 @@ from . import database as db
 from . import push_service
 from . import auth
 from . import i18n
+from . import mailer
 
 logger = logging.getLogger("pager")
 
@@ -633,6 +637,149 @@ async def api_admin_toggle_page_footer(page_id: int, request: Request):
 # RESTAURANT TENANT AUTH & DASHBOARD
 # ─────────────────────────────────────────────────────────────
 
+_RATE: Dict[str, List[float]] = defaultdict(list)
+_AR_DIGITS = "٠١٢٣٤٥٦٧٨٩"
+_EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]{2,}$")
+_PLANS = ("monthly", "yearly", "points")
+_WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+_MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+
+
+def _client_ip(request: Request) -> str:
+    forwarded = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
+    if forwarded:
+        return forwarded
+    return request.client.host if request.client else "local"
+
+
+def _rate_ok(key: str, limit: int, window: float) -> bool:
+    now = time.monotonic()
+    hits = [stamp for stamp in _RATE[key] if now - stamp < window]
+    if len(hits) >= limit:
+        _RATE[key] = hits
+        return False
+    hits.append(now)
+    _RATE[key] = hits
+    return True
+
+
+def _normalize_phone(raw: str) -> Optional[str]:
+    text = (raw or "").strip().replace(" ", "").replace("-", "")
+    text = "".join(str(_AR_DIGITS.index(ch)) if ch in _AR_DIGITS else ch for ch in text)
+    if text.startswith("+973"):
+        text = text[4:]
+    elif text.startswith("973") and len(text) == 11:
+        text = text[3:]
+    if re.fullmatch(r"\d{8}", text):
+        return "+973" + text
+    return None
+
+
+def _phone_local(stored: str) -> str:
+    if stored and stored.startswith("+973"):
+        return stored[4:]
+    return stored or ""
+
+
+def _valid_email(value: str) -> bool:
+    return bool(_EMAIL_RE.match((value or "").strip()))
+
+
+def _plan_code(value: Optional[str]) -> str:
+    return value if value in _PLANS else "monthly"
+
+
+def _auth_page(request: Request, screen: str, status_code: int = 200, **extra):
+    host = get_public_base_url(request).split("://", 1)[-1]
+    context = {
+        "request": request,
+        "screen": screen,
+        "link_host": host,
+        "errors": {},
+        "values": {},
+        "plan": "monthly",
+        "next": "",
+        "alert": None,
+        "rate_limited": False,
+        "sent_email": "",
+        "token": "",
+        "brand": None,
+    }
+    context.update(extra)
+    return templates.TemplateResponse("auth.html", context, status_code=status_code)
+
+
+def _start_session(response: RedirectResponse, rest: Dict[str, Any]) -> None:
+    token = auth.create_access_token({
+        "sub": str(rest["id"]),
+        "slug": rest["slug"],
+        "name": rest["name"],
+        "role": "restaurant",
+    })
+    response.set_cookie(
+        key=auth.RESTAURANT_COOKIE,
+        value=token,
+        httponly=True,
+        max_age=86400 * 30,
+        samesite="lax",
+        secure=True,
+    )
+
+
+def _bahrain_label(when: Any) -> str:
+    moment = when if isinstance(when, datetime) else datetime.fromisoformat(str(when))
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=datetime.now().astimezone().tzinfo)
+    local = moment.astimezone(ZoneInfo("Asia/Bahrain"))
+    return f"{_WEEKDAYS[local.weekday()]}, {local.day} {_MONTHS[local.month - 1]}"
+
+
+def _support_email() -> str:
+    return (os.getenv("SUPPORT_EMAIL") or "").strip() or "support@paiger.app"
+
+
+async def _send_welcome(email: str, name: str, slug: str, trial_ends: Any, base: str) -> None:
+    try:
+        host = base.rstrip("/")
+        context = {
+            "restaurant_name": name,
+            "base_url": host,
+            "trial_ends_label": _bahrain_label(trial_ends),
+            "cashier_url": f"{host}/r/{slug}/cashier",
+            "dashboard_url": f"{host}/dashboard",
+            "print_url": f"{host}/r/{slug}/print",
+            "customer_link": f"{host}/r/{slug}",
+            "support_email": _support_email(),
+        }
+        html = templates.env.get_template("emails/welcome.html").render(**context)
+        text = (
+            f"{name} is ready to page its first order.\n"
+            f"Your free trial runs until {context['trial_ends_label']}. No card needed until then.\n\n"
+            f"Open the cashier: {context['cashier_url']}\n"
+            f"Dashboard: {context['dashboard_url']}\n"
+            f"Customer link: {context['customer_link']}\n"
+            f"Print your QR stand: {context['print_url']}\n"
+        )
+        await asyncio.to_thread(mailer.send_email, email, "Welcome to Paiger", html, text)
+    except Exception:
+        logger.exception("Could not prepare the welcome email")
+
+
+async def _send_reset(email: str, name: str, reset_url: str, base: str) -> None:
+    try:
+        context = {
+            "restaurant_name": name,
+            "reset_url": reset_url,
+            "base_url": base.rstrip("/"),
+            "support_email": _support_email(),
+        }
+        html = templates.env.get_template("emails/reset_password.html").render(**context)
+        text = f"Set a new password for {name}: {reset_url}\nThis link expires in 1 hour.\n"
+        await asyncio.to_thread(mailer.send_email, email, "Set a new password", html, text)
+    except Exception:
+        logger.exception("Could not prepare the reset email")
+
+
 @app.get("/login", response_class=HTMLResponse)
 @app.get("/restaurant/login", response_class=HTMLResponse)
 async def restaurant_login_page(request: Request, next: Optional[str] = None):
@@ -640,53 +787,36 @@ async def restaurant_login_page(request: Request, next: Optional[str] = None):
     user = auth.get_current_restaurant(request)
     if user:
         return RedirectResponse(url=_next_for_restaurant(user, safe_next), status_code=status.HTTP_302_FOUND)
-    footer_pages = db.get_all_custom_pages(published_only=True, footer_only=True)
-    return templates.TemplateResponse("restaurant_login.html", {
-        "request": request, "error": None, "footer_pages": footer_pages, "next": safe_next or ""
-    })
+    return _auth_page(request, "login", next=safe_next or "")
+
 
 @app.post("/login", response_class=HTMLResponse)
 @app.post("/restaurant/login", response_class=HTMLResponse)
 async def restaurant_login_submit(
     request: Request,
-    identifier: str = Form(...),
-    password: str = Form(...),
-    next: Optional[str] = Form(None)
+    identifier: str = Form(""),
+    password: str = Form(""),
+    next: Optional[str] = Form(None),
 ):
     safe_next = _safe_next(next)
     ident = identifier.strip().lower()
-    # Check by email or slug
+    errors = {}
+    if not ident or ("@" in ident and not _valid_email(ident)):
+        errors["identifier"] = "auth.eEmail"
+    if not password:
+        errors["password"] = "auth.ePassReq"
+    if errors:
+        return _auth_page(request, "login", 400, errors=errors, values={"identifier": identifier}, next=safe_next or "")
+    ip = _client_ip(request)
+    if not _rate_ok(f"login-ip:{ip}", 10, 60) or not _rate_ok(f"login-id:{ident}", 10, 60):
+        return _auth_page(request, "login", 429, alert="auth.tooMany", values={"identifier": identifier}, next=safe_next or "", rate_limited=True)
     rest = db.get_restaurant_for_login(ident)
     if not rest or not auth.verify_password(password, rest["password_hash"]):
-        return templates.TemplateResponse(
-            "restaurant_login.html",
-            {"request": request, "error": "بيانات الدخول غير صحيحة، يرجى التحقق من البريد أو اسم المستخدم وكلمة المرور", "identifier": identifier, "next": safe_next or ""},
-            status_code=400
-        )
-
+        return _auth_page(request, "login", 400, alert="auth.eLogin", values={"identifier": identifier}, next=safe_next or "")
     if rest.get("is_active") == 0:
-        return templates.TemplateResponse(
-            "restaurant_login.html",
-            {"request": request, "error": "حساب هذا المطعم معطل حالياً من قبل الإدارة العامة", "identifier": identifier, "next": safe_next or ""},
-            status_code=403
-        )
-
-    token = auth.create_access_token({
-        "sub": str(rest["id"]),
-        "slug": rest["slug"],
-        "name": rest["name"],
-        "role": "restaurant"
-    })
-
+        return _auth_page(request, "login", 403, alert="auth.paused", values={"identifier": identifier}, next=safe_next or "")
     redirect = RedirectResponse(url=_next_for_restaurant(rest, safe_next), status_code=status.HTTP_302_FOUND)
-    redirect.set_cookie(
-        key=auth.RESTAURANT_COOKIE,
-        value=token,
-        httponly=True,
-        max_age=86400 * 30,
-        samesite="lax",
-        secure=True
-    )
+    _start_session(redirect, rest)
     return redirect
 
 @app.get("/logout")
@@ -909,9 +1039,147 @@ async def set_language(code: str, request: Request):
     return response
 
 
-@app.get("/signup")
-async def signup_placeholder():
-    return RedirectResponse("/login", status_code=302)
+@app.get("/api/signup/slug-available")
+async def signup_slug_available(slug: str = ""):
+    problem = db.slug_problem(slug)
+    return {"available": problem is None, "reason": problem or "ok"}
+
+
+@app.get("/signup", response_class=HTMLResponse)
+async def signup_page(request: Request, plan: Optional[str] = None):
+    if auth.get_current_restaurant(request):
+        return RedirectResponse("/dashboard", status_code=status.HTTP_302_FOUND)
+    return _auth_page(request, "signup", plan=_plan_code(plan))
+
+
+@app.post("/signup", response_class=HTMLResponse)
+async def signup_submit(
+    request: Request,
+    name: str = Form(""),
+    slug: str = Form(""),
+    email: str = Form(""),
+    password: str = Form(""),
+    phone: str = Form(""),
+    plan: str = Form("monthly"),
+):
+    chosen = _plan_code(plan)
+    values = {"name": name, "slug": slug.strip().lower(), "email": email.strip(), "phone": phone}
+    errors: Dict[str, str] = {}
+    if not name.strip():
+        errors["name"] = "auth.eRest"
+    problem = db.slug_problem(values["slug"])
+    if problem == "taken":
+        errors["slug"] = "auth.slugTaken"
+    elif problem:
+        errors["slug"] = "auth.eSlug"
+    if not _valid_email(email):
+        errors["email"] = "auth.eEmail"
+    elif db.email_in_use(email):
+        errors["email"] = "auth.emailTaken"
+    if len(password) < 8:
+        errors["password"] = "auth.ePass"
+    normalized = _normalize_phone(phone)
+    if not normalized:
+        errors["phone"] = "auth.ePhone"
+    if errors:
+        code = 409 if errors.get("email") == "auth.emailTaken" or errors.get("slug") == "auth.slugTaken" else 400
+        return _auth_page(request, "signup", code, errors=errors, values=values, plan=chosen)
+    if not _rate_ok(f"signup-ip:{_client_ip(request)}", 5, 3600):
+        return _auth_page(request, "signup", 429, values=values, plan=chosen, rate_limited=True)
+    try:
+        rest = db.create_restaurant(
+            name=name.strip(),
+            slug=values["slug"],
+            email=email.strip().lower(),
+            password_hash=auth.hash_password(password),
+            phone=normalized,
+            brand_color="#111111",
+        )
+    except Exception:
+        logger.exception("Could not create restaurant")
+        if db.email_in_use(email):
+            errors["email"] = "auth.emailTaken"
+        else:
+            errors["slug"] = "auth.slugTaken"
+        return _auth_page(request, "signup", 409, errors=errors, values=values, plan=chosen)
+    db.start_restaurant_trial(rest["id"], chosen)
+    rest = db.get_restaurant_by_id(rest["id"])
+    asyncio.create_task(_send_welcome(rest["email"], rest["name"], rest["slug"], rest.get("trial_ends_at"), get_public_base_url(request)))
+    redirect = RedirectResponse("/onboarding/brand", status_code=status.HTTP_302_FOUND)
+    _start_session(redirect, rest)
+    return redirect
+
+
+@app.get("/forgot-password", response_class=HTMLResponse)
+async def forgot_password_page(request: Request):
+    return _auth_page(request, "forgot")
+
+
+@app.post("/forgot-password", response_class=HTMLResponse)
+async def forgot_password_submit(request: Request, email: str = Form("")):
+    cleaned = email.strip()
+    if not _valid_email(cleaned):
+        return _auth_page(request, "forgot", 400, errors={"email": "auth.eEmail"}, values={"email": cleaned})
+    if not _rate_ok(f"forgot:{cleaned.lower()}", 3, 3600):
+        return _auth_page(request, "forgot", 429, rate_limited=True, values={"email": cleaned})
+    rest = db.get_restaurant_for_login(cleaned.lower())
+    if rest and rest.get("email", "").lower() == cleaned.lower():
+        raw = secrets.token_urlsafe(32)
+        db.create_password_reset(int(rest["id"]), raw)
+        base = get_public_base_url(request)
+        asyncio.create_task(_send_reset(rest["email"], rest["name"], f"{base}/reset-password/{raw}", base))
+    return _auth_page(request, "sent", sent_email=cleaned)
+
+
+@app.get("/reset-password/{token}", response_class=HTMLResponse)
+async def reset_password_page(request: Request, token: str):
+    if not db.reset_token_restaurant(token):
+        return _auth_page(request, "reset_bad", 400)
+    return _auth_page(request, "reset", token=token)
+
+
+@app.post("/reset-password/{token}", response_class=HTMLResponse)
+async def reset_password_submit(request: Request, token: str, password: str = Form(""), confirm: str = Form("")):
+    if not _rate_ok(f"reset-ip:{_client_ip(request)}", 10, 3600):
+        return _auth_page(request, "reset", 429, token=token, rate_limited=True)
+    errors = {}
+    if len(password) < 8:
+        errors["password"] = "auth.ePass"
+    elif password != confirm:
+        errors["confirm"] = "auth.eMatch"
+    if errors:
+        return _auth_page(request, "reset", 400, token=token, errors=errors)
+    restaurant_id = db.consume_password_reset(token)
+    if not restaurant_id:
+        return _auth_page(request, "reset_bad", 400)
+    db.set_restaurant_password(restaurant_id, auth.hash_password(password))
+    rest = db.get_restaurant_by_id(restaurant_id)
+    redirect = RedirectResponse("/dashboard", status_code=status.HTTP_302_FOUND)
+    _start_session(redirect, rest)
+    return redirect
+
+
+@app.get("/onboarding/brand", response_class=HTMLResponse)
+async def brand_setup_page(request: Request):
+    user = auth.get_current_restaurant(request)
+    if not user:
+        return RedirectResponse("/login?next=/onboarding/brand", status_code=status.HTTP_302_FOUND)
+    rest = db.get_restaurant_by_id(int(user["sub"]))
+    if not rest:
+        return RedirectResponse("/logout", status_code=status.HTTP_302_FOUND)
+    return _auth_page(request, "brand", brand=restaurant_brand(rest))
+
+
+@app.post("/onboarding/brand", response_class=HTMLResponse)
+async def brand_setup_submit(request: Request, brand_color: str = Form("#111111")):
+    user = auth.get_current_restaurant(request)
+    if not user:
+        return RedirectResponse("/login?next=/onboarding/brand", status_code=status.HTTP_302_FOUND)
+    color = brand_color.strip()
+    if not re.fullmatch(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})", color):
+        color = "#111111"
+    db.set_restaurant_brand(int(user["sub"]), color)
+    return RedirectResponse("/dashboard", status_code=status.HTTP_302_FOUND)
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -1194,6 +1462,9 @@ def _restaurant_id_for_create(actor: Dict[str, Any], requested_id: Optional[int]
     return int(restaurant["id"])
 
 
+_PUBLIC_ORDER_HOURS = 12
+
+
 @app.get("/api/orders")
 async def list_orders(request: Request, restaurant_id: Optional[int] = None):
     """Staff sessions keep the Phase 0 scope.
@@ -1207,10 +1478,15 @@ async def list_orders(request: Request, restaurant_id: Optional[int] = None):
         return db.get_all_orders(limit=150, restaurant_id=int(restaurant["sub"]))
     if auth.get_current_super_admin(request):
         return db.get_all_orders(limit=150)
+    # TODO(flutter-phase): the app must stop calling this list (register the token
+    # with only the order token it already has), then this public access gets removed.
     if restaurant_id:
+        if not _rate_ok(f"public-orders:{_client_ip(request)}", 60, 60):
+            raise HTTPException(status_code=429, detail="Too many requests")
         if not db.get_restaurant_by_id(int(restaurant_id)):
             raise HTTPException(status_code=404, detail="Restaurant not found")
-        return db.get_all_orders(limit=150, restaurant_id=int(restaurant_id))
+        since = datetime.now() - timedelta(hours=_PUBLIC_ORDER_HOURS)
+        return db.get_recent_public_orders(int(restaurant_id), since)
     raise HTTPException(status_code=401, detail="Unauthorized")
 
 

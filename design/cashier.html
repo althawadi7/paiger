@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#ffffff">
+<title>Cashier · Maison Café · Paiger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   PAIGER · Cashier (iPad landscape first)
+   Same tokens as the landing page. Green = ready/ringing only.
+   Amber = an order is taking longer than the shop's average prep time.
+   ===================================================================== */
+:root {
+  --ink: #111111; --ink-2: #1c1c1e;
+  --paper: #ffffff; --paper-2: #f6f6f7; --paper-3: #ececee;
+  --grey: #5f6368; --grey-2: #8e8e93; --line: #e6e6e8;
+  --ready: #22c55e; --ready-deep: #15803d; --ready-soft: #e7f8ee;
+  --late: #b45309; --late-soft: #fdf2e3;
+  --danger: #c2410c;
+  --display: "Fraunces", Georgia, serif;
+  --sans: "IBM Plex Sans", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", sans-serif;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+  --r: 18px;
+}
+html[lang="ar"] { --sans: "IBM Plex Sans Arabic", "IBM Plex Sans", -apple-system, sans-serif; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: var(--sans); color: var(--ink); background: var(--paper-2); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; overflow: hidden; font-size: 16px; line-height: 1.45; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; touch-action: manipulation; }
+input, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.num-font { font-family: var(--display); font-variant-numeric: lining-nums tabular-nums; direction: ltr; unicode-bidi: isolate; }
+
+/* ---------------- top bar ---------------- */
+.bar { height: 64px; display: flex; align-items: center; gap: 18px; padding: 0 20px; background: var(--paper); border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.brand-logo { width: 38px; height: 38px; border-radius: 11px; background: var(--ink); color: #fff; display: grid; place-items: center; font-family: var(--display); font-weight: 600; font-size: 18px; flex: none; }
+.brand b { font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.live { display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--paper-2); font-size: 13px; color: var(--grey); white-space: nowrap; }
+.live i { width: 8px; height: 8px; border-radius: 50%; background: var(--ready); box-shadow: 0 0 0 3px rgba(34,197,94,.18); }
+.live.off { background: var(--late-soft); color: var(--late); }
+.live.off i { background: var(--late); box-shadow: none; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: .2; } }
+.stats { display: flex; gap: 22px; margin-inline-start: auto; font-size: 13px; color: var(--grey); white-space: nowrap; }
+.stats b { display: block; font-size: 20px; font-weight: 500; color: var(--ink); line-height: 1.1; }
+.stats small { font-size: 13px; font-weight: 500; color: var(--grey); }
+.bar-actions { display: flex; align-items: center; gap: 6px; }
+.icon-btn { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; color: var(--grey); }
+.icon-btn:hover { background: var(--paper-2); color: var(--ink); }
+.icon-btn svg { width: 22px; height: 22px; }
+.lang-btn { height: 44px; padding: 0 12px; border-radius: 12px; font-size: 14px; font-weight: 500; color: var(--grey); }
+.lang-btn:hover { background: var(--paper-2); color: var(--ink); }
+.menu { position: absolute; top: 58px; inset-inline-end: 16px; z-index: 30; width: 230px; background: #fff; border-radius: 16px; padding: 6px; box-shadow: 0 0 0 1px var(--line), 0 20px 40px -12px rgba(0,0,0,.18); }
+.menu a, .menu button { display: flex; width: 100%; align-items: center; gap: 10px; padding: 12px 12px; border-radius: 10px; text-decoration: none; font-size: 15px; text-align: start; }
+.menu a:hover, .menu button:hover { background: var(--paper-2); }
+.menu hr { border: 0; border-top: 1px solid var(--line); margin: 6px; }
+
+/* ---------------- layout ---------------- */
+.layout { height: calc(100% - 64px); display: grid; grid-template-columns: minmax(0, 1fr) 340px; direction: ltr; }
+/* Keep the same physical layout in both languages (staff muscle memory):
+   Called on the left, Preparing in the middle, New order on the right. */
+.layout > *, .cols > * { direction: ltr; }
+html[dir="rtl"] .layout > *, html[dir="rtl"] .cols > * { direction: rtl; }
+.entry { order: 2; }
+.board { order: 1; }
+.entry { background: var(--paper); border-left: 1px solid var(--line); padding: 20px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+.board { display: grid; grid-template-rows: 1fr auto; min-height: 0; min-width: 0; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 0; direction: ltr; }
+.col-called { order: 1; border-right: 1px solid var(--line); }
+.col-prep { order: 2; }
+.col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.col-head { display: flex; align-items: center; gap: 10px; padding: 18px 20px 10px; }
+.col-head h2 { font-size: 17px; font-weight: 600; }
+.count { min-width: 28px; height: 28px; padding: 0 9px; border-radius: 999px; background: var(--paper-3); display: inline-grid; place-items: center; font-size: 14px; font-weight: 600; }
+.col-called .count { background: var(--ready-soft); color: var(--ready-deep); }
+.col-head .sub { margin-inline-start: auto; font-size: 13px; color: var(--grey-2); }
+.list { flex: 1; overflow-y: auto; padding: 6px 20px 20px; display: grid; gap: 10px; align-content: start; -webkit-overflow-scrolling: touch; }
+.empty { margin: 30px 20px; padding: 26px 18px; border-radius: var(--r); border: 1.5px dashed var(--line); text-align: center; color: var(--grey); font-size: 15px; }
+.empty b { display: block; color: var(--ink); font-weight: 600; margin-bottom: 4px; }
+
+/* ---------------- entry panel ---------------- */
+.entry h1 { font-size: 15px; font-weight: 600; color: var(--grey); }
+.display { position: relative; height: 92px; border-radius: var(--r); background: var(--paper-2); display: flex; align-items: center; justify-content: center; font-size: 60px; font-weight: 500; letter-spacing: .02em; transition: box-shadow .2s; }
+.display.has { background: #fff; box-shadow: 0 0 0 2px var(--ink) inset; }
+.display.dup { box-shadow: 0 0 0 2px var(--late) inset; }
+.display .ph { font-family: var(--sans); font-size: 16px; color: var(--grey-2); letter-spacing: 0; }
+.caret { width: 2px; height: 46px; background: var(--ink); margin-inline-start: 4px; animation: caret 1s steps(2) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+.hint { min-height: 22px; font-size: 14px; color: var(--grey); }
+.hint.warn { color: var(--late); font-weight: 500; }
+.hint button { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; direction: ltr; }
+.pad button { height: 66px; border-radius: 16px; background: var(--paper-2); font-family: var(--display); font-size: 30px; font-weight: 500; transition: background .1s, transform .1s; }
+.pad button:active { background: var(--paper-3); transform: scale(.96); }
+.pad .key-soft { background: transparent; font-family: var(--sans); font-size: 15px; color: var(--grey); }
+.pad .key-soft svg { width: 26px; height: 26px; margin: auto; }
+.extra-toggle { align-self: flex-start; font-size: 14px; color: var(--grey); text-decoration: underline; text-underline-offset: 3px; padding: 4px 0; }
+.extra { display: grid; gap: 8px; }
+.extra input { height: 48px; border-radius: 12px; border: 0; background: var(--paper-2); padding: 0 14px; outline: none; font-size: 15px; }
+.extra input:focus { background: #fff; box-shadow: 0 0 0 2px var(--ink) inset; }
+.issue { margin-top: auto; height: 68px; border-radius: 18px; background: var(--ink); color: #fff; font-size: 18px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 12px; transition: opacity .2s, transform .12s; flex: none; }
+.issue:active { transform: scale(.98); }
+.issue:disabled { opacity: .18; cursor: not-allowed; }
+.issue kbd { font-family: var(--sans); font-size: 12px; font-weight: 500; padding: 2px 7px; border-radius: 6px; background: rgba(255,255,255,.16); }
+
+/* ---------------- order card ----------------
+   Row 1: number | status, timer, scan state, name/note | overflow
+   Row 2: one or two big action buttons, full width (easy to hit) */
+.card { position: relative; background: var(--paper); border-radius: var(--r); padding: 14px; display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "no info more" "act act act"; gap: 12px 14px; align-items: center; box-shadow: 0 0 0 1px var(--line); animation: cardIn .35s var(--ease); }
+@keyframes cardIn { from { opacity: 0; transform: translateY(6px); } }
+.card.leaving { animation: cardOut .28s var(--ease) forwards; }
+@keyframes cardOut { to { opacity: 0; transform: scale(.97); } }
+.card .no { grid-area: no; font-size: 46px; font-weight: 500; line-height: 1; min-width: 70px; padding-inline-start: 4px; }
+.info { grid-area: info; display: grid; gap: 4px; min-width: 0; }
+.card .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 14px; color: var(--grey); min-width: 0; }
+.timer { font-variant-numeric: tabular-nums; font-weight: 500; color: var(--ink); direction: ltr; unicode-bidi: isolate; }
+.card.late .timer { color: var(--late); }
+.card.late { box-shadow: 0 0 0 1.5px #f1c48a; }
+.card.late .late-tag { display: inline-flex; }
+.late-tag { display: none; font-size: 12px; font-weight: 600; color: var(--late); background: var(--late-soft); padding: 2px 8px; border-radius: 999px; }
+.scan { display: inline-flex; align-items: center; gap: 5px; }
+.scan svg { width: 15px; height: 15px; }
+.scan-yes { color: var(--ready-deep); }
+.scan-no { color: var(--late); }
+.who { font-size: 14px; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.who:empty { display: none; }
+.who span { color: var(--grey); }
+.actions { grid-area: act; display: flex; gap: 8px; }
+.actions .btn { flex: 1; }
+.btn { height: 54px; padding: 0 18px; border-radius: 14px; font-size: 16px; font-weight: 600; white-space: nowrap; transition: transform .1s, background .15s; }
+.btn:active { transform: scale(.97); }
+.btn-ready { background: var(--ready-deep); color: #fff; }
+.btn-ink { background: var(--ink); color: #fff; }
+.btn-line { box-shadow: 0 0 0 1.5px var(--line) inset; }
+.btn-line:hover { box-shadow: 0 0 0 1.5px var(--ink) inset; }
+.more { grid-area: more; align-self: start; width: 44px; height: 44px; border-radius: 12px; color: var(--grey); display: grid; place-items: center; }
+.more:hover { background: var(--paper-2); color: var(--ink); }
+.more svg { width: 20px; height: 20px; }
+
+/* called states */
+.card.ringing { box-shadow: 0 0 0 2px var(--ready); }
+.card.ringing::before { content: ""; position: absolute; inset: -2px; border-radius: inherit; box-shadow: 0 0 0 0 rgba(34,197,94,.45); animation: pulse 1.8s var(--ease) infinite; pointer-events: none; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34,197,94,.45); } 100% { box-shadow: 0 0 0 12px rgba(34,197,94,0); } }
+.state { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 13px; padding: 3px 10px; border-radius: 999px; }
+.state-ring { background: var(--ready-soft); color: var(--ready-deep); }
+.state-ring i { width: 7px; height: 7px; border-radius: 50%; background: var(--ready); }
+.state-way { background: var(--ink); color: #fff; }
+.state-way svg { width: 14px; height: 14px; }
+.card.onway { box-shadow: 0 0 0 2px var(--ink); }
+
+/* popover for card overflow */
+.pop { position: absolute; z-index: 20; width: 200px; background: #fff; border-radius: 14px; padding: 6px; box-shadow: 0 0 0 1px var(--line), 0 18px 36px -12px rgba(0,0,0,.2); }
+.pop button { display: flex; width: 100%; gap: 10px; align-items: center; padding: 12px; border-radius: 10px; font-size: 15px; text-align: start; }
+.pop button:hover { background: var(--paper-2); }
+.pop .danger { color: var(--danger); }
+.pop svg { width: 18px; height: 18px; }
+
+/* ---------------- done strip ---------------- */
+.done { min-width: 0; border-top: 1px solid var(--line); background: var(--paper); padding: 12px 20px; display: flex; align-items: center; gap: 14px; min-height: 68px; }
+.done h3 { font-size: 14px; font-weight: 600; color: var(--grey); white-space: nowrap; }
+.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; flex: 1; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 14px; border-radius: 12px; background: var(--paper-2); font-size: 14px; color: var(--grey); }
+.chip b { font-family: var(--display); font-weight: 500; font-size: 19px; color: var(--ink); }
+.chip:hover { background: var(--paper-3); }
+.chip svg { width: 15px; height: 15px; }
+.done .none { font-size: 14px; color: var(--grey-2); }
+
+/* ---------------- QR sheet (faces the customer) ---------------- */
+.overlay { position: fixed; inset: 0; z-index: 50; background: rgba(17,17,17,.5); display: grid; place-items: center; padding: 20px; animation: fade .2s var(--ease); }
+@keyframes fade { from { opacity: 0; } }
+.sheet { width: min(520px, 100%); background: #fff; border-radius: 28px; padding: 26px 28px 22px; text-align: center; animation: pop .3s var(--ease); }
+@keyframes pop { from { opacity: 0; transform: translateY(12px) scale(.98); } }
+.sheet-lines { display: grid; gap: 2px; }
+.sheet-lines p { font-size: 18px; font-weight: 600; }
+.sheet-lines p + p { font-family: "IBM Plex Sans Arabic", sans-serif; }
+.qr { position: relative; width: min(300px, 70vw); aspect-ratio: 1; margin: 18px auto 12px; padding: 14px; border-radius: 20px; box-shadow: 0 0 0 1px var(--line); }
+.qr svg { width: 100%; height: 100%; }
+.qr .scanned { position: absolute; inset: 0; border-radius: inherit; background: rgba(255,255,255,.94); display: grid; place-items: center; align-content: center; gap: 10px; color: var(--ready-deep); font-weight: 600; font-size: 18px; animation: fade .25s var(--ease); }
+.qr .scanned svg { width: 64px; height: 64px; }
+.sheet .order-label { font-size: 14px; color: var(--grey); }
+.sheet .order-no { font-size: 76px; font-weight: 500; line-height: 1; }
+.qr-wait { margin-top: 12px; display: inline-flex; align-items: center; gap: 10px; font-size: 14px; color: var(--grey); }
+.spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--ink); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.sheet-actions { margin-top: 18px; display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+.sheet-actions .btn { width: 100%; }
+
+/* ---------------- toast with undo ---------------- */
+.toast { position: fixed; z-index: 60; bottom: 86px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 16px; padding: 0 8px 0 18px; height: 52px; border-radius: 14px; background: var(--ink); color: #fff; font-size: 15px; box-shadow: 0 16px 40px -12px rgba(0,0,0,.4); animation: toastIn .25s var(--ease); white-space: nowrap; }
+@keyframes toastIn { from { opacity: 0; transform: translate(-50%, 8px); } }
+.toast button { height: 38px; padding: 0 14px; border-radius: 10px; font-weight: 600; color: #fff; background: rgba(255,255,255,.14); }
+.toast .bar-time { position: absolute; inset-inline: 10px; bottom: 5px; height: 2px; border-radius: 2px; background: rgba(255,255,255,.35); transform-origin: left; animation: shrink 5s linear forwards; }
+html[dir="rtl"] .toast .bar-time { transform-origin: right; }
+@keyframes shrink { to { transform: scaleX(0); } }
+
+/* demo controls (prototype only, remove in production) */
+.demo-note { position: fixed; z-index: 5; bottom: 82px; left: 16px; font-size: 12px; color: var(--grey-2); background: var(--paper); padding: 8px 10px; border-radius: 10px; box-shadow: 0 0 0 1px var(--line); max-width: 260px; }
+
+/* ---------------- responsive ---------------- */
+@media (max-width: 1100px) { .stats { display: none; } }
+@media (max-width: 980px) {
+  body { overflow: auto; }
+  .layout { height: auto; grid-template-columns: 1fr; }
+  .entry { order: 0; border-left: 0; border-bottom: 1px solid var(--line); }
+  .col-prep { order: 1; }
+  .col-called { order: 2; border-right: 0; }
+  .issue { margin-top: 4px; }
+  .cols { grid-template-columns: minmax(0, 1fr); }
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .demo-note { display: none; }
+  .col-called { border-top: 1px solid var(--line); }
+  .list { overflow: visible; }
+}
+@media (max-width: 560px) {
+  .bar { padding: 0 12px; gap: 10px; }
+  .live span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; } }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
+  <symbol id="i-dots" viewBox="0 0 20 20"><circle cx="4" cy="10" r="1.7" fill="currentColor"/><circle cx="10" cy="10" r="1.7" fill="currentColor"/><circle cx="16" cy="10" r="1.7" fill="currentColor"/></symbol>
+  <symbol id="i-back" viewBox="0 0 26 26"><path d="M9 6h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-6-7 6-7z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10l5 6M17 10l-5 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-phone-ok" viewBox="0 0 16 16"><rect x="4" y="1.5" width="8" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6.3 8.2l1.3 1.3 2.3-2.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-phone-no" viewBox="0 0 16 16"><rect x="4" y="1.5" width="8" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 5.5v3.2M8 10.8v.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-walk" viewBox="0 0 16 16"><circle cx="9" cy="2.8" r="1.5" fill="currentColor"/><path d="M8 5.5L6 9l2.5 1.5L7.5 14M8 5.5l2.5 3H13M6 9l-2 1" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-qr" viewBox="0 0 20 20"><path d="M3 3h5v5H3zM12 3h5v5h-5zM3 12h5v5H3z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 12h2v2h-2zM15 15h2v2h-2zM12 16h1M16 12h1" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 20 20"><path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 16 16"><path d="M5 4L2 7l3 3M2.5 7H10a4 4 0 0 1 0 8H7" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-check-big" viewBox="0 0 64 64"><circle cx="32" cy="32" r="29" fill="none" stroke="currentColor" stroke-width="3"/><path d="M20 33l8 8 16-17" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<!-- ============================ TOP BAR ============================ -->
+<header class="bar">
+  <div class="brand">
+    <div class="brand-logo" aria-hidden="true">M</div>
+    <b>Maison Café</b>
+  </div>
+  <span class="live" id="live" role="status"><i></i><span data-t="live">Live</span></span>
+  <div class="stats" aria-label="Today">
+    <div><b class="num-font" id="stToday">0</b><span data-t="stToday">Orders today</span></div>
+    <div><b><span class="num-font" id="stAvg">6</span> <small id="stAvgUnit">min</small></b><span data-t="stAvg">Avg. prep</span></div>
+  </div>
+  <div class="bar-actions">
+    <button class="lang-btn" id="langBtn" type="button">العربية</button>
+    <button class="icon-btn" id="menuBtn" type="button" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><svg><use href="#i-menu"/></svg></button>
+  </div>
+  <div class="menu" id="menu" hidden role="menu">
+    <a href="/dashboard" role="menuitem" data-t="mDash">Dashboard</a>
+    <a href="/r/maison/print" role="menuitem" data-t="mStand">Print counter QR</a>
+    <button type="button" role="menuitem" id="soundBtn" data-t="mSoundOn">Sound for “on the way”: on</button>
+    <hr>
+    <a href="/logout" role="menuitem" data-t="mLogout">Log out</a>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- ============================ ENTRY ============================ -->
+  <section class="entry" aria-labelledby="entryTitle">
+    <h1 id="entryTitle" data-t="newOrder">New order</h1>
+    <div class="display num-font" id="display" aria-live="polite"><span class="ph" data-t="typeNumber">Type the order number</span></div>
+    <p class="hint" id="hint"></p>
+    <div class="pad" id="pad" aria-label="Keypad">
+      <button type="button" data-k="1">1</button><button type="button" data-k="2">2</button><button type="button" data-k="3">3</button>
+      <button type="button" data-k="4">4</button><button type="button" data-k="5">5</button><button type="button" data-k="6">6</button>
+      <button type="button" data-k="7">7</button><button type="button" data-k="8">8</button><button type="button" data-k="9">9</button>
+      <button type="button" class="key-soft" data-k="c" data-t="clear">Clear</button>
+      <button type="button" data-k="0">0</button>
+      <button type="button" class="key-soft" data-k="b" aria-label="Delete last digit"><svg><use href="#i-back"/></svg></button>
+    </div>
+    <button type="button" class="extra-toggle" id="extraToggle" data-t="addExtra">Add name or note</button>
+    <div class="extra" id="extra" hidden>
+      <input id="fName" type="text" autocomplete="off" data-tp="name" placeholder="Customer name (optional)">
+      <input id="fNote" type="text" autocomplete="off" data-tp="note" placeholder="Note, e.g. no sugar (optional)">
+    </div>
+    <button type="button" class="issue" id="issue" disabled><span data-t="issue">Issue pager</span><kbd>Enter</kbd></button>
+  </section>
+
+  <!-- ============================ BOARD ============================ -->
+  <section class="board">
+    <div class="cols">
+      <div class="col col-prep">
+        <div class="col-head"><h2 data-t="colPrep">Preparing</h2><span class="count num-font" id="cPrep">0</span><span class="sub" data-t="oldest">Oldest first</span></div>
+        <div class="list" id="listPrep"></div>
+      </div>
+      <div class="col col-called">
+        <div class="col-head"><h2 data-t="colCalled">Called</h2><span class="count num-font" id="cCalled">0</span></div>
+        <div class="list" id="listCalled"></div>
+      </div>
+    </div>
+    <div class="done">
+      <h3 data-t="pickedUp">Picked up</h3>
+      <div class="chips" id="chips"></div>
+    </div>
+  </section>
+</main>
+
+<!-- QR sheet -->
+<div class="overlay" id="qrOverlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="qrNo">
+    <div class="sheet-lines"><p>Scan with your phone camera</p><p>امسح الكود بكاميرا تلفونك</p></div>
+    <div class="qr" id="qrBox"></div>
+    <p class="order-label" data-t="orderNo">Order number</p>
+    <p class="order-no num-font" id="qrNo">--</p>
+    <p class="qr-wait" id="qrWait"><span class="spinner"></span><span data-t="waitScan">Closes by itself when the customer scans</span></p>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-line" id="qrPrint" data-t="print">Print</button>
+      <button type="button" class="btn btn-ink" id="qrDone" data-t="done">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="pop" id="pop" hidden role="menu">
+  <button type="button" data-act="qr"><svg><use href="#i-qr"/></svg><span data-t="showQr">Show QR again</span></button>
+  <button type="button" data-act="delete" class="danger"><svg><use href="#i-trash"/></svg><span data-t="delete">Delete order</span></button>
+</div>
+
+<div class="toast" id="toast" hidden role="status"><span id="toastText"></span><button type="button" id="toastUndo" data-t="undo">Undo</button><i class="bar-time"></i></div>
+
+<p class="demo-note" id="demoNote">Prototype: a customer “scans” 2 s after you issue, and taps “on the way” 6 s after you ring.</p>
+
+<script>
+/* =====================================================================
+   PROTOTYPE LOGIC. In production every state change goes through the API
+   (POST /api/orders, /ring, /done, /waiting, DELETE) and the WebSocket
+   /ws/cashier pushes updates. Status names must stay: waiting, ringing, onway, done.
+   ===================================================================== */
+(() => {
+  "use strict";
+  const T = {
+    en: {
+      live: "Live", offline: "Reconnecting…", stToday: "Orders today", stAvg: "Avg. prep",
+      mDash: "Dashboard", mStand: "Print counter QR", mSoundOn: "Sound for “on the way”: on", mSoundOff: "Sound for “on the way”: off", mLogout: "Log out",
+      newOrder: "New order", typeNumber: "Type the order number", clear: "Clear", addExtra: "Add name or note", hideExtra: "Hide name and note",
+      name: "Customer name (optional)", note: "Note, e.g. no sugar (optional)", issue: "Issue pager",
+      colPrep: "Preparing", colCalled: "Called", oldest: "Oldest first", pickedUp: "Picked up",
+      emptyPrepT: "No orders in preparation", emptyPrepP: "Type an order number to issue a pager.",
+      emptyCalledT: "Nobody is waiting at the counter", emptyCalledP: "Orders you mark ready appear here.",
+      noneDone: "Nothing picked up yet today.",
+      ready: "Ready", ringAgain: "Ring again", picked: "Picked up", ringing: "Ringing", onway: "On the way",
+      rang: (n) => n > 1 ? `rang ${n} times` : "", scanned: "Scanned", notScanned: "Not scanned, call the number",
+      late: "Late", calledAgo: (m) => `called ${m}`,
+      dup: (n) => `Order ${n} is already active.`, dupRing: "Ring it instead",
+      issued: (n) => `Pager ${n} issued.`, toastPicked: (n) => `Order ${n} picked up.`, toastDeleted: (n) => `Order ${n} deleted.`, toastReturned: (n) => `Order ${n} is back in preparation.`,
+      undo: "Undo", orderNo: "Order number", waitScan: "Closes by itself when the customer scans", scannedOk: "Scanned",
+      print: "Print", done: "Done", showQr: "Show QR again", delete: "Delete order", returnIt: "Return",
+      min: "min", sec: "s", minLong: "min",
+    },
+    ar: {
+      live: "مباشر", offline: "جاري إعادة الاتصال…", stToday: "طلبات اليوم", stAvg: "متوسط التحضير",
+      mDash: "لوحة التحكم", mStand: "طباعة كود الكاونتر", mSoundOn: "صوت «في الطريق»: شغال", mSoundOff: "صوت «في الطريق»: مطفي", mLogout: "تسجيل الخروج",
+      newOrder: "طلب جديد", typeNumber: "اكتب رقم الطلب", clear: "مسح", addExtra: "إضافة اسم أو ملاحظة", hideExtra: "إخفاء الاسم والملاحظة",
+      name: "اسم العميل (اختياري)", note: "ملاحظة، مثلاً بدون سكر (اختياري)", issue: "إصدار بيجر",
+      colPrep: "قيد التحضير", colCalled: "تم النداء", oldest: "الأقدم أولاً", pickedUp: "تم الاستلام",
+      emptyPrepT: "ما في طلبات قيد التحضير", emptyPrepP: "اكتب رقم الطلب عشان تصدر بيجر.",
+      emptyCalledT: "ما أحد ينتظر عند الكاونتر", emptyCalledP: "الطلبات اللي تخليها جاهزة تطلع هني.",
+      noneDone: "ما في طلبات مستلمة اليوم.",
+      ready: "جاهز", ringAgain: "رنّ مرة ثانية", picked: "استلم", ringing: "يرن", onway: "في الطريق",
+      rang: (n) => n > 1 ? `رنّ ${n} مرات` : "", scanned: "مسح الكود", notScanned: "ما مسح الكود، نادِ الرقم",
+      late: "متأخر", calledAgo: (m) => `من ${m}`,
+      dup: (n) => `الطلب ${n} موجود في الطلبات النشطة.`, dupRing: "رنّه بدلاً من ذلك",
+      issued: (n) => `تم إصدار البيجر ${n}.`, toastPicked: (n) => `تم استلام الطلب ${n}.`, toastDeleted: (n) => `تم حذف الطلب ${n}.`, toastReturned: (n) => `رجع الطلب ${n} لقيد التحضير.`,
+      undo: "تراجع", orderNo: "رقم الطلب", waitScan: "تتسكر بروحها لما يمسح العميل الكود", scannedOk: "تم المسح",
+      print: "طباعة", done: "تم", showQr: "عرض الكود مرة ثانية", delete: "حذف الطلب", returnIt: "إرجاع",
+      min: "د", sec: "ث", minLong: "دقائق",
+    },
+  };
+
+  let lang = "en";
+  try { lang = localStorage.getItem("paiger.lang") || "en"; } catch (_) {}
+  const t = (k, ...a) => { const v = (T[lang] && T[lang][k]) ?? T.en[k]; return typeof v === "function" ? v(...a) : v; };
+
+  /* ---------------- state (mock) ---------------- */
+  const AVG_PREP_MIN = 6;
+  const now = Date.now();
+  let seq = 100;
+  let orders = [
+    { id: 1, number: "36", status: "waiting", created: now - 9.5 * 60e3, scanned: true, calls: 0, name: "Fatima", note: "Oat milk" },
+    { id: 2, number: "38", status: "waiting", created: now - 4.2 * 60e3, scanned: false, calls: 0 },
+    { id: 3, number: "41", status: "waiting", created: now - 1.1 * 60e3, scanned: true, calls: 0 },
+    { id: 4, number: "33", status: "ringing", created: now - 11 * 60e3, called: now - 50e3, scanned: true, calls: 2 },
+    { id: 5, number: "35", status: "onway", created: now - 8 * 60e3, called: now - 25e3, scanned: true, calls: 1, name: "Ali" },
+    { id: 6, number: "29", status: "done", created: now - 30 * 60e3, done: now - 12 * 60e3, scanned: true, calls: 1 },
+    { id: 7, number: "31", status: "done", created: now - 25 * 60e3, done: now - 7 * 60e3, scanned: true, calls: 1 },
+    { id: 8, number: "32", status: "done", created: now - 20 * 60e3, done: now - 3 * 60e3, scanned: false, calls: 2 },
+  ];
+  let todayCount = 38;
+  let value = "";
+  let soundOn = true;
+
+  const $ = (id) => document.getElementById(id);
+  const el = {
+    display: $("display"), hint: $("hint"), pad: $("pad"), issue: $("issue"), extra: $("extra"), extraToggle: $("extraToggle"), fName: $("fName"), fNote: $("fNote"),
+    listPrep: $("listPrep"), listCalled: $("listCalled"), cPrep: $("cPrep"), cCalled: $("cCalled"), chips: $("chips"),
+    qrOverlay: $("qrOverlay"), qrBox: $("qrBox"), qrNo: $("qrNo"), qrWait: $("qrWait"), pop: $("pop"), toast: $("toast"), toastText: $("toastText"), toastUndo: $("toastUndo"),
+    menu: $("menu"), menuBtn: $("menuBtn"), live: $("live"), stToday: $("stToday"), stAvg: $("stAvg"),
+  };
+
+  /* ---------------- i18n ---------------- */
+  function applyLang() {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    document.querySelectorAll("[data-t]").forEach((n) => { const v = t(n.dataset.t); if (typeof v === "string") n.textContent = v; });
+    document.querySelectorAll("[data-tp]").forEach((n) => { n.placeholder = t(n.dataset.tp); });
+    $("langBtn").textContent = lang === "ar" ? "English" : "العربية";
+    $("soundBtn").textContent = t(soundOn ? "mSoundOn" : "mSoundOff");
+    el.extraToggle.textContent = t(el.extra.hidden ? "addExtra" : "hideExtra");
+    renderDisplay(); render();
+  }
+  $("langBtn").addEventListener("click", () => {
+    lang = lang === "ar" ? "en" : "ar";
+    try { localStorage.setItem("paiger.lang", lang); } catch (_) {}
+    applyLang();
+  });
+
+  /* ---------------- helpers ---------------- */
+  const active = () => orders.filter((o) => o.status !== "done");
+  const fmtElapsed = (ms) => {
+    const s = Math.max(0, Math.floor(ms / 1000)), m = Math.floor(s / 60);
+    return m >= 60 ? `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}` : `${m}:${String(s % 60).padStart(2, "0")}`;
+  };
+  const ago = (ms) => { const m = Math.floor(ms / 60e3); return m < 1 ? `${Math.floor(ms / 1000)} ${t("sec")}` : `${m} ${t("min")}`; };
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  /* ---------------- entry ---------------- */
+  function duplicate() { return value && active().find((o) => o.number === value); }
+  function renderDisplay() {
+    el.display.innerHTML = value ? `<span>${value}</span><span class="caret"></span>` : `<span class="ph">${t("typeNumber")}</span>`;
+    const dup = duplicate();
+    el.display.classList.toggle("has", !!value && !dup);
+    el.display.classList.toggle("dup", !!dup);
+    el.issue.disabled = !value || !!dup;
+    if (dup) {
+      el.hint.className = "hint warn";
+      el.hint.innerHTML = `${esc(t("dup", dup.number))} ${dup.status === "waiting" ? `<button type="button" id="dupRing">${t("dupRing")}</button>` : ""}`;
+      const b = $("dupRing"); if (b) b.addEventListener("click", () => { ring(dup.id); value = ""; renderDisplay(); });
+    } else { el.hint.className = "hint"; el.hint.textContent = ""; }
+  }
+  function press(k) {
+    if (k === "c") value = ""; else if (k === "b") value = value.slice(0, -1); else if (/^\d$/.test(k) && value.length < 5) value += k;
+    renderDisplay();
+  }
+  el.pad.addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) press(b.dataset.k); });
+  el.extraToggle.addEventListener("click", () => {
+    el.extra.hidden = !el.extra.hidden;
+    el.extraToggle.textContent = t(el.extra.hidden ? "addExtra" : "hideExtra");
+    if (!el.extra.hidden) el.fName.focus();
+  });
+  const AR_DIGITS = "٠١٢٣٤٥٦٧٨٩";
+  document.addEventListener("keydown", (e) => {
+    if (!el.qrOverlay.hidden) { if (e.key === "Enter" || e.key === "Escape") closeQr(); return; }
+    if (e.target.matches("input")) { if (e.key === "Enter") issue(); return; }
+    const k = AR_DIGITS.includes(e.key) ? String(AR_DIGITS.indexOf(e.key)) : e.key;
+    if (/^\d$/.test(k)) press(k);
+    else if (e.key === "Backspace") press("b");
+    else if (e.key === "Escape") press("c");
+    else if (e.key === "Enter") issue();
+  });
+  el.issue.addEventListener("click", issue);
+
+  function issue() {
+    if (!value || duplicate()) return;
+    const o = { id: ++seq, number: value, status: "waiting", created: Date.now(), scanned: false, calls: 0, name: el.fName.value.trim(), note: el.fNote.value.trim() };
+    orders.push(o); todayCount++;
+    value = ""; el.fName.value = ""; el.fNote.value = ""; el.extra.hidden = true; el.extraToggle.textContent = t("addExtra");
+    renderDisplay(); render(); openQr(o);
+    // PROTOTYPE: the customer scans after 2 s. In production: WS event "customer_connected".
+    setTimeout(() => { o.scanned = true; render(); if (qrOrder && qrOrder.id === o.id) qrScanned(); }, 2000);
+  }
+
+  /* ---------------- actions ---------------- */
+  function ring(id) {
+    const o = orders.find((x) => x.id === id); if (!o) return;
+    o.status = "ringing"; o.calls++; o.called = Date.now(); render();
+    // PROTOTYPE: customer taps "on the way" 6 s later. In production: WS event "customer_onway".
+    clearTimeout(o._t);
+    o._t = setTimeout(() => { if (o.status === "ringing") { o.status = "onway"; render(); chime(); } }, 6000);
+  }
+  function pickUp(id) {
+    const o = orders.find((x) => x.id === id); if (!o) return;
+    const prev = { status: o.status, done: o.done };
+    leave(id, () => { o.status = "done"; o.done = Date.now(); render(); });
+    toast(t("toastPicked", o.number), () => { Object.assign(o, prev); render(); });
+  }
+  function reset(id) {
+    const o = orders.find((x) => x.id === id); if (!o) return;
+    const prev = { status: o.status };
+    o.status = "waiting"; o.created = Date.now(); render();
+    toast(t("toastReturned", o.number), () => { Object.assign(o, prev); render(); });
+  }
+  function remove(id) {
+    const i = orders.findIndex((x) => x.id === id); if (i < 0) return;
+    const o = orders[i];
+    leave(id, () => { orders = orders.filter((x) => x.id !== id); render(); });
+    // In production: delay the DELETE call until the undo window closes.
+    toast(t("toastDeleted", o.number), () => { if (!orders.includes(o)) orders.splice(i, 0, o); render(); });
+  }
+  function leave(id, then) {
+    const card = document.querySelector(`.card[data-id="${id}"]`);
+    if (!card) return then();
+    card.classList.add("leaving"); setTimeout(then, 260);
+  }
+
+  /* ---------------- render ---------------- */
+  function cardHTML(o) {
+    const elapsed = Date.now() - o.created;
+    const late = o.status === "waiting" && elapsed > AVG_PREP_MIN * 60e3;
+    const who = [o.name && esc(o.name), o.note && `<span>${esc(o.note)}</span>`].filter(Boolean).join(" ");
+    let meta = "", actions = "";
+    if (o.status === "waiting") {
+      meta = `<span class="timer" data-since="${o.created}">${fmtElapsed(elapsed)}</span>
+        <span class="late-tag">${t("late")}</span>
+        <span class="scan ${o.scanned ? "scan-yes" : "scan-no"}"><svg><use href="#${o.scanned ? "i-phone-ok" : "i-phone-no"}"/></svg>${t(o.scanned ? "scanned" : "notScanned")}</span>`;
+      actions = `<button type="button" class="btn btn-ready" data-act="ring">${t("ready")}</button>`;
+    } else if (o.status === "ringing") {
+      meta = `<span class="state state-ring"><i></i>${t("ringing")}</span><span class="timer" data-since="${o.called}" data-ago="1">${t("calledAgo", ago(Date.now() - o.called))}</span>${o.calls > 1 ? `<span>${t("rang", o.calls)}</span>` : ""}`;
+      actions = `<button type="button" class="btn btn-line" data-act="ring">${t("ringAgain")}</button><button type="button" class="btn btn-ink" data-act="pick">${t("picked")}</button>`;
+    } else if (o.status === "onway") {
+      meta = `<span class="state state-way"><svg><use href="#i-walk"/></svg>${t("onway")}</span><span class="timer" data-since="${o.called}" data-ago="1">${t("calledAgo", ago(Date.now() - o.called))}</span>`;
+      actions = `<button type="button" class="btn btn-ink" data-act="pick">${t("picked")}</button>`;
+    }
+    return `<article class="card ${o.status}${late ? " late" : ""}" data-id="${o.id}">
+      <div class="no num-font">${esc(o.number)}</div>
+      <div class="info"><div class="meta">${meta}</div><div class="who">${who}</div></div>
+      <button type="button" class="more" data-act="more" aria-label="More"><svg><use href="#i-dots"/></svg></button>
+      <div class="actions">${actions}</div>
+    </article>`;
+  }
+  function render() {
+    const prep = orders.filter((o) => o.status === "waiting").sort((a, b) => a.created - b.created);
+    const called = orders.filter((o) => o.status === "ringing" || o.status === "onway").sort((a, b) => (a.status === "onway") - (b.status === "onway") || a.called - b.called);
+    const done = orders.filter((o) => o.status === "done").sort((a, b) => b.done - a.done).slice(0, 12);
+    el.listPrep.innerHTML = prep.length ? prep.map(cardHTML).join("") : `<div class="empty"><b>${t("emptyPrepT")}</b>${t("emptyPrepP")}</div>`;
+    el.listCalled.innerHTML = called.length ? called.map(cardHTML).join("") : `<div class="empty"><b>${t("emptyCalledT")}</b>${t("emptyCalledP")}</div>`;
+    el.cPrep.textContent = prep.length; el.cCalled.textContent = called.length;
+    el.chips.innerHTML = done.length ? done.map((o) => `<button type="button" class="chip" data-id="${o.id}" title="${t("returnIt")}"><b class="num-font">${esc(o.number)}</b><span>${ago(Date.now() - o.done)}</span><svg><use href="#i-undo"/></svg></button>`).join("") : `<span class="none">${t("noneDone")}</span>`;
+    el.stToday.textContent = todayCount; el.stAvg.textContent = AVG_PREP_MIN; $("stAvgUnit").textContent = t("minLong");
+  }
+  // live timers without re-rendering cards
+  setInterval(() => {
+    document.querySelectorAll(".timer[data-since]").forEach((n) => {
+      const ms = Date.now() - Number(n.dataset.since);
+      n.textContent = n.dataset.ago ? t("calledAgo", ago(ms)) : fmtElapsed(ms);
+      const card = n.closest(".card");
+      if (!n.dataset.ago && card) card.classList.toggle("late", ms > AVG_PREP_MIN * 60e3);
+    });
+  }, 1000);
+
+  document.querySelector(".board").addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip"); if (chip) return reset(Number(chip.dataset.id));
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    const id = Number(b.closest(".card").dataset.id);
+    if (b.dataset.act === "ring") ring(id);
+    if (b.dataset.act === "pick") pickUp(id);
+    if (b.dataset.act === "more") openPop(b, id);
+  });
+
+  /* ---------------- overflow popover ---------------- */
+  let popId = null;
+  function openPop(anchor, id) {
+    popId = id;
+    const r = anchor.getBoundingClientRect();
+    el.pop.hidden = false;
+    const w = el.pop.offsetWidth;
+    const left = document.documentElement.dir === "rtl" ? r.left : r.right - w;
+    el.pop.style.left = Math.max(8, Math.min(left, innerWidth - w - 8)) + "px";
+    el.pop.style.top = Math.min(r.bottom + 6, innerHeight - el.pop.offsetHeight - 8) + "px";
+  }
+  el.pop.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    const o = orders.find((x) => x.id === popId); el.pop.hidden = true;
+    if (!o) return;
+    if (b.dataset.act === "qr") openQr(o);
+    if (b.dataset.act === "delete") remove(o.id);
+  });
+  document.addEventListener("click", (e) => {
+    if (!el.pop.hidden && !e.target.closest("#pop") && !e.target.closest('[data-act="more"]')) el.pop.hidden = true;
+    if (!el.menu.hidden && !e.target.closest("#menu") && !e.target.closest("#menuBtn")) { el.menu.hidden = true; el.menuBtn.setAttribute("aria-expanded", "false"); }
+  });
+  el.menuBtn.addEventListener("click", () => { el.menu.hidden = !el.menu.hidden; el.menuBtn.setAttribute("aria-expanded", String(!el.menu.hidden)); });
+  $("soundBtn").addEventListener("click", () => { soundOn = !soundOn; $("soundBtn").textContent = t(soundOn ? "mSoundOn" : "mSoundOff"); });
+
+  /* ---------------- QR sheet ---------------- */
+  let qrOrder = null, qrTimer = null;
+  function fakeQR(seed) { // PROTOTYPE: production uses <img src="/api/qr/{token}">
+    let s = 0; for (const c of String(seed)) s = (s * 31 + c.charCodeAt(0)) >>> 0;
+    const rnd = () => ((s = (s * 1103515245 + 12345) >>> 0) / 4294967296);
+    const n = 25, cells = [];
+    const finder = (x, y) => [[x, y, 7], [x + 1, y + 1, 5], [x + 2, y + 2, 3]].map(([a, b, w], i) => `<rect x="${a}" y="${b}" width="${w}" height="${w}" fill="${i === 1 ? "#fff" : "#111"}"/>`).join("");
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
+      const inF = (x < 8 && y < 8) || (x > n - 9 && y < 8) || (x < 8 && y > n - 9);
+      if (!inF && rnd() > .52) cells.push(`<rect x="${x}" y="${y}" width="1" height="1"/>`);
+    }
+    return `<svg viewBox="0 0 ${n} ${n}" shape-rendering="crispEdges" fill="#111" role="img" aria-label="QR code">${cells.join("")}${finder(0, 0)}${finder(n - 7, 0)}${finder(0, n - 7)}</svg>`;
+  }
+  function openQr(o) {
+    qrOrder = o;
+    el.qrBox.innerHTML = fakeQR(o.number + o.id);
+    el.qrNo.textContent = o.number;
+    el.qrWait.hidden = false;
+    el.qrWait.innerHTML = `<span class="spinner"></span><span>${t("waitScan")}</span>`;
+    el.qrOverlay.hidden = false;
+    $("qrDone").focus();
+  }
+  function qrScanned() {
+    el.qrBox.insertAdjacentHTML("beforeend", `<div class="scanned"><svg><use href="#i-check-big"/></svg>${t("scannedOk")}</div>`);
+    el.qrWait.innerHTML = "";
+    clearTimeout(qrTimer); qrTimer = setTimeout(closeQr, 1100);
+  }
+  function closeQr() { clearTimeout(qrTimer); el.qrOverlay.hidden = true; qrOrder = null; }
+  $("qrDone").addEventListener("click", closeQr);
+  $("qrPrint").addEventListener("click", () => window.print());
+  el.qrOverlay.addEventListener("click", (e) => { if (e.target === el.qrOverlay) closeQr(); });
+
+  /* ---------------- toast with undo ---------------- */
+  let toastTimer = null, undoFn = null;
+  function toast(msg, undo) {
+    el.toastText.textContent = msg; undoFn = undo || null;
+    el.toastUndo.hidden = !undo;
+    el.toast.hidden = true; void el.toast.offsetWidth; el.toast.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.toast.hidden = true; undoFn = null; }, 5000);
+  }
+  el.toastUndo.addEventListener("click", () => { if (undoFn) undoFn(); undoFn = null; el.toast.hidden = true; });
+
+  /* ---------------- soft chime for "on the way" ---------------- */
+  let ctx = null;
+  function chime() {
+    if (!soundOn) return;
+    try {
+      ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+      [880, 1320].forEach((f, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain(), s = ctx.currentTime + i * 0.14;
+        o.type = "sine"; o.frequency.value = f; o.connect(g); g.connect(ctx.destination);
+        g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(0.12, s + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, s + 0.5);
+        o.start(s); o.stop(s + 0.55);
+      });
+    } catch (_) {}
+  }
+
+  /* ---------------- connection status ---------------- */
+  function setLive(ok) { el.live.classList.toggle("off", !ok); el.live.querySelector("span").textContent = t(ok ? "live" : "offline"); }
+  addEventListener("offline", () => setLive(false));
+  addEventListener("online", () => setLive(true));
+
+  applyLang();
+})();
+</script>
+</body>
+</html>
