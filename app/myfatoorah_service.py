@@ -177,9 +177,9 @@ def verify_webhook_signature(payload_bytes: bytes, received_signature: str) -> b
     """
     Validates MyFatoorah Webhook V2 signature with HMAC-SHA256.
     """
-    if not WEBHOOK_SECRET:
-        logger.warning("MYFATOORAH_WEBHOOK_SECRET is empty! Signature verification bypassed.")
-        return True
+    if not WEBHOOK_SECRET or not received_signature:
+        logger.warning("MyFatoorah webhook rejected: secret or signature is missing.")
+        return False
     try:
         secret_bytes = WEBHOOK_SECRET.encode("utf-8")
         computed = hmac.new(secret_bytes, payload_bytes, hashlib.sha256).digest()

@@ -1,6 +1,7 @@
 import io
 import os
 import json
+import logging
 import socket
 import asyncio
 from urllib.parse import quote
@@ -17,6 +18,8 @@ from pathlib import Path
 from . import database as db
 from . import push_service
 from . import auth
+
+logger = logging.getLogger("pager")
 
 BASE_DIR = Path(__file__).parent
 app = FastAPI(title="Paiger SaaS - جرس الطلبات الذكي للمطاعم")
@@ -1224,14 +1227,22 @@ class ChargeTokenDto(BaseModel):
     customer_name: Optional[str] = "Customer"
     customer_phone: Optional[str] = "97333000000"
 
+def _require_restaurant_user(request: Request) -> Dict[str, Any]:
+    user = auth.get_current_restaurant(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return user
+
+
 @app.get("/api/payment/myfatoorah/config")
 async def api_myfatoorah_config():
     """Returns configuration for website / app checkout."""
     return mf.get_payment_config()
 
 @app.post("/api/payment/myfatoorah/session")
-async def api_myfatoorah_session(amount: float = 1.0, customer_identifier: Optional[str] = None):
+async def api_myfatoorah_session(request: Request, amount: float = 1.0, customer_identifier: Optional[str] = None):
     """Initiates an embedded session for in-page payment without external redirect."""
+    _require_restaurant_user(request)
     try:
         session_data = await mf.initiate_session(amount=amount, customer_identifier=customer_identifier)
         return {"ok": True, "session": session_data}
@@ -1241,6 +1252,7 @@ async def api_myfatoorah_session(amount: float = 1.0, customer_identifier: Optio
 @app.post("/api/payment/myfatoorah/process")
 async def api_myfatoorah_process(req: ProcessPaymentDto, request: Request):
     """Processes payment after client-side session submission."""
+    _require_restaurant_user(request)
     base_url = get_public_base_url(request)
     callback_url = f"{base_url}/payment/myfatoorah/return"
     error_url = f"{base_url}/payment/myfatoorah/return"
@@ -1270,6 +1282,7 @@ async def api_myfatoorah_process(req: ProcessPaymentDto, request: Request):
 @app.post("/api/payment/myfatoorah/charge-token")
 async def api_myfatoorah_charge_token(req: ChargeTokenDto, request: Request):
     """Charges saved card token directly with zero redirection."""
+    _require_restaurant_user(request)
     base_url = get_public_base_url(request)
     callback_url = f"{base_url}/payment/myfatoorah/return"
     error_url = f"{base_url}/payment/myfatoorah/return"
@@ -1290,8 +1303,10 @@ async def api_myfatoorah_charge_token(req: ChargeTokenDto, request: Request):
         return {"ok": False, "error": str(ex)}
 
 @app.get("/checkout/{order_id}", response_class=HTMLResponse)
-async def page_embedded_checkout(order_id: str, amount: float = 5.0, request: Request = None):
+async def page_embedded_checkout(order_id: str, request: Request, amount: float = 5.0):
     """In-page embedded payment demo without redirect."""
+    if not auth.get_current_restaurant(request):
+        return _login_redirect(request)
     cfg = mf.get_payment_config()
     session_data = await mf.initiate_session(amount=amount, customer_identifier=f"ORDER_{order_id}")
     return templates.TemplateResponse(
