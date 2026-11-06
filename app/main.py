@@ -544,7 +544,7 @@ async def restaurant_login_submit(
     safe_next = _safe_next(next)
     ident = identifier.strip().lower()
     # Check by email or slug
-    rest = db.get_restaurant_by_email(ident) or db.get_restaurant_by_slug(ident)
+    rest = db.get_restaurant_for_login(ident)
     if not rest or not auth.verify_password(password, rest["password_hash"]):
         return templates.TemplateResponse(
             "restaurant_login.html",

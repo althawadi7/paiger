@@ -45,7 +45,7 @@ def get_db_connection():
 
 from decimal import Decimal
 
-def _serialize_row(row: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+def _serialize_row(row: Optional[Dict[str, Any]], include_secrets: bool = False) -> Optional[Dict[str, Any]]:
     if not row:
         return None
     d = dict(row)
@@ -54,6 +54,8 @@ def _serialize_row(row: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
             d[k] = v.isoformat()
         elif isinstance(v, Decimal):
             d[k] = int(v) if v % 1 == 0 else float(v)
+    if not include_secrets:
+        d.pop("password_hash", None)
     return d
 
 def init_db():
@@ -185,7 +187,7 @@ def get_super_admin_by_identifier(identifier: str) -> Optional[Dict[str, Any]]:
                 "SELECT * FROM super_admins WHERE username = %s OR email = %s LIMIT 1",
                 (identifier, identifier)
             )
-            return _serialize_row(cur.fetchone())
+            return _serialize_row(cur.fetchone(), include_secrets=True)
     finally:
         conn.close()
 
@@ -353,6 +355,19 @@ def get_restaurant_by_id(restaurant_id: int) -> Optional[Dict[str, Any]]:
         with conn.cursor() as cur:
             cur.execute("SELECT * FROM restaurants WHERE id = %s", (restaurant_id,))
             return _serialize_row(cur.fetchone())
+    finally:
+        conn.close()
+
+def get_restaurant_for_login(identifier: str) -> Optional[Dict[str, Any]]:
+    ident = identifier.strip().lower()
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT * FROM restaurants WHERE email = %s OR slug = %s LIMIT 1",
+                (ident, ident)
+            )
+            return _serialize_row(cur.fetchone(), include_secrets=True)
     finally:
         conn.close()
 
