@@ -6,8 +6,10 @@
     <div class="set-grid">
       <div class="card set">
         <header><h2>{{ t('admin.sTrial') }}</h2><p>{{ t('admin.sTrialSub') }}</p></header>
-        <div><div class="f" style="max-width:220px"><label for="trialDays">{{ t('admin.trialDays') }}</label><input class="in" id="trialDays" name="trial_days" type="number" min="0" max="60" value="{{ settings.trial_days }}" required></div>
-        <p class="muted">{{ t('admin.trialNote') }}</p></div>
+        <div>
+          <div class="f"><label for="trialDays">{{ t('admin.trialDays') }}</label><div class="short-row"><input class="in" id="trialDays" name="trial_days" type="number" min="0" max="60" value="{{ settings.trial_days }}" required></div></div>
+          <p class="muted">{{ t('admin.trialNote') }}</p>
+        </div>
       </div>
       <div class="card set">
         <header><h2>{{ t('admin.sEmpty') }}</h2><p>{{ t('admin.sEmptySub') }}</p></header>
@@ -16,15 +18,14 @@
             <label><input type="radio" name="points_empty_rule" value="warn" {% if settings.points_empty_rule == 'warn' %}checked{% endif %}><div><b>{{ t('admin.eWarn') }}</b><span>{{ t('admin.eWarnSub') }}</span></div></label>
             <label><input type="radio" name="points_empty_rule" value="block" {% if settings.points_empty_rule != 'warn' %}checked{% endif %}><div><b>{{ t('admin.eBlock') }}</b><span>{{ t('admin.eBlockSub') }}</span></div></label>
           </div>
-          <div class="f" style="max-width:260px;margin-top:14px"><label for="lowAt">{{ t('admin.lowAt') }}</label><input class="in" id="lowAt" name="low_points_at" type="number" min="0" value="{{ settings.low_points_at }}" required></div>
+          <div class="f" style="margin-top:14px"><label for="lowAt">{{ t('admin.lowAt') }}</label><div class="short-row"><input class="in" id="lowAt" name="low_points_at" type="number" min="0" value="{{ settings.low_points_at }}" required></div></div>
         </div>
       </div>
       <div class="card set">
         <header><h2>{{ t('admin.sDunning') }}</h2><p>{{ t('admin.sDunningSub') }}</p></header>
         <div>
-          <div class="f" style="max-width:220px"><label for="retryDays">{{ t('admin.dRetry') }}</label><input class="in" id="retryDays" name="renewal_retry_days" type="number" min="0" max="30" value="{{ settings.renewal_retry_days }}" required></div>
+          <div class="f"><label for="retryDays">{{ t('admin.dRetry') }}</label><div class="short-row"><input class="in" id="retryDays" name="renewal_retry_days" type="number" min="0" max="30" value="{{ settings.renewal_retry_days }}" required></div><p class="help">{{ t('admin.dRetryHelp') }}</p></div>
           <div class="kv">
-            <div><span>{{ t('admin.dRetry') }}</span><b>{{ t('admin.dRetryV').replace('{n}', settings.renewal_retry_days) }}</b></div>
             <div><span>{{ t('admin.dStatus') }}</span><b><span class="pill past_due">{{ t('admin.st.past_due') }}</span></b></div>
             <div><span>{{ t('admin.dAfter') }}</span><b>{{ t('admin.dAfterV') }}</b></div>
           </div>
