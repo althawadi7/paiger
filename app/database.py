@@ -478,10 +478,10 @@ def get_restaurant_orders(
 # ─────────────────────────────────────────────────────────────
 
 def create_order(
-    order_number: str, 
-    customer_name: str = "", 
+    order_number: str,
+    restaurant_id: int,
+    customer_name: str = "",
     notes: str = "",
-    restaurant_id: int = 1,
     restaurant_name: str = "",
     brand_color: str = "",
     brand_icon: str = ""

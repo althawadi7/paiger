@@ -3,7 +3,7 @@ import os
 import json
 import socket
 import asyncio
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request, Form, Depends, status
 from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse, FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -118,7 +118,7 @@ class CreateOrderRequest(BaseModel):
     order_number: str
     customer_name: str = ""
     notes: str = ""
-    restaurant_id: Optional[int] = 1
+    restaurant_id: Optional[int] = None
     restaurant_name: Optional[str] = ""
     brand_color: Optional[str] = ""
     brand_icon: Optional[str] = ""
@@ -851,8 +851,11 @@ async def get_order_details(token: str):
     }
 
 @app.post("/api/orders/{token}/onway")
-async def mobile_onway_order(token: str):
+async def mobile_onway_order(token: str, request: Request):
     order = db.get_order_by_token(token)
+    # Numeric ids share this shape. A real order token always wins and stays public.
+    if not order and token.isdigit():
+        return await onway_order(int(token), request)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     updated = db.update_order_status(order["id"], "onway")
@@ -884,17 +887,54 @@ async def register_live_activity_token(token: str, req: LiveActivityTokenRequest
 # CORE ORDERS REST APIS
 # ─────────────────────────────────────────────────────────────
 
+def _order_actor(request: Request) -> Dict[str, Any]:
+    """Restaurant id comes from the restaurant JWT. Super-admin has no tenant id."""
+    restaurant = auth.get_current_restaurant(request)
+    if restaurant and restaurant.get("sub"):
+        return {"role": "restaurant", "restaurant_id": int(restaurant["sub"])}
+    admin = auth.get_current_super_admin(request)
+    if admin:
+        return {"role": "super_admin", "restaurant_id": None}
+    raise HTTPException(status_code=401, detail="Unauthorized")
+
+
+def _order_for_actor(order_id: int, actor: Dict[str, Any]) -> Dict[str, Any]:
+    order = db.get_order_by_id(order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if actor["role"] == "restaurant" and int(order.get("restaurant_id") or 0) != actor["restaurant_id"]:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return order
+
+
+def _restaurant_id_for_create(actor: Dict[str, Any], requested_id: Optional[int]) -> int:
+    if actor["role"] == "restaurant":
+        return actor["restaurant_id"]
+    if not requested_id:
+        raise HTTPException(status_code=400, detail="restaurant_id is required")
+    restaurant = db.get_restaurant_by_id(int(requested_id))
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+    return int(restaurant["id"])
+
+
 @app.get("/api/orders")
-async def list_orders(restaurant_id: Optional[int] = None):
-    return db.get_all_orders(limit=150, restaurant_id=restaurant_id)
+async def list_orders(request: Request):
+    actor = _order_actor(request)
+    if actor["role"] == "restaurant":
+        return db.get_all_orders(limit=150, restaurant_id=actor["restaurant_id"])
+    return db.get_all_orders(limit=150)
+
 
 @app.post("/api/orders")
-async def create_new_order(order_data: CreateOrderRequest):
+async def create_new_order(order_data: CreateOrderRequest, request: Request):
+    actor = _order_actor(request)
+    restaurant_id = _restaurant_id_for_create(actor, order_data.restaurant_id)
     order = db.create_order(
         order_number=order_data.order_number,
+        restaurant_id=restaurant_id,
         customer_name=order_data.customer_name,
         notes=order_data.notes,
-        restaurant_id=order_data.restaurant_id or 1,
         restaurant_name=order_data.restaurant_name or "",
         brand_color=order_data.brand_color or "",
         brand_icon=order_data.brand_icon or ""
@@ -904,7 +944,9 @@ async def create_new_order(order_data: CreateOrderRequest):
 
 @app.post("/api/orders/{order_id}/ring")
 @app.post("/api/orders/{order_id}/call")
-async def ring_order(order_id: int):
+async def ring_order(order_id: int, request: Request):
+    actor = _order_actor(request)
+    _order_for_actor(order_id, actor)
     order = db.update_order_status(order_id, "ringing")
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -930,7 +972,9 @@ async def ring_order(order_id: int):
     return order
 
 @app.post("/api/orders/{order_id}/onway")
-async def onway_order(order_id: int):
+async def onway_order(order_id: int, request: Request):
+    actor = _order_actor(request)
+    _order_for_actor(order_id, actor)
     order = db.update_order_status(order_id, "onway")
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -948,7 +992,9 @@ async def onway_order(order_id: int):
 
 @app.post("/api/orders/{order_id}/done")
 @app.post("/api/orders/{order_id}/complete")
-async def complete_order(order_id: int):
+async def complete_order(order_id: int, request: Request):
+    actor = _order_actor(request)
+    _order_for_actor(order_id, actor)
     order = db.update_order_status(order_id, "done")
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -963,7 +1009,9 @@ async def complete_order(order_id: int):
 
 @app.post("/api/orders/{order_id}/waiting")
 @app.post("/api/orders/{order_id}/reset")
-async def reset_order(order_id: int):
+async def reset_order(order_id: int, request: Request):
+    actor = _order_actor(request)
+    _order_for_actor(order_id, actor)
     order = db.update_order_status(order_id, "waiting")
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -977,8 +1025,9 @@ async def reset_order(order_id: int):
     return order
 
 @app.delete("/api/orders/{order_id}")
-async def delete_order(order_id: int):
-    order = db.get_order_by_id(order_id)
+async def delete_order(order_id: int, request: Request):
+    actor = _order_actor(request)
+    order = _order_for_actor(order_id, actor)
     if order:
         db.delete_order(order_id)
         await manager.notify_pager(order["token"], {"event": "order_deleted"})

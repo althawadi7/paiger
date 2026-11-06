@@ -88,6 +88,7 @@ async def notify_order_push(order: dict):
         "icon": "/static/img/brand-logo.png?v=dawrak",
         "badge": "/static/img/brand-logo.png?v=dawrak",
         "url": f"/pager/{token}",
+        "token": token,
         "order_id": order.get("id"),
         "order_number": order_num,
         "status": order.get("status")

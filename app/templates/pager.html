@@ -1360,7 +1360,7 @@ async function confirmArrival(){
     try { ws.send(JSON.stringify({action: "onway"})); } catch(e){}
   }
   try {
-    await fetch("/api/orders/" + order.id + "/onway", {method: "POST"});
+    await fetch("/api/orders/" + order.token + "/onway", {method: "POST"});
   } catch(e){}
 }
 

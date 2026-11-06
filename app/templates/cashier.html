@@ -1140,7 +1140,9 @@ async function loadOrders(){
     var res = await fetch("/api/orders?restaurant_id=" + currentRestaurantId);
     if(res.ok){
       var list = await res.json();
-      orders = list.map(function(item){
+      orders = list.filter(function(item){
+        return String(item.restaurant_id) === String(currentRestaurantId);
+      }).map(function(item){
         return {
           id: item.id,
           num: item.order_number,
