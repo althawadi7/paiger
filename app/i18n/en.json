@@ -309,5 +309,12 @@
   "auth.cGreen": "Green",
   "auth.cBlue": "Blue",
   "auth.cPurple": "Purple",
-  "auth.cCustom": "Custom colour"
+  "auth.cCustom": "Custom colour",
+  "pager.clipH": "Get alerts on your iPhone",
+  "pager.clipP": "Tap <b>Open</b> in the Dawrak banner at the top of this page. It opens instantly, nothing to install, and your phone will ring even when it’s locked.",
+  "pager.clipNo": "No banner? Keep this page open and we’ll ring here.",
+  "pager.clipHereH": "Sound is on",
+  "pager.clipHereP": "Keep this page open, it can’t ring when your phone is locked.",
+  "pager.clipOnH": "Alerts are on in Dawrak",
+  "pager.clipOnP": "You can lock your phone."
 }

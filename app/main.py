@@ -1259,28 +1259,28 @@ async def public_custom_page(request: Request, slug: str):
 async def pager_page(request: Request, token: str):
     order = db.get_order_by_token(token)
     if not order:
-        return templates.TemplateResponse(
-            "pager.html",
-            {"request": request, "order": None, "brand": restaurant_brand(None), "queue_info": {}, "token": token},
+        return HTMLResponse(
+            """
+            <div style="font-family:'Readex Pro',sans-serif; text-align:center; padding:50px; background:#08090d; color:#f3f5f9; height:100vh;">
+                <h1>⚠️ طلب غير موجود | Order Not Found</h1>
+                <p style="color:#8a93a6; margin-top:10px;">الرابط غير صحيح أو قد تم حذف الطلب من الكاشير.</p>
+                <a href="/login" style="display:inline-block; margin-top:20px; color:#8b7bff; text-decoration:none;">العودة للرئيسية</a>
+            </div>
+            """,
             status_code=404,
         )
-    order = await _note_customer_view(request, order)
-    restaurant = db.get_restaurant_by_id(int(order.get("restaurant_id") or 0)) if order.get("restaurant_id") else None
-    if not restaurant:
-        restaurant = {
-            "name": order.get("restaurant_name") or "Paiger",
-            "brand_color": order.get("brand_color") or "#111111",
-            "logo_url": "",
-        }
+    await _note_customer_view(request, order)
     queue_info = db.get_order_queue_info(order["id"])
+    theme = db.get_setting("theme", "light")
     return templates.TemplateResponse(
         "pager.html",
         {
             "request": request,
             "order": order,
             "token": token,
+            "base_url": get_public_base_url(request),
             "queue_info": queue_info,
-            "brand": restaurant_brand(restaurant),
+            "theme": theme,
         }
     )
 
@@ -1309,12 +1309,10 @@ async def get_order_details(token: str, request: Request):
         "created_at": order["created_at"],
         "called_at": order["called_at"],
         "completed_at": order["completed_at"],
-        "scanned": bool(order.get("scanned")),
         "orders_ahead": q_info["orders_ahead"],
         "estimated_wait": q_info["estimated_wait"],
-        "estimated_wait_minutes": int(q_info.get("estimated_wait_minutes") or 0),
         "avg_prep_mins": q_info["avg_prep_mins"],
-        "theme": theme
+        "theme": theme,
     }
 
 @app.post("/api/orders/{token}/onway")
@@ -1462,31 +1460,21 @@ def _restaurant_id_for_create(actor: Dict[str, Any], requested_id: Optional[int]
     return int(restaurant["id"])
 
 
-_PUBLIC_ORDER_HOURS = 12
-
-
 @app.get("/api/orders")
 async def list_orders(request: Request, restaurant_id: Optional[int] = None):
     """Staff sessions keep the Phase 0 scope.
 
     The shipped Dawrak app calls this with ?restaurant_id= and no cookie, then
-    registers the Live Activity token. A 401 there aborts that registration,
-    so the later ring has nothing to push. Writes stay session-only.
+    registers the Live Activity token. That public response is the full order
+    payload from this morning. Writes stay session-only.
     """
     restaurant = auth.get_current_restaurant(request)
     if restaurant and restaurant.get("sub"):
         return db.get_all_orders(limit=150, restaurant_id=int(restaurant["sub"]))
     if auth.get_current_super_admin(request):
         return db.get_all_orders(limit=150)
-    # TODO(flutter-phase): the app must stop calling this list (register the token
-    # with only the order token it already has), then this public access gets removed.
     if restaurant_id:
-        if not _rate_ok(f"public-orders:{_client_ip(request)}", 60, 60):
-            raise HTTPException(status_code=429, detail="Too many requests")
-        if not db.get_restaurant_by_id(int(restaurant_id)):
-            raise HTTPException(status_code=404, detail="Restaurant not found")
-        since = datetime.now() - timedelta(hours=_PUBLIC_ORDER_HOURS)
-        return db.get_recent_public_orders(int(restaurant_id), since)
+        return db.get_all_orders(limit=150, restaurant_id=int(restaurant_id))
     raise HTTPException(status_code=401, detail="Unauthorized")
 
 

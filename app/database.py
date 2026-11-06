@@ -895,14 +895,22 @@ def get_order_by_number_and_restaurant(order_number: str, restaurant_id: int) ->
     finally:
         conn.close()
 
+_PUBLIC_ORDER_FIELDS = (
+    "id", "token", "order_number", "status", "restaurant_id",
+    "created_at", "called_at", "completed_at",
+)
+
+
 def get_recent_public_orders(restaurant_id: int, since: datetime) -> List[Dict[str, Any]]:
-    """Order tokens for the shipped Dawrak app. Nothing else is selected."""
+    """Fields Dawrak reads from the public list. No names, notes, or phone."""
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT token FROM orders
+                SELECT id, token, order_number, status, restaurant_id,
+                       created_at, called_at, completed_at
+                FROM orders
                 WHERE restaurant_id = %s
                   AND status IN ('waiting', 'ringing', 'onway')
                   AND created_at >= %s
@@ -911,7 +919,11 @@ def get_recent_public_orders(restaurant_id: int, since: datetime) -> List[Dict[s
                 """,
                 (restaurant_id, since),
             )
-            return [{"token": row["token"]} for row in cur.fetchall()]
+            rows = []
+            for row in cur.fetchall():
+                item = _serialize_row(row) or {}
+                rows.append({key: item.get(key) for key in _PUBLIC_ORDER_FIELDS})
+            return rows
     finally:
         conn.close()
 
@@ -1196,6 +1208,19 @@ def save_live_activity_token(order_token: str, push_token: str, device_type: str
             conn.commit()
     finally:
         conn.close()
+
+def has_live_activity(order_token: str) -> bool:
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT 1 FROM live_activity_tokens WHERE order_token = %s AND push_token <> '' LIMIT 1",
+                (order_token,),
+            )
+            return cur.fetchone() is not None
+    finally:
+        conn.close()
+
 
 def get_live_activity_tokens_by_token(order_token: str) -> List[Dict[str, Any]]:
     conn = get_db_connection()

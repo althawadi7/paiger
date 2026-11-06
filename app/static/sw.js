@@ -46,8 +46,8 @@ self.addEventListener('notificationclick', function(event) {
   var targetUrl = data.url || '/';
 
   // If user clicked the "I'm on the way" action button
-  if (event.action === 'onway' && data.token) {
-    fetch('/api/orders/' + data.token + '/onway', { method: 'POST' }).catch(function(){});
+  if (event.action === 'onway' && data.order_id) {
+    fetch('/api/orders/' + data.order_id + '/onway', { method: 'POST' }).catch(function(){});
   }
 
   event.waitUntil(
