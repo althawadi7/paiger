@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Order 580 · Karak House</title>
+<!-- KEEP from the morning page in production: the apple-itunes-app / App Clip meta tag and every <script> as-is. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* PAIGER · Customer page, minimal. One number, one countdown, one button. */
+:root {
+  --ink: #111111; --grey: #5f6368; --line: #e6e6e8; --paper: #ffffff; --paper-2: #f6f6f7;
+  --ready: #15803d; --brand: #111111; --brand-ink: #fff;
+  --sans: "IBM Plex Sans", "IBM Plex Sans Arabic", -apple-system, sans-serif;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+html[lang="ar"] { --sans: "IBM Plex Sans Arabic", "IBM Plex Sans", -apple-system, sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: var(--sans); color: var(--ink); background: var(--paper); -webkit-font-smoothing: antialiased; transition: background .4s, color .4s; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+[hidden] { display: none !important; }
+
+.page { min-height: 100svh; display: grid; grid-template-rows: auto 1fr auto; padding: max(14px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom)); }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rest { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.logo { width: 36px; height: 36px; border-radius: 10px; background: var(--brand); color: var(--brand-ink); display: grid; place-items: center; font-weight: 600; font-size: 16px; flex: none; }
+.rest b { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lang { font-size: 14px; color: var(--grey); padding: 8px 4px; }
+
+.center { align-self: center; text-align: center; }
+.lbl { font-size: 15px; color: var(--grey); }
+.no { font-family: "Fraunces", serif; font-weight: 500; font-size: clamp(120px, 42vw, 200px); line-height: .95; letter-spacing: -.03em; direction: ltr; margin-top: 4px; }
+
+/* countdown ring */
+.ring { position: relative; width: 168px; height: 168px; margin: 34px auto 0; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 6; }
+.ring .bg { stroke: var(--paper-2); }
+.ring .fg { stroke: var(--ink); stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+.ring .t { position: absolute; inset: 0; display: grid; place-content: center; }
+.ring .t b { font-family: "Fraunces", serif; font-weight: 500; font-size: 44px; line-height: 1; direction: ltr; font-variant-numeric: tabular-nums; }
+.ring .t span { font-size: 13px; color: var(--grey); margin-top: 6px; }
+
+.done-msg { font-size: 26px; font-weight: 600; margin-top: 26px; }
+
+.btn { width: 100%; height: 60px; border-radius: 18px; font-size: 17px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; transition: transform .1s; }
+.btn:active { transform: scale(.985); }
+.btn-ink { background: var(--ink); color: #fff; }
+.btn-white { background: #fff; color: var(--ready); }
+.on { display: flex; align-items: center; justify-content: center; gap: 8px; height: 60px; font-size: 15px; color: var(--grey); }
+.on i { width: 8px; height: 8px; border-radius: 50%; background: var(--ready); }
+
+/* ready */
+body.ready { background: var(--ready); color: #fff; }
+body.ready .lbl, body.ready .lang { color: rgba(255,255,255,.75); }
+body.ready .no { animation: pulse 1.2s var(--ease) infinite; }
+@keyframes pulse { 50% { transform: scale(1.04); } }
+
+.proto { position: fixed; top: 60px; inset-inline-end: 10px; display: flex; flex-direction: column; gap: 3px; padding: 5px; border-radius: 12px; background: rgba(255,255,255,.95); color: var(--ink); box-shadow: 0 0 0 1px var(--line), 0 10px 30px -10px rgba(0,0,0,.25); font: 11px var(--sans); }
+.proto button { padding: 5px 8px; border-radius: 7px; text-align: start; }
+.proto button.on2 { background: var(--ink); color: #fff; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top">
+    <div class="rest"><div class="logo">K</div><b>Karak House</b></div>
+    <button class="lang" id="langBtn" type="button">العربية</button>
+  </header>
+
+  <main class="center">
+    <p class="lbl" id="lbl">Your order</p>
+    <p class="no">580</p>
+
+    <!-- waiting: countdown -->
+    <div class="ring" id="ring">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><circle class="bg" cx="50" cy="50" r="46"/><circle class="fg" id="arc" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/></svg>
+      <div class="t" role="timer" aria-live="off"><b id="time">5:00</b><span id="timeLbl">about</span></div>
+    </div>
+
+    <!-- ready / done -->
+    <p class="done-msg" id="msg" hidden></p>
+  </main>
+
+  <footer id="foot"></footer>
+</div>
+
+<div class="proto" aria-label="Prototype">
+  <button type="button" data-s="new" class="on2">Waiting, alerts off</button>
+  <button type="button" data-s="waiting">Waiting, alerts on</button>
+  <button type="button" data-s="late">Waiting, past estimate</button>
+  <button type="button" data-s="ready">Ready (ringing)</button>
+  <button type="button" data-s="onway">On my way</button>
+  <button type="button" data-s="done">Picked up</button>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  // In production these strings come from window.PAIGER_I18N (server-injected); the state comes from the existing script.
+  const T = {
+    en: { yours: "Your order", about: "estimated", any: "Any moment now", alerts: "Turn on alerts", alertsOn: "Alerts on. You can lock your phone.",
+          ready: "Your order is ready", way: "I’m on my way", wayDone: "The counter knows you’re coming", done: "Enjoy your order", lang: "العربية" },
+    ar: { yours: "طلبك", about: "الوقت المتوقع", any: "خلال لحظات", alerts: "تفعيل التنبيه", alertsOn: "التنبيه مفعّل. يمكنك قفل الهاتف.",
+          ready: "طلبك جاهز", way: "أنا في الطريق", wayDone: "تم إبلاغ الكاونتر بقدومك", done: "بالهناء والعافية", lang: "English" },
+  };
+  let lang = "en", state = "new", total = 300, left = 300, tick;
+  const $ = (id) => document.getElementById(id);
+  const t = (k) => T[lang][k];
+
+  function fmt(s) { const m = Math.floor(s / 60), r = s % 60; return `${m}:${String(r).padStart(2, "0")}`; }
+  function paintTimer() {
+    if (left > 0) { $("time").textContent = fmt(left); $("timeLbl").textContent = t("about"); }
+    else { $("time").textContent = "0:00"; $("timeLbl").textContent = t("any"); }
+    $("arc").style.strokeDashoffset = String(100 - Math.max(0, left) / total * 100);
+  }
+  function render() {
+    document.documentElement.lang = lang; document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    $("langBtn").textContent = t("lang"); $("lbl").textContent = t("yours");
+    const waiting = ["new", "waiting", "late"].includes(state);
+    document.body.classList.toggle("ready", state === "ready" || state === "onway");
+    $("ring").hidden = !waiting; $("msg").hidden = waiting;
+    if (state === "ready") $("msg").textContent = t("ready");
+    if (state === "onway") $("msg").textContent = t("ready");
+    if (state === "done") $("msg").textContent = t("done");
+    const f = $("foot");
+    if (state === "new") f.innerHTML = `<button class="btn btn-ink" id="act">${t("alerts")}</button>`;
+    else if (waiting) f.innerHTML = `<p class="on"><i></i>${t("alertsOn")}</p>`;
+    else if (state === "ready") f.innerHTML = `<button class="btn btn-white" id="act">${t("way")}</button>`;
+    else if (state === "onway") f.innerHTML = `<p class="on" style="color:rgba(255,255,255,.85)">${t("wayDone")}</p>`;
+    else f.innerHTML = "";
+    const a = $("act"); if (a) a.onclick = () => set(state === "new" ? "waiting" : "onway");
+    paintTimer();
+  }
+  function set(s) {
+    state = s; clearInterval(tick);
+    if (s === "late") left = 0; else if (s === "new" || s === "waiting") { if (left <= 0) left = total; tick = setInterval(() => { left--; paintTimer(); if (left <= 0) clearInterval(tick); }, 1000); }
+    document.querySelectorAll(".proto button").forEach((b) => b.classList.toggle("on2", b.dataset.s === s));
+    render();
+  }
+  $("langBtn").onclick = () => { lang = lang === "ar" ? "en" : "ar"; render(); };
+  document.querySelector(".proto").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) set(b.dataset.s); });
+  set("new");
+})();
+</script>
+</body>
+</html>

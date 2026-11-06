@@ -214,12 +214,12 @@ These Terms are governed by applicable trade and digital commerce laws. For cont
 
 ---
 
-### 🚀 رؤيتنا
+###  رؤيتنا
 إنهاء عصر أجهزة البيجر التقليدية (Buzzer Pagers) التي تكلف آلاف الريالات، وتتعرض للتلف والضياع وتتطلب شحناً مستمراً، واستبدالها بنظام سحابي أنيق يعمل مباشرة عبر **هاتف العميل نفسه** دون أي تعقيد.
 
 ---
 
-### ✨ لماذا بيجر هو الخيار الأول؟
+###  لماذا بيجر هو الخيار الأول؟
 1. **بدون تحميل تطبيقات (Apple App Clip):** يمسح العميل الـ QR من شاشة الكاشير أو الطاولة، فيفتح له الكارت فورياً في نصف ثانية دون حاجة للانتظار في متجر التطبيقات.
 2. **الجزيرة التفاعلية وشاشة القفل (Live Activities):** يتابع العميل حالة تحضير طلبه أولاً بأول بينما يتصفح هاتفه بحرية تامة.
 3. **تعدد الفروع والمتاجر (Multi-Tenant SaaS):** واجهة مخصصة لكل مطعم بهويته وألوانه وشعاره الخاص، مع شاشات كاشير لحظية ولوحة إحصائيات متطورة.
@@ -227,7 +227,7 @@ These Terms are governed by applicable trade and digital commerce laws. For cont
 
 ---
 
-### 📍 المقر والتواصل
+###  المقر والتواصل
 * **الموقع الرسمي:** https://pager.rahapp.com
 * **شراكات الأعمال والمطاعم:** partners@rahapp.com''',
 
@@ -237,12 +237,12 @@ These Terms are governed by applicable trade and digital commerce laws. For cont
 
 ---
 
-### 🚀 Our Mission
+###  Our Mission
 To retire bulky, fragile, expensive hardware buzzer pagers and replace them with instantaneous, frictionless digital paging directly on customers' smartphones via **Apple App Clips** and **Dynamic Island Live Activities**.
 
 ---
 
-### ✨ Key Advantages
+###  Key Advantages
 1. **Zero Download Friction:** Guests scan the QR code and immediately access their digital pager within 0.5 seconds via Apple App Clip.
 2. **Always-On Visibility:** Queue progress and preparation status remain visible on the Lock Screen and Dynamic Island without keeping the app open.
 3. **Multi-Tenant White-Labeling:** Every restaurant enjoys its custom brand colors, icons, dedicated cashier terminals, and real-time analytics.
@@ -250,7 +250,7 @@ To retire bulky, fragile, expensive hardware buzzer pagers and replace them with
 
 ---
 
-### 📍 Headquarters & Business Inquiries
+###  Headquarters & Business Inquiries
 * **Official Website:** https://pager.rahapp.com
 * **Enterprise Partnerships:** partners@rahapp.com'''
     },
@@ -266,7 +266,7 @@ To retire bulky, fragile, expensive hardware buzzer pagers and replace them with
 
 ---
 
-### 📞 قنوات التواصل المباشرة
+###  قنوات التواصل المباشرة
 * **البريد الإلكتروني للدعم الفني:** support@rahapp.com
 * **مبيعات المطاعم والاشتراكات:** sales@rahapp.com
 * **الاستفسارات العامة:** info@rahapp.com
@@ -281,7 +281,7 @@ To retire bulky, fragile, expensive hardware buzzer pagers and replace them with
 
 ---
 
-### ❓ الأسئلة الشائعة (FAQ)
+###  الأسئلة الشائعة (FAQ)
 * **هل يحتاج العميل إلى تحميل تطبيق؟**  
   لا، يعمل النظام تلقائياً عبر متصفح الجوال أو الـ Apple App Clip فور مسح رمز الـ QR.
 * **كيف يتم تنبيه العميل عند جهوزية طلبه؟**  
@@ -295,7 +295,7 @@ The **Paiger SaaS** support team is available around the clock to support restau
 
 ---
 
-### 📞 Direct Communication Channels
+###  Direct Communication Channels
 * **Technical Support:** support@rahapp.com
 * **Sales & Enterprise Onboarding:** sales@rahapp.com
 * **General Inquiries:** info@rahapp.com
@@ -310,7 +310,7 @@ The **Paiger SaaS** support team is available around the clock to support restau
 
 ---
 
-### ❓ Frequently Asked Questions (FAQ)
+###  Frequently Asked Questions (FAQ)
 * **Does the diner need to download an app?**  
   No. Scanning the counter QR code immediately opens the web pager or native Apple App Clip in seconds.
 * **How is the customer alerted?**  
@@ -336,6 +336,6 @@ with conn.cursor() as cur:
                 sort_order = VALUES(sort_order);
         ''', (p['slug'], p['title'], p['title_en'], p['content'], p['content_en'], p['meta_description'], p['sort_order']))
     conn.commit()
-    print('Seeded clean pages successfully! Count:', len(pages))
+    print('Seeded clean pages successfully Count:', len(pages))
 conn.close()
 

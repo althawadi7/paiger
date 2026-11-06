@@ -4,6 +4,49 @@
   'logo_url': order.logo_url|default('', true)
 }) %}
 {% set lvl = {'waiting': 1, 'ringing': 2, 'onway': 3, 'done': 3}.get(order.status, 1) %}
+{% if lang == 'ar' %}
+{% set tx = {
+  'yours': 'طلبك',
+  'estimated': 'الوقت المتوقع',
+  'any': 'خلال لحظات',
+  'alerts': 'تفعيل التنبيه',
+  'alertsOn': 'التنبيه مفعّل. يمكنك قفل الهاتف.',
+  'ready': 'طلبك جاهز',
+  'way': 'أنا في الطريق',
+  'wayDone': 'تم إبلاغ الكاونتر بقدومك',
+  'done': 'بالهناء والعافية',
+  'status_wait': 'طلبك قيد التحضير',
+  'status_wait_sub': 'سنعلمك فور أن يصبح الطلب جاهزاً.',
+  'push_ready_title': 'طلبك جاهز',
+  'push_ready_body': 'الطلب',
+  'push_done_title': 'تم استلام الطلب',
+  'push_done_body': 'شكراً لزيارتك.',
+  'push_wait_title': 'الطلب',
+  'push_wait_body': 'طلبك قيد التحضير.',
+  'queue_picked': 'تم الاستلام'
+} %}
+{% else %}
+{% set tx = {
+  'yours': 'Your order',
+  'estimated': 'estimated',
+  'any': 'Any moment now',
+  'alerts': 'Turn on alerts',
+  'alertsOn': 'Alerts on. You can lock your phone.',
+  'ready': 'Your order is ready',
+  'way': "I'm on my way",
+  'wayDone': "The counter knows you're coming",
+  'done': 'Enjoy your order',
+  'status_wait': 'Your order is being prepared',
+  'status_wait_sub': 'We will let you know as soon as it is ready.',
+  'push_ready_title': 'Your order is ready',
+  'push_ready_body': 'Order',
+  'push_done_title': 'Order collected',
+  'push_done_body': 'Thank you for your visit.',
+  'push_wait_title': 'Order',
+  'push_wait_body': 'Your order is being prepared.',
+  'queue_picked': 'Collected'
+} %}
+{% endif %}
 <!DOCTYPE html>
 <html lang="{{ lang }}" dir="{{ dir }}" data-theme="{{ theme }}">
 <head>
@@ -12,274 +55,156 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#ffffff">
-<title>{{ t('pager.orderNo') }} {{ order.order_number }} · {{ brand.name }}</title>
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="بيجر المطعم">
+<meta name="apple-itunes-app" content="app-id=6829547522, app-clip-bundle-id=com.dawrak.app.Clip, app-clip-display=card">
+<title>{{ order.order_number }} · {{ brand.name }}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="icon" href="/static/img/brand-logo.png?v=dawrak">
 <link rel="manifest" href="/manifest.json">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="{{ brand.name }}">
-<meta name="apple-itunes-app" content="app-clip-bundle-id=com.dawrak.app.Clip">
 <style>
 :root {
   --brand: {{ brand.brand }};
   --brand-ink: {{ brand.brand_ink }};
-  --ink: #111111; --grey: #5f6368; --grey-2: #8e8e93; --line: #e6e6e8;
-  --paper: #ffffff; --paper-2: #f6f6f7;
-  --ready: #22c55e; --ready-deep: #15803d; --ready-soft: #e7f8ee;
-  --warn: #b45309; --warn-soft: #fdf2e3;
-  --display: "Fraunces", Georgia, serif;
-  --sans: "IBM Plex Sans", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", sans-serif;
+  --ink: #111111; --grey: #5f6368; --line: #e6e6e8; --paper: #ffffff; --paper-2: #f6f6f7;
+  --ready: #15803d;
+  --sans: "IBM Plex Sans", "IBM Plex Sans Arabic", -apple-system, sans-serif;
   --ease: cubic-bezier(.2, .7, .2, 1);
 }
 html[lang="ar"] { --sans: "IBM Plex Sans Arabic", "IBM Plex Sans", -apple-system, sans-serif; }
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html { background: var(--paper); -webkit-text-size-adjust: 100%; }
-body {
-  min-height: 100svh;
-  font-family: var(--sans);
-  color: var(--ink);
-  background: var(--paper);
-  -webkit-font-smoothing: antialiased;
-  transition: background .5s var(--ease), color .5s;
-}
-button, input { font: inherit; color: inherit; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow-x: hidden; }
+body { font-family: var(--sans); color: var(--ink); background: var(--paper); -webkit-font-smoothing: antialiased; transition: background .4s, color .4s; }
+button, input { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 a { color: inherit; }
-.num { font-family: var(--display); font-variant-numeric: lining-nums tabular-nums; direction: ltr; unicode-bidi: isolate; }
-.page {
-  max-width: 460px;
-  min-height: 100svh;
-  margin: 0 auto;
-  padding: max(18px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
-  display: flex;
-  flex-direction: column;
-}
-.head, .widget-header-brand { display: flex; align-items: center; gap: 12px; }
-.logo {
-  width: 44px; height: 44px; border-radius: 13px; background: var(--brand); color: var(--brand-ink);
-  display: grid; place-items: center; font-family: var(--display); font-weight: 600; font-size: 20px;
-  flex: none; overflow: hidden;
-}
+[hidden] { display: none !important; }
+.page { min-height: 100svh; display: grid; grid-template-rows: auto 1fr auto; padding: max(14px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom)); }
+.top, .head, .widget-header-brand { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rest, .shop { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.logo { width: 36px; height: 36px; border-radius: 10px; background: var(--brand); color: var(--brand-ink); display: grid; place-items: center; font-weight: 600; font-size: 16px; flex: none; overflow: hidden; }
 .logo img, #pageLogoImg { width: 100%; height: 100%; object-fit: cover; display: block; }
-.logo span#pageLogoImg { width: auto; height: auto; display: block; }
-.shop { min-width: 0; }
-.shop b, .brand-title { display: block; font-size: 17px; font-weight: 600; line-height: 1.25; color: var(--ink); }
-.shop span, .brand-sub { font-size: 13px; color: var(--grey); }
-.head-end { margin-inline-start: auto; display: flex; align-items: center; gap: 4px; }
-.live-time-chip {
-  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
-  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
-}
-.lang {
-  height: 38px; padding: 0 12px; border-radius: 999px; font-size: 14px; color: var(--grey);
-  text-decoration: none; display: inline-flex; align-items: center;
-}
-.lang:hover { background: var(--paper-2); color: var(--ink); }
-.ready-title { display: none; margin-top: 22px; text-align: center; color: #fff; }
-.ready-title h1 { font-family: var(--display); font-weight: 500; font-size: 36px; line-height: 1.05; letter-spacing: -.01em; }
-html[lang="ar"] .ready-title h1 { font-family: var(--sans); font-weight: 600; line-height: 1.3; }
-.ready-title p { margin-top: 6px; font-size: 16px; color: rgba(255,255,255,.85); }
-.ticket, .widget-box {
-  margin-top: 22px; border-radius: 28px; background: var(--paper-2); padding: 26px 22px 22px;
-  text-align: center; position: relative; overflow: hidden; transition: background .5s var(--ease), color .5s;
-}
-.ticket .label, .widget-label { font-size: 14px; color: var(--grey); }
-.widget-order-num {
-  font-family: var(--display); font-weight: 500; font-size: clamp(96px, 34vw, 132px);
-  line-height: .95; letter-spacing: -.02em; margin-top: 6px; direction: ltr; color: var(--ink);
-}
-.who { margin-top: 6px; font-size: 15px; color: var(--grey); }
-.who strong { color: var(--ink); font-weight: 600; }
-.status {
-  margin-top: 18px; display: inline-flex; align-items: center; gap: 9px; min-height: 40px;
-  padding: 8px 16px; border-radius: 999px; background: #fff; font-size: 16px; font-weight: 600;
-  box-shadow: 0 0 0 1px var(--line);
-}
-.status i { width: 9px; height: 9px; border-radius: 50%; background: var(--brand); flex: none; animation: breathe 2s ease-in-out infinite; }
-@keyframes breathe { 50% { opacity: .35; } }
-.widget-status-title { font-size: 16px; font-weight: 600; }
-.widget-status-sub { margin-top: 10px; font-size: 14.5px; color: var(--grey); line-height: 1.45; }
-.widget-steps, .steps { margin-top: 22px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.widget-steps i { height: 5px; border-radius: 5px; background: #dedee2; position: relative; overflow: hidden; display: block; }
-.widget-steps i.on { background: var(--brand); }
-.widget-steps i.on:not(:has(~ i.on))::after {
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.6), transparent);
-  animation: sweep 1.6s linear infinite;
-}
-html[dir="rtl"] .widget-steps i.on:not(:has(~ i.on))::after { animation-direction: reverse; }
-@keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
-.step-labels { margin-top: 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 12.5px; color: var(--grey-2); }
-.queue-container, .facts { margin-top: 16px; display: block; }
-.queue-cards-row { display: grid; grid-template-columns: 1fr 1fr; border-radius: 20px; box-shadow: 0 0 0 1px var(--line); background: #fff; }
-.queue-card { padding: 14px 16px; text-align: center; background: transparent; border: 0; box-shadow: none; }
-.queue-card + .queue-card { border-inline-start: 1px solid var(--line); }
-.queue-val { display: block; font-size: 26px; font-weight: 500; line-height: 1.1; color: var(--ink); }
-.queue-val.time-val { font-family: var(--sans); font-size: 15px; font-weight: 600; line-height: 1.35; }
-.queue-label { display: block; margin-top: 4px; font-size: 13.5px; color: var(--grey); font-weight: 400; }
-.foot { margin-top: auto; padding-top: 26px; text-align: center; font-size: 12.5px; color: var(--grey-2); }
-.foot a { color: inherit; text-decoration: none; }
-
-body.ring { background: var(--ready-deep); color: #fff; }
-body.ring .shop b, body.ring .brand-title, body.ring .lang, body.ring .live-time-chip { color: #fff; }
-body.ring .shop span, body.ring .brand-sub { color: rgba(255,255,255,.75); }
-body.ring .lang:hover { background: rgba(255,255,255,.12); color: #fff; }
-body.ring .ready-title { display: block; }
-body.ring .ticket, body.ring .widget-box { background: #fff; color: var(--ink); animation: nudge 1.4s var(--ease) infinite; }
-@keyframes nudge { 0%, 100% { transform: none; } 6% { transform: rotate(-1.2deg); } 12% { transform: rotate(1.2deg); } 18% { transform: rotate(-.6deg); } 24% { transform: none; } }
-body.ring .status { background: var(--ready-soft); color: var(--ready-deep); box-shadow: none; }
-body.ring .status i { background: var(--ready); animation-duration: .7s; }
-body.ring .widget-status-title { color: var(--ready-deep); }
-body.ring .widget-steps i { background: #dedee2; }
-body.ring .widget-steps i.on { background: var(--ready-deep); }
-body.ring #queueContainer { display: none; }
-body.ring .page { padding-bottom: 108px; }
-body.ring .foot { color: rgba(255,255,255,.6); }
-
-.permission-backdrop {
-  position: fixed; inset: 0; z-index: 40; background: rgba(17,17,17,.45);
-  display: flex; align-items: flex-end; justify-content: center;
-}
-.permission-backdrop.hide { opacity: 0; visibility: hidden; pointer-events: none; }
-.permission-sheet {
-  width: min(460px, 100%); background: #fff; color: var(--ink);
-  border-radius: 26px 26px 0 0; padding: 22px 20px max(20px, env(safe-area-inset-bottom));
-  text-align: start; border: 0; box-shadow: none;
-}
-.permission-title { font-size: 20px; font-weight: 600; color: var(--ink); }
-.permission-desc { margin-top: 8px; font-size: 15.5px; color: var(--grey); line-height: 1.5; }
-.permission-accept-btn, .banner-action-btn {
-  margin-top: 16px; width: 100%; height: 58px; border-radius: 16px; border: 0; cursor: pointer;
-  background: var(--ink); color: #fff; font-size: 17px; font-weight: 600;
-  display: flex; align-items: center; justify-content: center;
-}
-.permission-accept-btn:active, .banner-action-btn:active { transform: scale(.98); }
-.open-app-pill {
-  margin-top: 10px; width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: center;
-  font-size: 14.5px; color: var(--grey); text-decoration: underline; text-underline-offset: 3px;
-  background: transparent; box-shadow: none; padding: 8px;
-}
-
-.floating-push-banner {
-  position: fixed; z-index: 30; left: 50%; bottom: max(16px, env(safe-area-inset-bottom));
-  width: min(420px, calc(100% - 32px)); transform: translate(-50%, 160%);
-  opacity: 0; pointer-events: none; background: transparent; border: 0; box-shadow: none; padding: 0;
-}
-.floating-push-banner.show { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
-.floating-push-banner .banner-top-row, .floating-push-banner .banner-content-row { display: none; }
-body.ring .banner-action-btn { margin-top: 0; height: 62px; background: #fff; color: var(--ready-deep); font-size: 18px; }
-
-.tap-audio-banner {
-  display: none; position: fixed; top: max(18px, env(safe-area-inset-top)); left: 18px; right: 18px;
-  z-index: 50; background: var(--warn-soft); color: var(--warn); padding: 14px 16px; border-radius: 16px;
-  font-weight: 600; font-size: 15px; text-align: center; cursor: pointer;
-}
-.tap-audio-banner.show { display: flex; align-items: center; justify-content: center; }
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
-}
+.logo span#pageLogoImg { width: auto; height: auto; object-fit: unset; }
+.rest b, .shop b, .brand-title { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lang { font-size: 14px; color: var(--grey); padding: 8px 4px; text-decoration: none; margin-inline-start: auto; }
+.center { align-self: center; text-align: center; }
+.lbl { font-size: 15px; color: var(--grey); }
+.no, .widget-order-num { font-family: "Fraunces", serif; font-weight: 500; font-size: clamp(120px, 42vw, 200px); line-height: .95; letter-spacing: -.03em; direction: ltr; margin-top: 4px; }
+.timer { position: relative; width: 168px; height: 168px; margin: 34px auto 0; }
+.timer svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.timer circle { fill: none; stroke-width: 6; }
+.timer .bg { stroke: var(--paper-2); }
+.timer .fg { stroke: var(--ink); stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+.timer .t { position: absolute; inset: 0; display: grid; place-content: center; }
+.timer .t b { font-family: "Fraunces", serif; font-weight: 500; font-size: 44px; line-height: 1; direction: ltr; font-variant-numeric: tabular-nums; }
+.timer .t span { font-size: 13px; color: var(--grey); margin-top: 6px; }
+.done-msg, #ws { font-size: 26px; font-weight: 600; margin-top: 26px; }
+#ws, #wu, .ready-title, .brand-sub, .who, .step-labels, .foot-old { display: none; }
+body.ring #ws, body[data-status="onway"] #ws, body[data-status="done"] #ws { display: block; }
+body.ring #ring, body[data-status="onway"] #ring, body[data-status="done"] #ring { display: none !important; }
+.live-time-chip, .open-app-pill, .permission-title, .permission-desc, .banner-top-row, .banner-content-row { display: none; }
+.permission-backdrop { position: fixed; inset: auto 0 0 0; z-index: 40; background: transparent; display: block; padding: 0 20px max(20px, env(safe-area-inset-bottom)); }
+.permission-backdrop.hide { display: none; }
+.permission-sheet { background: transparent; padding: 0; text-align: center; }
+.permission-accept-btn, .banner-action-btn, .btn { width: 100%; height: 60px; border-radius: 18px; font-size: 17px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
+.permission-accept-btn { background: var(--ink); color: #fff; }
+.btn:active, .permission-accept-btn:active, .banner-action-btn:active { transform: scale(.985); }
+#alertsOn { display: none; align-items: center; justify-content: center; gap: 8px; height: 60px; font-size: 15px; color: var(--grey); }
+#alertsOn i { width: 8px; height: 8px; border-radius: 50%; background: var(--ready); display: block; }
+body[data-status="waiting"] #permissionModal.hide ~ .page #alertsOn { display: flex; }
+body.ring .permission-backdrop, body[data-status="onway"] .permission-backdrop, body[data-status="done"] .permission-backdrop,
+body.ring #alertsOn, body[data-status="onway"] #alertsOn, body[data-status="done"] #alertsOn { display: none !important; }
+.floating-push-banner { position: fixed; z-index: 30; left: 0; right: 0; bottom: 0; padding: 0 20px max(20px, env(safe-area-inset-bottom)); transform: translateY(160%); opacity: 0; pointer-events: none; }
+.floating-push-banner.show { transform: none; opacity: 1; pointer-events: auto; }
+.banner-action-btn { background: #fff; color: var(--ready); }
+.tap-audio-banner { display: none; }
+body.ring, body[data-status="onway"] { background: var(--ready); color: #fff; }
+body.ring .lbl, body.ring .lang, body[data-status="onway"] .lbl, body[data-status="onway"] .lang { color: rgba(255,255,255,.75); }
+body.ring .no, body.ring #wn { animation: pulse 1.2s var(--ease) infinite; }
+@keyframes pulse { 50% { transform: scale(1.04); } }
+body[data-status="onway"] #ws { font-size: 22px; font-weight: 500; color: rgba(255,255,255,.92); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; } }
 </style>
 </head>
-<body id="pageBody" data-theme="{{ theme }}"{% if order.status == 'ringing' %} class="ring"{% endif %}>
+<body id="pageBody" data-theme="{{ theme }}" data-status="{{ order.status }}"{% if order.status == 'ringing' %} class="ring"{% endif %}>
 
   <div class="permission-backdrop" id="permissionModal">
     <div class="permission-sheet">
-      <h2 class="permission-title">{{ t('pager.aOffH') }}</h2>
-      <p class="permission-desc">{{ t('pager.aOffP') }}</p>
-      <button class="permission-accept-btn" id="permissionAcceptBtn" type="button">{{ t('pager.enable') }}</button>
+      <h2 class="permission-title">{{ tx.alerts }}</h2>
+      <p class="permission-desc">{{ tx.alertsOn }}</p>
+      <button class="permission-accept-btn" id="permissionAcceptBtn" type="button">{{ tx.alerts }}</button>
       <a href="dawrak://pager/{{ order.token }}" class="open-app-pill">{{ t('pager.clipH') }}</a>
     </div>
   </div>
 
   <div class="floating-push-banner" id="pushBanner">
-    <div class="banner-top-row">
-      <div class="banner-app-info">
-        <span class="banner-app-name">{{ brand.name }}</span>
-      </div>
-      <span class="banner-time">{{ t('pager.sReady') }}</span>
-    </div>
-    <div class="banner-content-row">
-      <div class="banner-title" id="bannerTitle">{{ t('pager.readyH') }}</div>
-      <div class="banner-body" id="bannerBody">{{ t('pager.readyP') }}</div>
-    </div>
-    <div class="banner-btn-row">
-      <button class="banner-action-btn" id="bannerActionBtn" type="button">{{ t('pager.onway') }}</button>
-    </div>
+    <div class="banner-top-row"><span class="banner-app-name">{{ brand.name }}</span><span class="banner-time">{{ tx.ready }}</span></div>
+    <div class="banner-content-row"><div class="banner-title" id="bannerTitle">{{ tx.ready }}</div><div class="banner-body" id="bannerBody">{{ tx.wayDone }}</div></div>
+    <div class="banner-btn-row"><button class="banner-action-btn" id="bannerActionBtn" type="button">{{ tx.way }}</button></div>
   </div>
 
-  <div id="tapAudioBanner" class="tap-audio-banner">{{ t('pager.readyH') }}</div>
-
+  <div id="tapAudioBanner" class="tap-audio-banner"></div>
   <audio id="ringAlarmAudio" loop preload="auto" src="/static/audio/chime.wav"></audio>
 
-  <main class="page pager-main-center">
-    <header class="head widget-header-brand">
-      <div class="logo" aria-hidden="true">
-        {% if brand.logo_url %}
-        <img id="pageLogoImg" src="{{ brand.logo_url }}" alt="">
-        {% else %}
-        <span id="pageLogoImg">{{ brand.initial }}</span>
-        {% endif %}
-      </div>
-      <div class="shop brand-text-col">
+  <main class="page">
+    <header class="top head widget-header-brand">
+      <div class="rest shop">
+        <div class="logo" aria-hidden="true">
+          {% if brand.logo_url %}<img id="pageLogoImg" src="{{ brand.logo_url }}" alt="">{% else %}<span id="pageLogoImg">{{ brand.initial }}</span>{% endif %}
+        </div>
         <b class="brand-title">{{ brand.name }}</b>
-        <span class="brand-sub">{{ t('pager.shopSub') }}</span>
       </div>
-      <div class="head-end">
-        <div class="live-time-chip" id="wt">--:--</div>
-        <a class="lang" href="/lang/{{ 'en' if lang == 'ar' else 'ar' }}" aria-label="{{ t('nav.langLabel') }}">{{ t('nav.langSwitch') }}</a>
-      </div>
+      <div class="live-time-chip" id="wt">--:--</div>
+      <a class="lang" href="/lang/{{ 'en' if lang == 'ar' else 'ar' }}" aria-label="{{ t('nav.langLabel') }}">{{ t('nav.langSwitch') }}</a>
     </header>
-
-    <div class="ready-title">
-      <h1>{{ t('pager.readyH') }}</h1>
-      <p>{{ t('pager.readyP') }}</p>
-    </div>
-
-    <section class="ticket widget-box" aria-live="polite">
-      <p class="label">{{ t('pager.orderNo') }}</p>
-      <div class="widget-order-num num" id="wn">{{ order.order_number }}</div>
-      {% if order.customer_name or order.notes %}
-      <p class="who customer-badge-line">
-        {% if order.customer_name %}<strong>{{ order.customer_name }}</strong>{% endif %}
-        {% if order.notes %} · {{ order.notes }}{% endif %}
-      </p>
-      {% endif %}
-      <div class="status">
-        <i></i>
-        <span class="widget-status-title" id="ws">{% if order.status == 'ringing' %}{{ t('pager.readyH') }}{% elif order.status == 'onway' %}{{ t('pager.onway') }}{% elif order.status == 'done' %}{{ t('pager.sDone') }}{% else %}{{ t('pager.sPrep') }}{% endif %}</span>
+    <div class="center">
+      <p class="lbl" id="lbl">{{ tx.yours }}</p>
+      <p class="no widget-order-num num" id="wn">{{ order.order_number }}</p>
+      <div class="timer" id="ring">
+        <svg viewBox="0 0 100 100" aria-hidden="true"><circle class="bg" cx="50" cy="50" r="46"/><circle class="fg" id="arc" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/></svg>
+        <div class="t" role="timer"><b id="time">0:00</b><span id="timeLbl">{{ tx.estimated }}</span></div>
       </div>
-      <p class="widget-status-sub" id="wu">{% if order.status == 'ringing' %}{{ t('pager.readyP') }}{% elif order.status == 'onway' %}{{ t('pager.onwaySent') }}{% elif order.status == 'done' %}{{ t('pager.doneH') }}{% else %}{{ t('pager.aOffP') }}{% endif %}</p>
-      <div class="widget-steps steps" id="stp" aria-hidden="true">
-        <i class="{{ 'on' if lvl >= 1 else '' }}"></i>
-        <i class="{{ 'on' if lvl >= 2 else '' }}"></i>
-        <i class="{{ 'on' if lvl >= 3 else '' }}"></i>
-      </div>
-      <div class="step-labels" aria-hidden="true">
-        <span>{{ t('pager.sPrep') }}</span>
-        <span>{{ t('pager.sReady') }}</span>
-        <span>{{ t('pager.sDone') }}</span>
-      </div>
-    </section>
-
-    <div class="queue-container facts" id="queueContainer">
-      <div class="queue-cards-row">
-        <div class="queue-card">
-          <span class="queue-val num" id="queueAheadVal">{{ queue_info.orders_ahead if queue_info else 0 }}</span>
-          <span class="queue-label">{{ t('pager.ahead') }}</span>
-        </div>
-        <div class="queue-card">
-          <span class="queue-val time-val" id="queueTimeVal">{{ queue_info.estimated_wait if queue_info else '' }}</span>
-          <span class="queue-label">{{ t('pager.eta') }}</span>
-        </div>
+      <p class="done-msg widget-status-title" id="ws"></p>
+      <p class="widget-status-sub" id="wu"></p>
+      <div class="widget-steps steps" id="stp" hidden aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="queue-container" id="queueContainer" hidden>
+        <span id="queueAheadVal"></span>
+        <span id="queueTimeVal"></span>
       </div>
     </div>
-
-    <footer class="foot"><span>{{ t('pager.powered') }}</span> <a href="/">Paiger</a></footer>
+    <p class="on" id="alertsOn"><i></i>{{ tx.alertsOn }}</p>
   </main>
 
 <script>
+window.PAIGER_I18N = {
+  yours: {{ tx.yours|tojson }},
+  estimated: {{ tx.estimated|tojson }},
+  any: {{ tx.any|tojson }},
+  alerts: {{ tx.alerts|tojson }},
+  alertsOn: {{ tx.alertsOn|tojson }},
+  ready: {{ tx.ready|tojson }},
+  way: {{ tx.way|tojson }},
+  wayDone: {{ tx.wayDone|tojson }},
+  done: {{ tx.done|tojson }},
+  status_wait: {{ tx.status_wait|tojson }},
+  status_wait_sub: {{ tx.status_wait_sub|tojson }},
+  push_ready_title: {{ tx.push_ready_title|tojson }},
+  push_ready_body: {{ tx.push_ready_body|tojson }},
+  push_done_title: {{ tx.push_done_title|tojson }},
+  push_done_body: {{ tx.push_done_body|tojson }},
+  push_wait_title: {{ tx.push_wait_title|tojson }},
+  push_wait_body: {{ tx.push_wait_body|tojson }},
+  queue_ready: {{ tx.ready|tojson }},
+  queue_picked: {{ tx.queue_picked|tojson }}
+};
+window.PAIGER_PREP = {{ prep_minutes if prep_minutes is defined else 6 }};
+window.PAIGER_CREATED = {{ created_ms if created_ms is defined else 0 }};
+</script>
+<script>
+
 (function(){
+function t(k){ var bag = window.PAIGER_I18N || {}; return Object.prototype.hasOwnProperty.call(bag, k) ? bag[k] : ""; }
 var order = {
   id: {{ order.id }},
   num: "{{ order.order_number }}",
@@ -323,10 +248,10 @@ function updateQueueDisplay(qInfo) {
   }
   if (order.status === 'ringing') {
     if (queueAheadVal) queueAheadVal.textContent = "0";
-    if (queueTimeVal) queueTimeVal.textContent = "طلبك جاهز! 🎉";
+    if (queueTimeVal) queueTimeVal.textContent = t("queue_ready");
   } else if (order.status === 'done') {
     if (queueAheadVal) queueAheadVal.textContent = "0";
-    if (queueTimeVal) queueTimeVal.textContent = "تم الاستلام";
+    if (queueTimeVal) queueTimeVal.textContent = t("queue_picked");
   }
 }
 
@@ -449,13 +374,13 @@ async function showStickyOrderNotification(status){
     var isRing = status === 'ringing';
     var isDone = status === 'done';
 
-    var title = isRing 
-      ? ("طلبك جاهز للاستلام! 🔔") 
-      : (isDone ? ("تم استلام طلبك #" + order.num + " ✓") : ("طلب رقم #" + order.num));
+    var title = isRing
+      ? t("push_ready_title")
+      : (isDone ? (t("push_done_title") + " #" + order.num) : (t("push_wait_title") + " #" + order.num));
 
-    var body = isRing 
-      ? ("طلب رقم #" + order.num + " • تفضل إلى الكاونتر الآن") 
-      : (isDone ? "شكراً لزيارتك." : "طلبك قيد التحضير...");
+    var body = isRing
+      ? (t("push_ready_body") + " #" + order.num)
+      : (isDone ? t("push_done_body") : t("push_wait_body"));
 
     var notifOpts = {
       body: body,
@@ -545,6 +470,7 @@ function stopRingingAlarm(){
 // 7. iOS & Android Lock Screen Media Session Widget
 // 8. UI Synchronizer
 function updateUI(){
+  document.body.setAttribute("data-status", order.status);
   var isRinging = order.status === 'ringing';
   var isDone = order.status === 'done';
   var isOnway = order.status === 'onway';
@@ -562,11 +488,11 @@ function updateUI(){
   }
 
   var m = {
-    waiting: ['طلبك قيد التحضير', 'سنهتز ونرن فور أن يجهز'],
-    ringing: ['طلبك جاهز! 🎉', 'تفضل إلى الكاونتر للاستلام'],
-    onway: ['أبلغنا الكاشير', 'الكاشير يعلم أنك قادم'],
-    done: ['تم الاستلام', 'بالعافية! شكراً لزيارتك']
-  }[order.status] || ['قيد الانتظار', ''];
+    waiting: [t("status_wait"), t("status_wait_sub")],
+    ringing: [t("ready"), t("way")],
+    onway: [t("wayDone"), ""],
+    done: [t("done"), ""]
+  }[order.status] || [t("status_wait"), ""];
 
   if (wsEl) wsEl.textContent = m[0];
   if (wuEl) wuEl.textContent = m[1];
@@ -625,7 +551,7 @@ async function activateArming(){
   updateUI();
 }
 
-// Universal interaction listener: ANY touch, click, tap anywhere arms audio & starts widgets!
+// Universal interaction listener: ANY touch, click, tap anywhere arms audio & starts widgets
 function onUserTap(){
   if(!isArmed || (ctx && ctx.state === "suspended")){
     activateArming();
@@ -732,7 +658,7 @@ setInterval(checkStatusImmediate, 1000);
 function clock(){
   var d = new Date();
   var wtEl = document.getElementById("wt");
-  if (wtEl) wtEl.textContent = d.toLocaleTimeString('ar', {hour:'2-digit', minute:'2-digit'});
+  if (wtEl) wtEl.textContent = d.toLocaleTimeString(document.documentElement.lang === "ar" ? "ar" : "en", {hour:'2-digit', minute:'2-digit'});
 }
 clock();
 setInterval(clock, 1000);
@@ -808,6 +734,33 @@ if (bannerActionBtn) {
 
 connectWS();
 updateUI();
+})();
+</script>
+<script>
+(function () {
+  function t(k) { var bag = window.PAIGER_I18N || {}; return bag[k] || ""; }
+  var total = Math.max(0, Math.round((Number(window.PAIGER_PREP) || 0) * 60));
+  var created = Number(window.PAIGER_CREATED) || Date.now();
+  var arc = document.getElementById("arc");
+  var time = document.getElementById("time");
+  var label = document.getElementById("timeLbl");
+  if (arc) arc.style.transition = "none";
+  function left() {
+    return Math.max(0, total - Math.floor((Date.now() - created) / 1000));
+  }
+  function paint() {
+    var s = left();
+    var m = Math.floor(s / 60);
+    if (time) time.textContent = s > 0 ? (m + ":" + String(s % 60).padStart(2, "0")) : "0:00";
+    if (label) label.textContent = s > 0 ? t("estimated") : t("any");
+    if (arc) {
+      arc.style.strokeDashoffset = String(total > 0 ? (100 - (s / total) * 100) : 100);
+      arc.style.strokeLinecap = s > 0 ? "round" : "butt";
+    }
+  }
+  paint();
+  if (arc) requestAnimationFrame(function () { arc.style.transition = ""; });
+  setInterval(paint, 1000);
 })();
 </script>
 </body>

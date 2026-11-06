@@ -175,7 +175,7 @@ class CashierController {
   copyCurrentLink() {
     if (this.modalLink.value) {
       navigator.clipboard.writeText(this.modalLink.value);
-      alert("تم نسخ الرابط! يمكنك إرساله أو فتحه للتجربة.");
+      alert("تم نسخ الرابط يمكنك إرساله أو فتحه للتجربة.");
     }
   }
 
@@ -203,13 +203,13 @@ class CashierController {
 
       if (order.status === "READY") {
         stateClass = "ready-state";
-        tagBadge = `<span class="tag-status tag-ready">🔔 يرن الآن</span>`;
+        tagBadge = `<span class="tag-status tag-ready"> يرن الآن</span>`;
         actionButtons = `
           <button class="btn-ctrl btn-ctrl-repeat" onclick="cashier.repeatCallOrder(${order.id})" title="تكرار الرنين">
-            🔁 تكرار التنبيه
+             تكرار التنبيه
           </button>
           <button class="btn-ctrl btn-ctrl-complete" onclick="cashier.completeOrder(${order.id})" title="تم التسليم">
-            ✅ تم الاستلام
+             تم الاستلام
           </button>
         `;
       } else if (order.status === "WAITING") {
@@ -217,12 +217,12 @@ class CashierController {
         tagBadge = `<span class="tag-status tag-waiting">⏳ قيد التحضير</span>`;
         actionButtons = `
           <button class="btn-ctrl btn-ctrl-call" onclick="cashier.callOrder(${order.id})" title="تشغيل البيجر">
-            🔔 رنين البيجر
+             رنين البيجر
           </button>
         `;
       } else if (order.status === "COMPLETED") {
         stateClass = "completed-state";
-        tagBadge = `<span class="tag-status tag-completed">🎉 تم الاستلام</span>`;
+        tagBadge = `<span class="tag-status tag-completed"> تم الاستلام</span>`;
         actionButtons = `
           <button class="btn-ctrl btn-ctrl-icon" style="flex:1;" onclick="cashier.resetOrder(${order.id})" title="إعادة للانتظار">
             ↩️ إعادة للانتظار
@@ -239,8 +239,8 @@ class CashierController {
             </div>
 
             <div class="order-details-meta" style="margin-top: 10px;">
-              ${order.customer_name ? `<div>👤 <strong>${order.customer_name}</strong></div>` : ""}
-              ${order.notes ? `<div>📝 ${order.notes}</div>` : ""}
+              ${order.customer_name ? `<div> <strong>${order.customer_name}</strong></div>` : ""}
+              ${order.notes ? `<div> ${order.notes}</div>` : ""}
               <div style="font-size: 11px; color: #64748b; margin-top: 6px;">
                 ⏱️ رن: ${order.call_count || 0} مرات | ${new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
@@ -251,10 +251,10 @@ class CashierController {
             <div class="order-card-buttons">
               ${actionButtons}
               <button class="btn-ctrl btn-ctrl-icon" onclick="cashier.showQrModal('${order.token}', '${order.order_number}')" title="عرض QR Code">
-                📱
+                
               </button>
               <button class="btn-ctrl btn-ctrl-icon" onclick="cashier.deleteOrder(${order.id})" title="حذف">
-                🗑️
+                
               </button>
             </div>
           </div>
@@ -285,7 +285,7 @@ class CashierController {
           const data = JSON.parse(event.data);
           if (data.event === "customer_acknowledged") {
             this.playCashierDing();
-            alert(`🏃‍♂️ العميل صاحب الطلب #${data.order?.order_number || ''} في طريقه للاستلام الآن!`);
+            alert(`‍ العميل صاحب الطلب #${data.order?.order_number || ''} في طريقه للاستلام الآن`);
           }
           this.loadOrders();
         } catch (e) {

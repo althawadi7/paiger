@@ -233,14 +233,14 @@
         } else if (data.ok) {
           window.location.href = `/payment/success?order_id=${orderId}`;
         } else {
-          alert('❌ فشل الدفع: ' + (data.error || 'يرجى المحاولة مجدداً'));
+          alert(' فشل الدفع: ' + (data.error || 'يرجى المحاولة مجدداً'));
           btn.disabled = false;
           btn.innerHTML = '<span class="material-icons-outlined">lock</span><span>تأكيد ودفع الآن</span>';
         }
       })
       .catch(function (error) {
         console.error("MyFatoorah submit error:", error);
-        alert('❌ خطأ في بيانات البطاقة المدخلة');
+        alert(' خطأ في بيانات البطاقة المدخلة');
         btn.disabled = false;
         btn.innerHTML = '<span class="material-icons-outlined">lock</span><span>تأكيد ودفع الآن</span>';
       });

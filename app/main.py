@@ -1770,7 +1770,7 @@ async def pager_page(request: Request, token: str):
         return HTMLResponse(
             """
             <div style="font-family:'Readex Pro',sans-serif; text-align:center; padding:50px; background:#08090d; color:#f3f5f9; height:100vh;">
-                <h1>⚠️ طلب غير موجود | Order Not Found</h1>
+                <h1>طلب غير موجود | Order Not Found</h1>
                 <p style="color:#8a93a6; margin-top:10px;">الرابط غير صحيح أو قد تم حذف الطلب من الكاشير.</p>
                 <a href="/login" style="display:inline-block; margin-top:20px; color:#8b7bff; text-decoration:none;">العودة للرئيسية</a>
             </div>
@@ -1782,6 +1782,19 @@ async def pager_page(request: Request, token: str):
     await _note_customer_view(request, order)
     queue_info = db.get_order_queue_info(order["id"])
     theme = db.get_setting("theme", "light")
+    prep_minutes = 6
+    if order.get("restaurant_id"):
+        rest_row = db.get_restaurant_by_id(int(order["restaurant_id"]))
+        raw_prep = (rest_row or {}).get("prep_minutes")
+        if raw_prep is not None:
+            prep_minutes = int(raw_prep)
+    created = order.get("created_at")
+    if isinstance(created, str) and created:
+        try:
+            created = datetime.fromisoformat(created)
+        except ValueError:
+            created = None
+    created_ms = int(created.timestamp() * 1000) if isinstance(created, datetime) else int(datetime.now().timestamp() * 1000)
     return templates.TemplateResponse(
         "pager.html",
         {
@@ -1791,6 +1804,8 @@ async def pager_page(request: Request, token: str):
             "base_url": get_public_base_url(request),
             "queue_info": queue_info,
             "theme": theme,
+            "prep_minutes": prep_minutes,
+            "created_ms": created_ms,
         }
     )
 
@@ -2149,7 +2164,7 @@ async def get_qr_image(request: Request, token: str, host: str = None):
         elif token in ("demo", "stand"):
             url = clean_host
         else:
-            # Guarantee the customer gets to their specific pager page!
+            # Guarantee the customer gets to their specific pager page
             url = f"{clean_host}/pager/{token}"
     else:
         url = f"{base}/pager/{token}"
@@ -2250,7 +2265,7 @@ async def websocket_cashier(websocket: WebSocket):
         manager.disconnect_cashier(websocket)
 
 # ========================================================
-# 💳 MYFATOORAH EMBEDDED & IN-APP PAYMENT ROUTERS
+#  MYFATOORAH EMBEDDED & IN-APP PAYMENT ROUTERS
 # ========================================================
 from . import myfatoorah_service as mf
 
@@ -2399,8 +2414,8 @@ async def page_myfatoorah_return(request: Request, paymentId: Optional[str] = No
     </head>
     <body>
         <div class="card">
-            <div class="icon">{'✅' if is_success else '❌'}</div>
-            <h2>{'تمت عملية الدفع بنجاح!' if is_success else 'فشلت عملية الدفع'}</h2>
+            <div class="icon">{'تم' if is_success else 'تعذر'}</div>
+            <h2>{'تمت عملية الدفع بنجاح.' if is_success else 'فشلت عملية الدفع'}</h2>
             <p style="color: #94a3b8; font-size: 14px; margin-top: 8px;">معرف العملية: {pid or 'غير متوفر'}</p>
             <a href="/" class="btn">العودة للرئيسية</a>
         </div>

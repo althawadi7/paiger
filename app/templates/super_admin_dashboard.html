@@ -1234,23 +1234,23 @@
                     {% if ord.status == 'waiting' %}
                       <span class="status-badge waiting">⏳ قيد التحضير</span>
                     {% elif ord.status == 'ringing' %}
-                      <span class="status-badge ringing">🔔 يرن الآن</span>
+                      <span class="status-badge ringing"> يرن الآن</span>
                     {% elif ord.status == 'onway' %}
-                      <span class="status-badge onway">🏃 العميل قادم</span>
+                      <span class="status-badge onway"> العميل قادم</span>
                     {% elif ord.status == 'done' %}
-                      <span class="status-badge done">✅ مكتمل</span>
+                      <span class="status-badge done"> مكتمل</span>
                     {% endif %}
                   </td>
                   <td><span class="time-ticker">{{ ord.created_at }}</span></td>
                   <td>
                     <div class="action-group">
-                      <button onclick="ringOrder({{ ord.id }})" class="action-btn ring-btn" title="نداء / رنين 🔔">
+                      <button onclick="ringOrder({{ ord.id }})" class="action-btn ring-btn" title="نداء / رنين ">
                         <span class="material-icons-outlined">notifications_active</span>
                       </button>
-                      <button onclick="completeOrder({{ ord.id }})" class="action-btn done-btn" title="إكمال الطلب ✅">
+                      <button onclick="completeOrder({{ ord.id }})" class="action-btn done-btn" title="إكمال الطلب ">
                         <span class="material-icons-outlined">check_circle</span>
                       </button>
-                      <a href="/order/{{ ord.token }}" target="_blank" class="action-btn" title="صفحة البيجر للعميل 📱">
+                      <a href="/order/{{ ord.token }}" target="_blank" class="action-btn" title="صفحة البيجر للعميل ">
                         <span class="material-icons-outlined">phone_iphone</span>
                       </a>
                     </div>
@@ -1292,8 +1292,8 @@
             </div>
             <div class="filter-pills">
               <button class="filter-pill active" onclick="setRestFilter('all', this)">جميع المطاعم</button>
-              <button class="filter-pill" onclick="setRestFilter('active', this)">🟢 النشطة فقط</button>
-              <button class="filter-pill" onclick="setRestFilter('inactive', this)">🔴 المعطلة</button>
+              <button class="filter-pill" onclick="setRestFilter('active', this)"> النشطة فقط</button>
+              <button class="filter-pill" onclick="setRestFilter('inactive', this)"> المعطلة</button>
             </div>
           </div>
 
@@ -1348,20 +1348,20 @@
                   </td>
                   <td>
                     <div class="action-group">
-                      <a href="/r/{{ r.slug }}/cashier" target="_blank" class="action-btn" title="فتح شاشة الكاشير 💻">
+                      <a href="/r/{{ r.slug }}/cashier" target="_blank" class="action-btn" title="فتح شاشة الكاشير ">
                         <span class="material-icons-outlined">point_of_sale</span>
                       </a>
-                      <a href="/r/{{ r.slug }}/print" target="_blank" class="action-btn" title="طباعة ستاند الاستقبال و QR 🖨️">
+                      <a href="/r/{{ r.slug }}/print" target="_blank" class="action-btn" title="طباعة ستاند الاستقبال و QR ">
                         <span class="material-icons-outlined">qr_code_2</span>
                       </a>
-                      <button onclick='openEditModal({{ r|tojson }})' class="action-btn" title="تعديل بيانات المطعم ✏️">
+                      <button onclick='openEditModal({{ r|tojson }})' class="action-btn" title="تعديل بيانات المطعم ">
                         <span class="material-icons-outlined">edit</span>
                       </button>
-                      <button onclick="copyToClipboard('https://pager.rahapp.com/r/{{ r.slug }}/cashier', 'رابط الكاشير')" class="action-btn" title="نسخ رابط الكاشير 📋">
+                      <button onclick="copyToClipboard('https://pager.rahapp.com/r/{{ r.slug }}/cashier', 'رابط الكاشير')" class="action-btn" title="نسخ رابط الكاشير ">
                         <span class="material-icons-outlined">content_copy</span>
                       </button>
                       {% if r.id != 1 %}
-                      <button onclick="deleteRestaurant({{ r.id }}, '{{ r.name }}')" class="action-btn danger-btn" title="حذف المطعم نهائياً 🗑️">
+                      <button onclick="deleteRestaurant({{ r.id }}, '{{ r.name }}')" class="action-btn danger-btn" title="حذف المطعم نهائياً ">
                         <span class="material-icons-outlined">delete_outline</span>
                       </button>
                       {% endif %}
@@ -1408,7 +1408,7 @@
             <!-- Restaurant Filter Dropdown -->
             <div class="select-wrap">
               <select id="orderRestFilter" onchange="filterOrders()">
-                <option value="all">🏢 جميع المطاعم والفروع</option>
+                <option value="all"> جميع المطاعم والفروع</option>
                 {% for r in restaurants %}
                 <option value="{{ r.id }}">{{ r.name }} ({{ r.slug }})</option>
                 {% endfor %}
@@ -1419,9 +1419,9 @@
             <div class="filter-pills">
               <button class="filter-pill active" onclick="setOrderStatusFilter('all', this)">الكل (<span id="countAllOrders">{{ all_orders|length }}</span>)</button>
               <button class="filter-pill" onclick="setOrderStatusFilter('waiting', this)">⏳ تحضير</button>
-              <button class="filter-pill" onclick="setOrderStatusFilter('ringing', this)">🔔 يرن الآن</button>
-              <button class="filter-pill" onclick="setOrderStatusFilter('onway', this)">🏃 العميل قادم</button>
-              <button class="filter-pill" onclick="setOrderStatusFilter('done', this)">✅ مكتمل</button>
+              <button class="filter-pill" onclick="setOrderStatusFilter('ringing', this)"> يرن الآن</button>
+              <button class="filter-pill" onclick="setOrderStatusFilter('onway', this)"> العميل قادم</button>
+              <button class="filter-pill" onclick="setOrderStatusFilter('done', this)"> مكتمل</button>
             </div>
           </div>
 
@@ -1465,11 +1465,11 @@
                     {% if o.status == 'waiting' %}
                       <span class="status-badge waiting">⏳ قيد التحضير</span>
                     {% elif o.status == 'ringing' %}
-                      <span class="status-badge ringing">🔔 يرن الآن</span>
+                      <span class="status-badge ringing"> يرن الآن</span>
                     {% elif o.status == 'onway' %}
-                      <span class="status-badge onway">🏃 العميل قادم</span>
+                      <span class="status-badge onway"> العميل قادم</span>
                     {% elif o.status == 'done' %}
-                      <span class="status-badge done">✅ مكتمل</span>
+                      <span class="status-badge done"> مكتمل</span>
                     {% endif %}
                   </td>
                   <td>
@@ -1481,19 +1481,19 @@
                   <td><span class="time-ticker">{{ o.created_at }}</span></td>
                   <td>
                     <div class="action-group">
-                      <button onclick="ringOrder({{ o.id }})" class="action-btn ring-btn" title="نداء / رنين 🔔">
+                      <button onclick="ringOrder({{ o.id }})" class="action-btn ring-btn" title="نداء / رنين ">
                         <span class="material-icons-outlined">notifications_active</span>
                       </button>
-                      <button onclick="completeOrder({{ o.id }})" class="action-btn done-btn" title="إكمال الطلب ✅">
+                      <button onclick="completeOrder({{ o.id }})" class="action-btn done-btn" title="إكمال الطلب ">
                         <span class="material-icons-outlined">check_circle</span>
                       </button>
                       <button onclick="resetOrder({{ o.id }})" class="action-btn" title="إعادة للانتظار ⏳">
                         <span class="material-icons-outlined">replay</span>
                       </button>
-                      <a href="/order/{{ o.token }}" target="_blank" class="action-btn" title="فتح بيجر العميل 📱">
+                      <a href="/order/{{ o.token }}" target="_blank" class="action-btn" title="فتح بيجر العميل ">
                         <span class="material-icons-outlined">phone_iphone</span>
                       </a>
-                      <button onclick="deleteOrder({{ o.id }})" class="action-btn danger-btn" title="حذف الطلب 🗑️">
+                      <button onclick="deleteOrder({{ o.id }})" class="action-btn danger-btn" title="حذف الطلب ">
                         <span class="material-icons-outlined">delete_outline</span>
                       </button>
                     </div>
@@ -1609,7 +1609,7 @@
             </div>
 
             <div style="margin-top: 20px; padding: 14px; background: var(--card-soft); border-radius: 12px; border: 1px solid var(--border-soft); font-size: 12.5px; line-height: 1.6; color: var(--ink-secondary);">
-              💡 <strong>جاهزية الـ App Clip:</strong> تم إعداد وتوثيق ملف AASA بنجاح. بمجرد مسح العميل لكود الـ QR، يتم استدعاء الـ App Clip Card فورياً لتفعيل الـ Live Activity في الجزيرة التفاعلية (Dynamic Island) وشاشة القفل بدون الحاجة لتثبيت التطبيق.
+               <strong>جاهزية الـ App Clip:</strong> تم إعداد وتوثيق ملف AASA بنجاح. بمجرد مسح العميل لكود الـ QR، يتم استدعاء الـ App Clip Card فورياً لتفعيل الـ Live Activity في الجزيرة التفاعلية (Dynamic Island) وشاشة القفل بدون الحاجة لتثبيت التطبيق.
             </div>
           </div>
 
@@ -1742,14 +1742,14 @@
                       <a href="/p/{{ p.slug }}" target="_blank" class="action-btn" title="معاينة الصفحة الحية ↗">
                         <span class="material-icons-outlined">visibility</span>
                       </a>
-                      <button onclick='openEditPageModal({{ p|tojson }})' class="action-btn" title="تعديل المحتوى ✏️">
+                      <button onclick='openEditPageModal({{ p|tojson }})' class="action-btn" title="تعديل المحتوى ">
                         <span class="material-icons-outlined">edit</span>
                       </button>
-                      <button onclick="copyToClipboard('https://pager.rahapp.com/p/{{ p.slug }}', 'رابط الصفحة لمتجر آبل')" class="action-btn" title="نسخ الرابط الرسمي لمتجر آبل 📋">
+                      <button onclick="copyToClipboard('https://pager.rahapp.com/p/{{ p.slug }}', 'رابط الصفحة لمتجر آبل')" class="action-btn" title="نسخ الرابط الرسمي لمتجر آبل ">
                         <span class="material-icons-outlined">content_copy</span>
                       </button>
                       {% if p.slug not in ('privacy-policy', 'terms-of-service') %}
-                      <button onclick="deletePage({{ p.id }}, '{{ p.title }}')" class="action-btn danger-btn" title="حذف الصفحة 🗑️">
+                      <button onclick="deletePage({{ p.id }}, '{{ p.title }}')" class="action-btn danger-btn" title="حذف الصفحة ">
                         <span class="material-icons-outlined">delete_outline</span>
                       </button>
                       {% endif %}
@@ -1836,12 +1836,12 @@
       <div class="form-group">
         <label class="form-label">أيقونة النشاط</label>
         <select name="brand_icon" id="addIcon" class="form-input">
-          <option value="coffee">☕ قهوة ومشروبات (Coffee)</option>
-          <option value="restaurant">🍴 مطعم ومأكولات (Restaurant)</option>
-          <option value="fastfood">🍔 وجبات سريعة وبرجر (Fastfood)</option>
-          <option value="icecream">🍦 مثلجات وحلويات (Dessert)</option>
-          <option value="bakery_dining">🥐 مخبوزات ومعجنات (Bakery)</option>
-          <option value="local_pizza">🍕 بيتزا وإيطالي (Pizza)</option>
+          <option value="coffee"> قهوة ومشروبات (Coffee)</option>
+          <option value="restaurant"> مطعم ومأكولات (Restaurant)</option>
+          <option value="fastfood"> وجبات سريعة وبرجر (Fastfood)</option>
+          <option value="icecream"> مثلجات وحلويات (Dessert)</option>
+          <option value="bakery_dining"> مخبوزات ومعجنات (Bakery)</option>
+          <option value="local_pizza"> بيتزا وإيطالي (Pizza)</option>
         </select>
       </div>
 
@@ -1911,19 +1911,19 @@
         <div class="form-group">
           <label class="form-label">حالة المطعم</label>
           <select name="is_active" id="editActive" class="form-input">
-            <option value="1">🟢 نشط ومفعل (Active)</option>
-            <option value="0">🔴 معطل وموقوف (Inactive)</option>
+            <option value="1"> نشط ومفعل (Active)</option>
+            <option value="0"> معطل وموقوف (Inactive)</option>
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">أيقونة النشاط</label>
           <select name="brand_icon" id="editIcon" class="form-input">
-            <option value="coffee">☕ قهوة ومشروبات (Coffee)</option>
-            <option value="restaurant">🍴 مطعم ومأكولات (Restaurant)</option>
-            <option value="fastfood">🍔 وجبات سريعة وبرجر (Fastfood)</option>
-            <option value="icecream">🍦 مثلجات وحلويات (Dessert)</option>
-            <option value="bakery_dining">🥐 مخبوزات ومعجنات (Bakery)</option>
-            <option value="local_pizza">🍕 بيتزا وإيطالي (Pizza)</option>
+            <option value="coffee"> قهوة ومشروبات (Coffee)</option>
+            <option value="restaurant"> مطعم ومأكولات (Restaurant)</option>
+            <option value="fastfood"> وجبات سريعة وبرجر (Fastfood)</option>
+            <option value="icecream"> مثلجات وحلويات (Dessert)</option>
+            <option value="bakery_dining"> مخبوزات ومعجنات (Bakery)</option>
+            <option value="local_pizza"> بيتزا وإيطالي (Pizza)</option>
           </select>
         </div>
       </div>
@@ -2013,15 +2013,15 @@
         <div class="form-group">
           <label class="form-label">حالة النشر</label>
           <select name="is_published" id="addPagePublished" class="form-input">
-            <option value="1">🟢 منشورة ومتاحة للعامة (Published)</option>
-            <option value="0">⚪ مسودة غير منشورة (Draft)</option>
+            <option value="1"> منشورة ومتاحة للعامة (Published)</option>
+            <option value="0"> مسودة غير منشورة (Draft)</option>
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">الظهور في الفوتر</label>
           <select name="show_in_footer" id="addPageFooter" class="form-input">
-            <option value="1">✅ نعم، اعرضها في فوتر الموقع</option>
-            <option value="0">❌ لا، صفحة مستقلة فقط</option>
+            <option value="1"> نعم، اعرضها في فوتر الموقع</option>
+            <option value="0"> لا، صفحة مستقلة فقط</option>
           </select>
         </div>
       </div>
@@ -2096,15 +2096,15 @@
         <div class="form-group">
           <label class="form-label">حالة النشر</label>
           <select name="is_published" id="editPagePublished" class="form-input">
-            <option value="1">🟢 منشورة ومتاحة للعامة (Published)</option>
-            <option value="0">⚪ مسودة غير منشورة (Draft)</option>
+            <option value="1"> منشورة ومتاحة للعامة (Published)</option>
+            <option value="0"> مسودة غير منشورة (Draft)</option>
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">الظهور في الفوتر</label>
           <select name="show_in_footer" id="editPageFooter" class="form-input">
-            <option value="1">✅ نعم، اعرضها في فوتر الموقع</option>
-            <option value="0">❌ لا، صفحة مستقلة فقط</option>
+            <option value="1"> نعم، اعرضها في فوتر الموقع</option>
+            <option value="0"> لا، صفحة مستقلة فقط</option>
           </select>
         </div>
       </div>
@@ -2191,7 +2191,7 @@
 
   function copyToClipboard(text, label) {
     navigator.clipboard.writeText(text).then(() => {
-      showToast(`تم نسخ ${label} إلى الحافظة بنجاح!`, 'success');
+      showToast(`تم نسخ ${label} إلى الحافظة بنجاح`, 'success');
     }).catch(() => {
       prompt('انسخ الرابط يدوياً:', text);
     });
@@ -2250,14 +2250,14 @@
       });
       const result = await res.json();
       if (res.ok) {
-        showToast('✅ تم إنشاء المطعم بنجاح!', 'success');
+        showToast(' تم إنشاء المطعم بنجاح', 'success');
         closeAddModal();
         setTimeout(() => location.reload(), 800);
       } else {
-        showToast('❌ خطأ: ' + (result.detail || 'تعذر إنشاء المطعم'), 'error');
+        showToast(' خطأ: ' + (result.detail || 'تعذر إنشاء المطعم'), 'error');
       }
     } catch (err) {
-      showToast('❌ خطأ اتصال: ' + err.message, 'error');
+      showToast(' خطأ اتصال: ' + err.message, 'error');
     }
   }
 
@@ -2276,14 +2276,14 @@
       });
       const result = await res.json();
       if (res.ok) {
-        showToast('✅ تم تحديث بيانات المطعم بنجاح!', 'success');
+        showToast(' تم تحديث بيانات المطعم بنجاح', 'success');
         closeEditModal();
         setTimeout(() => location.reload(), 800);
       } else {
-        showToast('❌ خطأ: ' + (result.detail || 'تعذر التحديث'), 'error');
+        showToast(' خطأ: ' + (result.detail || 'تعذر التحديث'), 'error');
       }
     } catch (err) {
-      showToast('❌ خطأ اتصال: ' + err.message, 'error');
+      showToast(' خطأ اتصال: ' + err.message, 'error');
     }
   }
 
@@ -2293,16 +2293,16 @@
       const res = await fetch(`/api/admin/restaurants/${id}/toggle-status`, { method: 'POST' });
       const result = await res.json();
       if (res.ok) {
-        showToast(result.is_active ? '🟢 تم تفعيل المطعم بنجاح' : '🔴 تم إيقاف المطعم مؤقتاً', 'success');
+        showToast(result.is_active ? ' تم تفعيل المطعم بنجاح' : ' تم إيقاف المطعم مؤقتاً', 'success');
         const row = document.getElementById(`rest-row-${id}`);
         if (row) {
           row.dataset.status = result.is_active ? 'active' : 'inactive';
         }
       } else {
-        showToast('❌ فشل تغيير الحالة', 'error');
+        showToast(' فشل تغيير الحالة', 'error');
       }
     } catch (err) {
-      showToast('❌ خطأ: ' + err.message, 'error');
+      showToast(' خطأ: ' + err.message, 'error');
     }
   }
 
@@ -2313,14 +2313,14 @@
       const res = await fetch(`/api/admin/restaurants/${id}`, { method: 'DELETE' });
       const result = await res.json();
       if (res.ok) {
-        showToast('✅ تم حذف المطعم بنجاح', 'success');
+        showToast(' تم حذف المطعم بنجاح', 'success');
         const row = document.getElementById(`rest-row-${id}`);
         if (row) row.remove();
       } else {
-        showToast('❌ خطأ: ' + (result.detail || 'تعذر الحذف'), 'error');
+        showToast(' خطأ: ' + (result.detail || 'تعذر الحذف'), 'error');
       }
     } catch (err) {
-      showToast('❌ خطأ اتصال: ' + err.message, 'error');
+      showToast(' خطأ اتصال: ' + err.message, 'error');
     }
   }
 
@@ -2349,13 +2349,13 @@
     try {
       const res = await fetch(`/api/orders/${id}/ring`, { method: 'POST' });
       if (res.ok) {
-        showToast(`🔔 تم إرسال نداء ورنين للطلب #${id}!`, 'success');
+        showToast(` تم إرسال نداء ورنين للطلب #${id}!`, 'success');
         refreshOrdersData();
       } else {
-        showToast('❌ تعذر إرسال النداء', 'error');
+        showToast(' تعذر إرسال النداء', 'error');
       }
     } catch (err) {
-      showToast('❌ خطأ: ' + err.message, 'error');
+      showToast(' خطأ: ' + err.message, 'error');
     }
   }
 
@@ -2363,13 +2363,13 @@
     try {
       const res = await fetch(`/api/orders/${id}/done`, { method: 'POST' });
       if (res.ok) {
-        showToast(`✅ تم إكمال وتسليم الطلب #${id}`, 'success');
+        showToast(` تم إكمال وتسليم الطلب #${id}`, 'success');
         refreshOrdersData();
       } else {
-        showToast('❌ تعذر إكمال الطلب', 'error');
+        showToast(' تعذر إكمال الطلب', 'error');
       }
     } catch (err) {
-      showToast('❌ خطأ: ' + err.message, 'error');
+      showToast(' خطأ: ' + err.message, 'error');
     }
   }
 
@@ -2380,10 +2380,10 @@
         showToast(`⏳ تمت إعادة الطلب #${id} إلى حالة الانتظار`, 'info');
         refreshOrdersData();
       } else {
-        showToast('❌ تعذر تحديث الطلب', 'error');
+        showToast(' تعذر تحديث الطلب', 'error');
       }
     } catch (err) {
-      showToast('❌ خطأ: ' + err.message, 'error');
+      showToast(' خطأ: ' + err.message, 'error');
     }
   }
 
@@ -2392,14 +2392,14 @@
     try {
       const res = await fetch(`/api/orders/${id}`, { method: 'DELETE' });
       if (res.ok) {
-        showToast(`🗑️ تم حذف الطلب #${id}`, 'info');
+        showToast(` تم حذف الطلب #${id}`, 'info');
         const row = document.getElementById(`order-row-${id}`);
         if (row) row.remove();
       } else {
-        showToast('❌ تعذر حذف الطلب', 'error');
+        showToast(' تعذر حذف الطلب', 'error');
       }
     } catch (err) {
-      showToast('❌ خطأ: ' + err.message, 'error');
+      showToast(' خطأ: ' + err.message, 'error');
     }
   }
 
@@ -2464,9 +2464,9 @@
     tbody.innerHTML = orders.map(o => {
       let statusHtml = '';
       if (o.status === 'waiting') statusHtml = '<span class="status-badge waiting">⏳ قيد التحضير</span>';
-      else if (o.status === 'ringing') statusHtml = '<span class="status-badge ringing">🔔 يرن الآن</span>';
-      else if (o.status === 'onway') statusHtml = '<span class="status-badge onway">🏃 العميل قادم</span>';
-      else if (o.status === 'done') statusHtml = '<span class="status-badge done">✅ مكتمل</span>';
+      else if (o.status === 'ringing') statusHtml = '<span class="status-badge ringing"> يرن الآن</span>';
+      else if (o.status === 'onway') statusHtml = '<span class="status-badge onway"> العميل قادم</span>';
+      else if (o.status === 'done') statusHtml = '<span class="status-badge done"> مكتمل</span>';
 
       return `
         <tr id="order-row-${o.id}"
@@ -2495,19 +2495,19 @@
           <td><span class="time-ticker">${o.created_at || ''}</span></td>
           <td>
             <div class="action-group">
-              <button onclick="ringOrder(${o.id})" class="action-btn ring-btn" title="نداء / رنين 🔔">
+              <button onclick="ringOrder(${o.id})" class="action-btn ring-btn" title="نداء / رنين ">
                 <span class="material-icons-outlined">notifications_active</span>
               </button>
-              <button onclick="completeOrder(${o.id})" class="action-btn done-btn" title="إكمال الطلب ✅">
+              <button onclick="completeOrder(${o.id})" class="action-btn done-btn" title="إكمال الطلب ">
                 <span class="material-icons-outlined">check_circle</span>
               </button>
               <button onclick="resetOrder(${o.id})" class="action-btn" title="إعادة للانتظار ⏳">
                 <span class="material-icons-outlined">replay</span>
               </button>
-              <a href="/order/${o.token}" target="_blank" class="action-btn" title="فتح بيجر العميل 📱">
+              <a href="/order/${o.token}" target="_blank" class="action-btn" title="فتح بيجر العميل ">
                 <span class="material-icons-outlined">phone_iphone</span>
               </a>
-              <button onclick="deleteOrder(${o.id})" class="action-btn danger-btn" title="حذف الطلب 🗑️">
+              <button onclick="deleteOrder(${o.id})" class="action-btn danger-btn" title="حذف الطلب ">
                 <span class="material-icons-outlined">delete_outline</span>
               </button>
             </div>
@@ -2570,14 +2570,14 @@
       });
       const result = await res.json();
       if (res.ok) {
-        showToast('✅ تم إنشاء الصفحة بنجاح!', 'success');
+        showToast(' تم إنشاء الصفحة بنجاح', 'success');
         closeAddPageModal();
         setTimeout(() => location.reload(), 800);
       } else {
-        showToast('❌ خطأ: ' + (result.detail || 'تعذر إنشاء الصفحة'), 'error');
+        showToast(' خطأ: ' + (result.detail || 'تعذر إنشاء الصفحة'), 'error');
       }
     } catch (err) {
-      showToast('❌ خطأ اتصال: ' + err.message, 'error');
+      showToast(' خطأ اتصال: ' + err.message, 'error');
     }
   }
 
@@ -2595,14 +2595,14 @@
       });
       const result = await res.json();
       if (res.ok) {
-        showToast('✅ تم تحديث بيانات الصفحة بنجاح!', 'success');
+        showToast(' تم تحديث بيانات الصفحة بنجاح', 'success');
         closeEditPageModal();
         setTimeout(() => location.reload(), 800);
       } else {
-        showToast('❌ خطأ: ' + (result.detail || 'تعذر التحديث'), 'error');
+        showToast(' خطأ: ' + (result.detail || 'تعذر التحديث'), 'error');
       }
     } catch (err) {
-      showToast('❌ خطأ اتصال: ' + err.message, 'error');
+      showToast(' خطأ اتصال: ' + err.message, 'error');
     }
   }
 
@@ -2611,12 +2611,12 @@
       const res = await fetch(`/api/admin/pages/${id}/toggle-published`, { method: 'POST' });
       const result = await res.json();
       if (res.ok) {
-        showToast(result.is_published ? '🟢 تم نشر الصفحة للعامة' : '⚪ تم تحويل الصفحة لمسودة', 'success');
+        showToast(result.is_published ? ' تم نشر الصفحة للعامة' : ' تم تحويل الصفحة لمسودة', 'success');
       } else {
-        showToast('❌ تعذر تغيير حالة النشر', 'error');
+        showToast(' تعذر تغيير حالة النشر', 'error');
       }
     } catch (err) {
-      showToast('❌ خطأ: ' + err.message, 'error');
+      showToast(' خطأ: ' + err.message, 'error');
     }
   }
 
@@ -2625,12 +2625,12 @@
       const res = await fetch(`/api/admin/pages/${id}/toggle-footer`, { method: 'POST' });
       const result = await res.json();
       if (res.ok) {
-        showToast(result.show_in_footer ? '✅ ستظهر الصفحة في فوتر الموقع' : '❌ تم إخفاء الصفحة من الفوتر', 'info');
+        showToast(result.show_in_footer ? ' ستظهر الصفحة في فوتر الموقع' : ' تم إخفاء الصفحة من الفوتر', 'info');
       } else {
-        showToast('❌ تعذر تغيير إعداد الفوتر', 'error');
+        showToast(' تعذر تغيير إعداد الفوتر', 'error');
       }
     } catch (err) {
-      showToast('❌ خطأ: ' + err.message, 'error');
+      showToast(' خطأ: ' + err.message, 'error');
     }
   }
 
@@ -2640,14 +2640,14 @@
       const res = await fetch(`/api/admin/pages/${id}`, { method: 'DELETE' });
       const result = await res.json();
       if (res.ok) {
-        showToast('✅ تم حذف الصفحة بنجاح', 'success');
+        showToast(' تم حذف الصفحة بنجاح', 'success');
         const row = document.getElementById(`page-row-${id}`);
         if (row) row.remove();
       } else {
-        showToast('❌ خطأ: ' + (result.detail || 'تعذر الحذف'), 'error');
+        showToast(' خطأ: ' + (result.detail || 'تعذر الحذف'), 'error');
       }
     } catch (err) {
-      showToast('❌ خطأ: ' + err.message, 'error');
+      showToast(' خطأ: ' + err.message, 'error');
     }
   }
 
@@ -2677,9 +2677,9 @@
         // Refresh tables on any cashier activity
         refreshOrdersData();
         if (msg.event === 'order_created') {
-          showToast(`📦 طلب جديد #${msg.order?.order_number || ''}`, 'info');
+          showToast(` طلب جديد #${msg.order?.order_number || ''}`, 'info');
         } else if (msg.event === 'customer_onway') {
-          showToast(`🏃 العميل قادم لاستلام طلب #${msg.order?.order_number || ''}!`, 'info');
+          showToast(` العميل قادم لاستلام طلب #${msg.order?.order_number || ''}!`, 'info');
         }
       } catch (err) {
         console.log(err);

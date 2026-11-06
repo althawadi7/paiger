@@ -126,13 +126,13 @@
 <body>
 
   <div class="print-actions">
-    <button onclick="window.print()" class="btn-print">🖨️ طباعة الستاند الآن (Print Stand)</button>
+    <button onclick="window.print()" class="btn-print"> طباعة الستاند الآن (Print Stand)</button>
     <button onclick="window.close()" class="btn-print" style="background: #fff; color: #23150d; border: 1px solid #d0c8be;">إغلاق</button>
   </div>
 
   <div class="stand-card">
     <div class="stand-logo" aria-hidden="true">{% if brand.logo_url %}<img src="{{ brand.logo_url }}" alt="">{% else %}{{ brand.initial }}{% endif %}</div>
-    <div class="stand-badge">⚡ نظام البيجر الفوري الذكي</div>
+    <div class="stand-badge"> نظام البيجر الفوري الذكي</div>
     <h1 class="restaurant-title">{{ brand.name }}</h1>
     <p class="stand-subtitle">تابع دورك واستلم طلبك طازجاً فور جهوزيته</p>
 
@@ -140,7 +140,7 @@
       <img src="/api/qr/stand?host=https://pager.rahapp.com/r/{{ restaurant.slug }}" alt="QR Code" id="standQrImg">
     </div>
 
-    <div class="instructions-ar">وجّه كاميرا هاتفك نحو الكود لمتابعة طلبك 📱</div>
+    <div class="instructions-ar">وجّه كاميرا هاتفك نحو الكود لمتابعة طلبك </div>
     <div class="instructions-en">Scan with phone camera to track your order</div>
 
     <div class="stand-footer">

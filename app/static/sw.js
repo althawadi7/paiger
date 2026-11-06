@@ -16,13 +16,13 @@ self.addEventListener('push', function(event) {
     try {
       data = event.data.json();
     } catch(e) {
-      data = { title: "طلبك جاهز للاستلام! 🔔", body: event.data.text() };
+      data = { title: "طلبك جاهز للاستلام", body: event.data.text() };
     }
   }
 
-  var title = data.title || "طلبك جاهز للاستلام! 🔔";
+  var title = data.title || "طلبك جاهز للاستلام";
   var options = {
-    body: data.body || "تفضل إلى الكاونتر للاستلام الآن.",
+    body: data.body || "يرجى التوجه إلى الكاونتر.",
     icon: data.icon || "/static/img/brand-logo.png?v=dawrak",
     badge: data.badge || "/static/img/brand-logo.png?v=dawrak",
     vibrate: [600, 150, 600, 150, 900, 200, 600, 150, 900],
@@ -71,9 +71,9 @@ self.addEventListener('notificationclick', function(event) {
 self.addEventListener('message', function(event) {
   if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
     var p = event.data.payload || {};
-    var title = p.title || "طلبك جاهز للاستلام! 🔔";
+    var title = p.title || "طلبك جاهز للاستلام";
     var options = {
-      body: p.body || "تفضل إلى الكاونتر للاستلام الآن.",
+      body: p.body || "يرجى التوجه إلى الكاونتر.",
       icon: "/static/img/brand-logo.png?v=dawrak",
       badge: "/static/img/brand-logo.png?v=dawrak",
       vibrate: [600, 150, 600, 150, 900, 200, 600, 150, 900],

@@ -146,7 +146,7 @@ class PagerClient {
 
   /**
    * Updates Lock Screen Widget info (MediaSession API)
-   * This displays on iPhone lock screen and Android notification tray!
+   * This displays on iPhone lock screen and Android notification tray
    */
   updateMediaSession(isReady) {
     if (!("mediaSession" in navigator)) return;
@@ -155,7 +155,7 @@ class PagerClient {
       const orderNum = this.order ? this.order.order_number : "";
       if (isReady) {
         navigator.mediaSession.metadata = new MediaMetadata({
-          title: `🚨 طلبك #${orderNum} جاهز للاستلام الآن!`,
+          title: ` طلبك #${orderNum} جاهز للاستلام الآن`,
           artist: "مطعم البرجر الذهبي",
           album: "توجه إلى كاونتر الاستلام لأخذ وجبتك",
           artwork: [
@@ -189,7 +189,7 @@ class PagerClient {
     if (this.isAcknowledged) return;
     this.isRinging = true;
 
-    // 1. Play loud buzzer audio on loop (works in background & locked screen!)
+    // 1. Play loud buzzer audio on loop (works in background & locked screen)
     try {
       this.audioEl.src = "/static/audio/buzzer.wav";
       this.audioEl.volume = 1.0;
@@ -218,7 +218,7 @@ class PagerClient {
     // 4. Notification API fallback
     if (window.isSecureContext && "Notification" in window && Notification.permission === "granted") {
       try {
-        new Notification(`🚨 طلبك #${this.order.order_number} جاهز للاستلام!`, {
+        new Notification(` طلبك #${this.order.order_number} جاهز للاستلام`, {
           body: "يرجى التوجه إلى كاونتر الاستلام لاستلام وجبتك",
           icon: "/static/img/icon-512.png",
           requireInteraction: true
@@ -240,8 +240,8 @@ class PagerClient {
     this.isAcknowledged = true;
     this.stopAlert();
     this.claimBtn.style.display = "none";
-    this.statusTitleEl.textContent = "✅ تم تأكيد الاستلام";
-    this.statusDescEl.textContent = "شكراً لك! نحن بانتظارك عند الكاونتر.";
+    this.statusTitleEl.textContent = " تم تأكيد الاستلام";
+    this.statusDescEl.textContent = "شكراً لك نحن بانتظارك عند الكاونتر.";
 
     // Send acknowledge to server
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
@@ -283,8 +283,8 @@ class PagerClient {
       this.bodyEl.classList.add("state-ready");
       this.step2.className = "step-node active";
       this.step3.className = "step-node active ready-step";
-      this.indicatorEl.textContent = "جاهز للاستلام 🔔";
-      this.statusTitleEl.textContent = "🔔 وجبتك جاهزة للاستلام الآن!";
+      this.indicatorEl.textContent = "جاهز للاستلام ";
+      this.statusTitleEl.textContent = " وجبتك جاهزة للاستلام الآن";
       this.statusDescEl.textContent = "تفضل إلى كاونتر الاستلام لاستلام طلبك.";
       if (this.claimBtn && !this.isAcknowledged) {
         this.claimBtn.style.display = "flex";
@@ -296,8 +296,8 @@ class PagerClient {
       this.bodyEl.classList.add("state-completed");
       this.step2.className = "step-node active";
       this.step3.className = "step-node active";
-      this.indicatorEl.textContent = "تم الاستلام 🎉";
-      this.statusTitleEl.textContent = "تم استلام الطلب بالعافية!";
+      this.indicatorEl.textContent = "تم الاستلام ";
+      this.statusTitleEl.textContent = "تم استلام الطلب بالعافية";
       this.statusDescEl.textContent = "شكراً لزيارتك لمطعمنا، نتمنى لك وجبة شهية.";
       if (this.claimBtn) this.claimBtn.style.display = "none";
     }
@@ -331,7 +331,7 @@ class PagerClient {
       };
 
       this.ws.onclose = () => {
-        this.connPill.innerHTML = '⚠️ جاري الاتصال...';
+        this.connPill.innerHTML = ' جاري الاتصال...';
         this.connPill.style.color = "#f59e0b";
         setTimeout(() => this.connectWebSocket(), 3000);
       };

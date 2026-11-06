@@ -701,7 +701,8 @@ window.PAIGER_CASHIER = {{ {
   function openQr(o) {
     if (!o) return;
     qrOrder = o;
-    el.qrBox.innerHTML = `<img alt="QR code" src="/api/qr/${encodeURIComponent(o.token)}">`;
+    var pagerUrl = {{ base_url|tojson }} + "/pager/" + o.token;
+    el.qrBox.innerHTML = `<img alt="QR code" src="/api/qr/${encodeURIComponent(o.token)}?host=${encodeURIComponent(pagerUrl)}">`;
     el.qrNo.textContent = o.number;
     el.qrWait.hidden = false;
     el.qrWait.innerHTML = `<span class="spinner"></span><span>${esc(t("waitScan"))}</span>`;

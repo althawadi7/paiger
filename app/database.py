@@ -1464,7 +1464,7 @@ def get_order_queue_info(order_id: int) -> Dict[str, Any]:
     if status in ("ringing", "onway", "done"):
         return {
             "orders_ahead": 0,
-            "estimated_wait": "جاهز للاستلام الآن! 🎉" if status != "done" else "تم الاستلام",
+            "estimated_wait": "جاهز للاستلام الآن" if status != "done" else "تم الاستلام",
             "estimated_wait_minutes": 0,
             "avg_prep_mins": 0
         }

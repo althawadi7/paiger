@@ -151,7 +151,7 @@
     <p class="track-desc">أدخل رقم طلبك المعطى من الكاشير لمتابعة جاهزيته مباشرة</p>
 
     {% if error %}
-    <div class="error-alert">⚠️ {{ error }}</div>
+    <div class="error-alert"> {{ error }}</div>
     {% endif %}
 
     <form method="GET" action="/r/{{ restaurant.slug }}">

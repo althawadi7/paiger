@@ -38,7 +38,7 @@ def get_apns_jwt() -> str:
 async def send_live_activity_update(
     push_token: str,
     order_number: str,
-    status_text: str = "طلبك جاهز للاستلام 🔔",
+    status_text: str = "طلبك جاهز للاستلام",
     is_ringing: bool = True,
     phase: str = "calling"
 ):
@@ -65,8 +65,8 @@ async def send_live_activity_update(
         }
         if is_ringing:
             payload["aps"]["alert"] = {
-                "title": "🔔 طلبك جاهز للاستلام!",
-                "body": f"طلب رقم {clean_num} جاهز، تفضل بالاستلام الآن",
+                "title": "طلبك جاهز للاستلام",
+                "body": f"الطلب رقم {clean_num} جاهز. يرجى التوجه إلى الكاونتر.",
                 "sound": "default"
             }
 
@@ -110,7 +110,7 @@ async def notify_order_live_activity(
     order: dict,
     is_ringing: bool = True,
     phase: str = "calling",
-    status_text: str = "طلبك جاهز للاستلام 🔔"
+    status_text: str = "طلبك جاهز للاستلام"
 ):
     token = order.get("token")
     if not token:

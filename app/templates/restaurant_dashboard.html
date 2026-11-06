@@ -432,7 +432,7 @@
       <div class="hero-info">
         <h2>
           <span class="material-icons-outlined" style="color: var(--brand);">storefront</span>
-          <span>شاشة الكاشير الخاصة بمطعمك جاهزة الآن!</span>
+          <span>شاشة الكاشير الخاصة بمطعمك جاهزة الآن</span>
         </h2>
         <p style="color: var(--muted); font-size: 13.5px;">يمكنك فتحها على أي آيباد أو كمبيوتر على كاونتر الطلبات لإصدار أرقام البيجر ومسحها فورياً.</p>
         <div class="hero-url-box">
@@ -511,9 +511,9 @@
           <div class="tabs-group">
             <div class="tab-btn active" onclick="filterStatus('all', this)">الكل</div>
             <div class="tab-btn" onclick="filterStatus('waiting', this)">قيد الانتظار</div>
-            <div class="tab-btn" onclick="filterStatus('ringing', this)">🔔 يرن</div>
-            <div class="tab-btn" onclick="filterStatus('onway', this)">🏃 في الطريق</div>
-            <div class="tab-btn" onclick="filterStatus('done', this)">✅ مكتمل</div>
+            <div class="tab-btn" onclick="filterStatus('ringing', this)"> يرن</div>
+            <div class="tab-btn" onclick="filterStatus('onway', this)"> في الطريق</div>
+            <div class="tab-btn" onclick="filterStatus('done', this)"> مكتمل</div>
           </div>
 
           <div style="position: relative;">
@@ -547,13 +547,13 @@
               <td style="color: var(--muted); font-size: 12.5px;">{{ o.notes or '—' }}</td>
               <td>
                 {% if o.status == 'ringing' %}
-                <span class="order-badge badge-ringing">🔔 يرن الآن ({{ o.call_count }})</span>
+                <span class="order-badge badge-ringing"> يرن الآن ({{ o.call_count }})</span>
                 {% elif o.status == 'onway' %}
-                <span class="order-badge badge-onway">🏃 في الطريق للاستلام</span>
+                <span class="order-badge badge-onway"> في الطريق للاستلام</span>
                 {% elif o.status == 'waiting' %}
                 <span class="order-badge badge-waiting">⏳ قيد الانتظار</span>
                 {% else %}
-                <span class="order-badge badge-done">✅ تم الاستلام</span>
+                <span class="order-badge badge-done"> تم الاستلام</span>
                 {% endif %}
               </td>
               <td style="color: var(--muted); font-size: 12px;">{{ o.created_at[:16].replace('T', ' ') if o.created_at else '' }}</td>
@@ -583,7 +583,7 @@
             {% else %}
             <tr>
               <td colspan="7" style="text-align: center; padding: 40px; color: var(--muted);">
-                لا توجد طلبات مسجلة بعد. اضغط على "+ طلب جديد" لإصدار أول بيجر!
+                لا توجد طلبات مسجلة بعد. اضغط على "+ طلب جديد" لإصدار أول بيجر
               </td>
             </tr>
             {% endfor %}
@@ -662,7 +662,7 @@
       const url = document.getElementById('cashierUrlText').innerText;
       navigator.clipboard.writeText(url).then(() => {
         const btn = document.getElementById('copyBtnText');
-        btn.innerText = 'تم النسخ! ✅';
+        btn.innerText = 'تم النسخ ';
         setTimeout(() => btn.innerText = 'نسخ الرابط', 2500);
       });
     }
@@ -776,7 +776,7 @@
           })
         });
         if (res.ok) {
-          alert('✅ تم حفظ إعدادات المطعم بنجاح!');
+          alert(' تم حفظ إعدادات المطعم بنجاح');
           location.reload();
         } else {
           alert('تعذر الحفظ');
