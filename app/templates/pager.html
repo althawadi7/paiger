@@ -551,11 +551,12 @@ async function activateArming(){
   updateUI();
 }
 
-// Universal interaction listener: ANY touch, click, tap anywhere arms audio & starts widgets
+// First tap only resumes audio. Permission, vibration and the dawrak hand-off stay on the button.
 function onUserTap(){
-  if(!isArmed || (ctx && ctx.state === "suspended")){
-    activateArming();
-  }
+  try {
+    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === "suspended") ctx.resume();
+  } catch(e){}
 }
 ['click', 'touchstart', 'touchend', 'pointerdown', 'keydown'].forEach(function(evt){
   document.addEventListener(evt, onUserTap, { passive: true });
