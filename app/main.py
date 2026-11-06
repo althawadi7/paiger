@@ -22,7 +22,13 @@ from . import auth
 logger = logging.getLogger("pager")
 
 BASE_DIR = Path(__file__).parent
-app = FastAPI(title="Paiger SaaS - جرس الطلبات الذكي للمطاعم")
+_enable_docs = os.getenv("ENABLE_DOCS") == "1"
+app = FastAPI(
+    title="Paiger SaaS - جرس الطلبات الذكي للمطاعم",
+    docs_url="/docs" if _enable_docs else None,
+    redoc_url="/redoc" if _enable_docs else None,
+    openapi_url="/openapi.json" if _enable_docs else None,
+)
 
 # Static files & templates
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
