@@ -485,5 +485,18 @@
   "pin.owner": "Restaurant owner?",
   "pin.login": "Log in instead",
   "pin.delete": "Delete",
-  "cash.tooFast": "Too many orders. Wait a moment and try again."
+  "cash.tooFast": "Too many orders. Wait a moment and try again.",
+  "admin.badge": "Admin",
+  "admin.title": "Platform admin",
+  "admin.user": "Username or email",
+  "admin.pw": "Password",
+  "admin.show": "Show",
+  "admin.hide": "Hide",
+  "admin.caps": "Caps Lock is on.",
+  "admin.signin": "Sign in",
+  "admin.empty": "Enter your username and password.",
+  "admin.wrong": "Wrong username or password.",
+  "admin.locked": "Too many attempts. Try again in 15 minutes.",
+  "admin.owner": "Running a restaurant?",
+  "admin.ownerLink": "Restaurant login"
 }

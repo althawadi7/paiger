@@ -104,6 +104,15 @@ async def language_middleware(request: Request, call_next):
 
 
 @app.middleware("http")
+async def admin_robots_header(request: Request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    if path == "/admin" or path.startswith("/admin/"):
+        response.headers["X-Robots-Tag"] = "noindex"
+    return response
+
+
+@app.middleware("http")
 async def refresh_cashier_devices(request: Request, call_next):
     response = await call_next(request)
     if request.url.path.startswith("/static"):
@@ -422,36 +431,39 @@ async def get_manifest():
 # SUPER ADMIN AUTH & DASHBOARD
 # ─────────────────────────────────────────────────────────────
 
-@app.get("/admin/login", response_class=HTMLResponse)
+@app.api_route("/admin/login", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def super_admin_login_page(request: Request):
     user = auth.get_current_super_admin(request)
     if user:
         return RedirectResponse(url="/admin", status_code=status.HTTP_302_FOUND)
-    footer_pages = db.get_all_custom_pages(published_only=True, footer_only=True)
-    return templates.TemplateResponse("super_admin_login.html", {"request": request, "error": None, "footer_pages": footer_pages})
+    locked = db.admin_login_failures(_client_ip(request)) >= 5
+    return _admin_login_page(request, "admin.locked" if locked else None, "")
+
 
 @app.post("/admin/login", response_class=HTMLResponse)
 async def super_admin_login_submit(
     request: Request,
-    response: Response,
-    identifier: str = Form(...),
-    password: str = Form(...)
+    identifier: str = Form(""),
+    password: str = Form(""),
 ):
-    admin = db.get_super_admin_by_identifier(identifier.strip())
+    ip = _client_ip(request)
+    tried = (identifier or "").strip()
+    if db.admin_login_failures(ip) >= 5:
+        db.log_admin_login_attempt(ip, tried, False)
+        return _admin_login_page(request, "admin.locked", tried, 429)
+    if not tried or not password:
+        return _admin_login_page(request, "admin.empty", tried, 400)
+    admin = db.get_super_admin_by_identifier(tried)
     if not admin or not auth.verify_password(password, admin["password_hash"]):
-        return templates.TemplateResponse(
-            "super_admin_login.html",
-            {"request": request, "error": "بيانات الدخول غير صحيحة، يرجى التحقق من الاسم أو كلمة المرور", "identifier": identifier},
-            status_code=400
-        )
+        db.log_admin_login_attempt(ip, tried, False)
+        return _admin_login_page(request, "admin.wrong", tried, 400)
 
-    # Issue JWT token
+    db.log_admin_login_attempt(ip, tried, True)
     token = auth.create_access_token({
         "sub": str(admin["id"]),
         "username": admin["username"],
         "role": "super_admin"
     })
-
     redirect = RedirectResponse(url="/admin", status_code=status.HTTP_302_FOUND)
     redirect.set_cookie(
         key=auth.SUPER_ADMIN_COOKIE,
@@ -459,9 +471,17 @@ async def super_admin_login_submit(
         httponly=True,
         max_age=86400 * 7,
         samesite="lax",
-        secure=True
+        secure=_cookie_secure(),
     )
     return redirect
+
+
+def _admin_login_page(request: Request, error: Optional[str], identifier: str, status_code: int = 200):
+    return templates.TemplateResponse(
+        "super_admin_login.html",
+        {"request": request, "error": error, "identifier": identifier},
+        status_code=status_code,
+    )
 
 @app.get("/admin/logout")
 async def super_admin_logout():

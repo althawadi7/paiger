@@ -204,6 +204,19 @@ def init_db():
     ensure_column("orders", "cashier_device_id", "INT NULL")
     _ensure_owner_tables()
     _backfill_legacy_subscriptions()
+    ensure_table(
+        "admin_login_attempts",
+        """
+        CREATE TABLE admin_login_attempts (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            ip VARCHAR(64) NOT NULL,
+            username VARCHAR(150) NOT NULL,
+            success TINYINT(1) NOT NULL,
+            created_at DATETIME NOT NULL,
+            INDEX idx_admin_attempt_ip (ip, created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """,
+    )
 
 
 _IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -517,6 +530,31 @@ def consume_password_reset(raw_token: str) -> Optional[int]:
         conn.close()
 
 
+def ensure_table(name: str, ddl: str) -> None:
+    """Create a table when information_schema says it is missing."""
+    if not _IDENT.match(name):
+        raise ValueError("invalid SQL identifier")
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT COUNT(*) AS n
+                FROM information_schema.TABLES
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s
+                """,
+                (name,),
+            )
+            row = cur.fetchone() or {}
+            count = row.get("n", 0) if isinstance(row, dict) else row[0]
+            if int(count or 0):
+                return
+            cur.execute(ddl)
+            conn.commit()
+    finally:
+        conn.close()
+
+
 def ensure_column(table: str, column: str, definition: str) -> None:
     """Add a column when it is missing. Later batches can reuse this for new columns."""
     if not _IDENT.match(table) or not _IDENT.match(column):
@@ -563,6 +601,40 @@ def get_super_admin_by_id(admin_id: int) -> Optional[Dict[str, Any]]:
         with conn.cursor() as cur:
             cur.execute("SELECT id, username, email, full_name, created_at FROM super_admins WHERE id = %s", (admin_id,))
             return _serialize_row(cur.fetchone())
+    finally:
+        conn.close()
+
+
+def log_admin_login_attempt(ip: str, username: str, success: bool) -> None:
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO admin_login_attempts (ip, username, success, created_at)
+                VALUES (%s, %s, %s, %s)
+                """,
+                ((ip or "")[:64], (username or "")[:150], 1 if success else 0, datetime.now()),
+            )
+            conn.commit()
+    finally:
+        conn.close()
+
+
+def admin_login_failures(ip: str, within_minutes: int = 15) -> int:
+    since = datetime.now() - timedelta(minutes=within_minutes)
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT COUNT(*) AS n
+                FROM admin_login_attempts
+                WHERE ip=%s AND success=0 AND created_at>=%s
+                """,
+                ((ip or "")[:64], since),
+            )
+            return int((cur.fetchone() or {}).get("n") or 0)
     finally:
         conn.close()
 

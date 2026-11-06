@@ -1,233 +1,115 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="light">
+<!doctype html>
+<html lang="{{ lang }}" dir="{{ dir }}">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>تسجيل دخول الإدارة العامة | Super Admin - Paiger</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&family=Sora:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined">
-  <style>
-    :root {
-      --bg: #f6f3ed;
-      --card: #ffffff;
-      --border: rgba(58, 38, 28, 0.12);
-      --ink: #23150d;
-      --muted: #7a6656;
-      --primary: #3e2415;
-      --primary-hover: #2b190e;
-      --accent: #c05621;
-      --radius: 24px;
-      --shadow: 0 20px 50px rgba(45, 30, 20, 0.08), 0 4px 15px rgba(45, 30, 20, 0.04);
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    body {
-      background:
-        radial-gradient(1200px 700px at 50% -10%, rgba(192, 86, 33, 0.14), transparent 75%),
-        radial-gradient(900px 500px at 10% 40%, rgba(62, 36, 21, 0.05), transparent 75%),
-        radial-gradient(800px 600px at 90% 70%, rgba(110, 70, 45, 0.08), transparent 75%),
-        var(--bg);
-      color: var(--ink);
-      font-family: "Readex Pro", system-ui, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-    }
-    .login-container {
-      width: 100%;
-      max-width: 440px;
-    }
-    .brand-header {
-      text-align: center;
-      margin-bottom: 28px;
-    }
-    .brand-logo-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 72px;
-      height: 72px;
-      border-radius: 24px;
-      background: linear-gradient(135deg, rgba(62, 36, 21, 0.12), rgba(192, 86, 33, 0.16));
-      border: 1px solid rgba(192, 86, 33, 0.25);
-      margin-bottom: 16px;
-      box-shadow: 0 10px 25px rgba(45, 30, 20, 0.08);
-    }
-    .brand-logo-badge span {
-      font-size: 36px;
-      color: var(--primary);
-    }
-    .brand-title {
-      font-size: 26px;
-      font-weight: 800;
-      color: var(--ink);
-      letter-spacing: -0.02em;
-      margin-bottom: 6px;
-    }
-    .brand-subtitle {
-      font-size: 13.5px;
-      color: var(--muted);
-    }
-    .glass-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 38px 32px;
-      box-shadow: var(--shadow);
-    }
-    .error-box {
-      background: rgba(220, 38, 38, 0.08);
-      border: 1px solid rgba(220, 38, 38, 0.25);
-      border-radius: 14px;
-      padding: 12px 14px;
-      margin-bottom: 20px;
-      font-size: 13px;
-      color: #b91c1c;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .form-group {
-      margin-bottom: 20px;
-    }
-    .form-label {
-      display: block;
-      font-size: 12.5px;
-      font-weight: 700;
-      color: var(--muted);
-      margin-bottom: 8px;
-    }
-    .input-wrap {
-      position: relative;
-      display: flex;
-      align-items: center;
-    }
-    .input-wrap .material-icons-outlined {
-      position: absolute;
-      right: 14px;
-      color: var(--muted);
-      font-size: 20px;
-      pointer-events: none;
-    }
-    .form-input {
-      width: 100%;
-      background: #faf8f5;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 13px 44px 13px 14px;
-      color: var(--ink);
-      font-size: 14px;
-      font-family: inherit;
-      outline: none;
-      transition: all 0.2s ease;
-    }
-    .form-input:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(62, 36, 21, 0.12);
-      background: #ffffff;
-    }
-    .btn-submit {
-      width: 100%;
-      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-      color: #ffffff;
-      border: none;
-      border-radius: 14px;
-      padding: 14px;
-      font-size: 15px;
-      font-weight: 700;
-      font-family: inherit;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      transition: all 0.2s ease;
-      box-shadow: 0 8px 25px -4px rgba(45, 30, 20, 0.25);
-      margin-top: 26px;
-    }
-    .btn-submit:hover {
-      background: #23150d;
-      transform: translateY(-1px);
-      box-shadow: 0 12px 28px -4px rgba(45, 30, 20, 0.35);
-    }
-    .btn-submit:active {
-      transform: translateY(0);
-    }
-    .footer-links {
-      text-align: center;
-      margin-top: 24px;
-      font-size: 12.5px;
-      color: var(--muted);
-    }
-    .footer-links a {
-      color: var(--accent);
-      text-decoration: none;
-      font-weight: 700;
-    }
-    .footer-links a:hover {
-      text-decoration: underline;
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#111111">
+<title>{{ t('admin.title') }} · Paiger</title>
+<link rel="icon" href="/static/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #111111; --ink-2: #1c1c1e; --ink-3: #2a2a2d; --grey: #5f6368; --grey-2: #8e8e93; --line: #e6e6e8;
+  --paper: #ffffff; --paper-2: #f6f6f7; --error: #b42318; --error-soft: #fdecea;
+  --sans: "IBM Plex Sans", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", sans-serif;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+html[lang="ar"] { --sans: "IBM Plex Sans Arabic", "IBM Plex Sans", -apple-system, sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { min-height: 100%; background: var(--ink); }
+body { font-family: var(--sans); color: #fff; -webkit-font-smoothing: antialiased; }
+button, input { font: inherit; color: inherit; }
+button { background: none; border: 0; cursor: pointer; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+[hidden] { display: none !important; }
+.page { min-height: 100svh; display: grid; grid-template-rows: auto 1fr; padding: 20px clamp(16px, 4vw, 36px) max(20px, env(safe-area-inset-bottom));
+  background: radial-gradient(1200px 600px at 50% -10%, #222225 0%, var(--ink) 60%); }
+.top { display: flex; justify-content: space-between; align-items: center; }
+.wm { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.wm b { font-family: "Fraunces", serif; font-weight: 600; font-size: 19px; letter-spacing: -.01em; }
+.wm span { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--grey-2); padding: 3px 8px; border-radius: 6px; box-shadow: 0 0 0 1px var(--ink-3) inset; }
+.lang { height: 38px; padding: 0 14px; border-radius: 10px; font-size: 14px; color: var(--grey-2); text-decoration: none; display: inline-flex; align-items: center; }
+.lang:hover { color: #fff; background: var(--ink-2); }
+.wrap { align-self: center; justify-self: center; width: 100%; max-width: 400px; padding: 28px 0; }
+.head { margin-bottom: 22px; }
+h1 { font-size: 28px; font-weight: 600; letter-spacing: -.015em; line-height: 1.2; }
+.card { background: var(--paper); color: var(--ink); border-radius: 22px; padding: 26px; box-shadow: 0 30px 80px -30px rgba(0,0,0,.7); }
+.f + .f { margin-top: 16px; }
+.f label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 7px; }
+.field { position: relative; }
+.in { width: 100%; height: 50px; border: 0; border-radius: 13px; background: var(--paper-2); padding: 0 16px; font-size: 16px; outline: none; transition: box-shadow .15s, background .15s; }
+.in:focus { background: #fff; box-shadow: 0 0 0 2px var(--ink) inset; }
+.in.bad { box-shadow: 0 0 0 1.5px var(--error) inset; background: #fff; }
+.field .in.pw { padding-inline-end: 64px; }
+.eye { position: absolute; inset-block: 0; inset-inline-end: 6px; margin: auto 0; height: 38px; padding: 0 10px; border-radius: 9px; font-size: 13.5px; font-weight: 500; color: var(--grey); }
+.eye:hover { background: var(--paper-2); color: var(--ink); }
+.caps { margin-top: 7px; font-size: 13px; color: var(--grey); }
+.err { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 18px; padding: 12px 14px; border-radius: 12px; background: var(--error-soft); color: var(--error); font-size: 14px; font-weight: 500; line-height: 1.45; }
+.err svg { width: 18px; height: 18px; flex: none; margin-top: 1px; }
+.go { margin-top: 22px; width: 100%; height: 52px; border-radius: 14px; background: var(--ink); color: #fff; font-weight: 600; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: background .15s, transform .08s; }
+.go:hover { background: #2b2b2e; } .go:active { transform: scale(.985); }
+.go[disabled] { opacity: .55; cursor: default; }
+.note { margin-top: 18px; text-align: center; font-size: 13.5px; color: var(--grey-2); line-height: 1.6; }
+.note a { color: #fff; }
+@media (max-width: 420px) { .card { padding: 20px; border-radius: 20px; } h1 { font-size: 25px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; } }
+</style>
 </head>
 <body>
-
-  <div class="login-container">
-    <div class="brand-header">
-      <div class="brand-logo-badge">
-        <span class="material-icons-outlined">shield</span>
-      </div>
-      <h1 class="brand-title">الإدارة العامة لمنصة Paiger</h1>
-      <p class="brand-subtitle">لوحة الإشراف المركزية وإدارة المطاعم السحابية</p>
+<div class="page">
+  <header class="top">
+    <a class="wm" href="/"><b>Paiger</b><span>{{ t('admin.badge') }}</span></a>
+    <a class="lang" href="/lang/{{ 'en' if lang == 'ar' else 'ar' }}">{{ t('nav.langSwitch') }}</a>
+  </header>
+  <main class="wrap">
+    <div class="head">
+      <h1>{{ t('admin.title') }}</h1>
     </div>
-
-    <div class="glass-card">
+    <form class="card" id="form" method="post" action="/admin/login">
       {% if error %}
-      <div class="error-box">
-        <span class="material-icons-outlined" style="font-size: 18px;">error_outline</span>
-        <span>{{ error }}</span>
+      <div class="err" id="err" role="alert">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="9" cy="9" r="7.2"/><path d="M9 5.4v4.2M9 12.4h.01"/></svg>
+        <span>{{ t(error) }}</span>
       </div>
       {% endif %}
-
-      <form method="POST" action="/admin/login">
-        <div class="form-group">
-          <label class="form-label">اسم المستخدم أو البريد الإلكتروني</label>
-          <div class="input-wrap">
-            <span class="material-icons-outlined">person</span>
-            <input type="text" name="identifier" class="form-input" placeholder="admin" required autofocus value="{{ identifier|default('') }}">
-          </div>
+      <div class="f">
+        <label for="user">{{ t('admin.user') }}</label>
+        <input class="in {{ 'bad' if error in ['admin.wrong', 'admin.empty'] else '' }}" id="user" name="identifier" value="{{ identifier }}" autocomplete="username" autocapitalize="none" spellcheck="false" dir="ltr">
+      </div>
+      <div class="f">
+        <label for="pw">{{ t('admin.pw') }}</label>
+        <div class="field">
+          <input class="in pw {{ 'bad' if error in ['admin.wrong', 'admin.empty'] else '' }}" id="pw" name="password" type="password" autocomplete="current-password" dir="ltr">
+          <button class="eye" type="button" id="eye">{{ t('admin.show') }}</button>
         </div>
-
-        <div class="form-group">
-          <label class="form-label">كلمة المرور</label>
-          <div class="input-wrap">
-            <span class="material-icons-outlined">lock</span>
-            <input type="password" name="password" class="form-input" placeholder="••••••••••••" required>
-          </div>
-        </div>
-
-        <button type="submit" class="btn-submit">
-          <span>دخول لوحة الإدارة</span>
-          <span class="material-icons-outlined" style="font-size: 18px;">arrow_back</span>
-        </button>
-      </form>
-    </div>
-
-    <div class="footer-links">
-      <span>هل أنت صاحب مطعم أو كافيه؟ </span>
-      <a href="/login">تسجيل دخول المطاعم من هنا</a>
-    </div>
-
-    <!-- Official Legal Footer Links -->
-    <div style="margin-top: 18px; text-align: center; font-size: 12px; color: var(--muted); display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap;">
-      {% for fp in footer_pages %}
-      <a href="/p/{{ fp.slug }}" target="_blank" style="color: var(--muted); transition: color 0.2s;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--muted)'">{{ fp.title }}</a>
-      {% if not loop.last %}<span>•</span>{% endif %}
-      {% endfor %}
-    </div>
-  </div>
-
+        <p class="caps" id="caps" hidden>{{ t('admin.caps') }}</p>
+      </div>
+      <button class="go" id="go" type="submit" {% if error == 'admin.locked' %}disabled{% endif %}>{{ t('admin.signin') }}</button>
+    </form>
+    <p class="note">{{ t('admin.owner') }} <a href="/login">{{ t('admin.ownerLink') }}</a></p>
+  </main>
+</div>
+<script>
+(function () {
+  var show = {{ t('admin.show')|tojson }};
+  var hide = {{ t('admin.hide')|tojson }};
+  var pw = document.getElementById("pw");
+  var eye = document.getElementById("eye");
+  eye.addEventListener("click", function () {
+    var open = pw.type === "password";
+    pw.type = open ? "text" : "password";
+    eye.textContent = open ? hide : show;
+    pw.focus();
+  });
+  pw.addEventListener("keyup", function (e) {
+    if (e.getModifierState) document.getElementById("caps").hidden = !e.getModifierState("CapsLock");
+  });
+  document.getElementById("user").focus();
+})();
+</script>
 </body>
 </html>
