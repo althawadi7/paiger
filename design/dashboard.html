@@ -1,0 +1,921 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Dashboard · Karak House · Paiger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   PAIGER · Restaurant dashboard: Overview, Orders, Subscription, Settings
+   One prototype file; production = one template per section on base.html.
+   ===================================================================== */
+:root {
+  --ink: #111111; --ink-2: #1c1c1e; --grey: #5f6368; --grey-2: #8e8e93; --line: #e6e6e8;
+  --paper: #ffffff; --paper-2: #f6f6f7; --paper-3: #ececee;
+  --ready: #22c55e; --ready-deep: #15803d; --ready-soft: #e7f8ee;
+  --warn: #b45309; --warn-soft: #fdf2e3; --error: #b42318; --error-soft: #fdecea;
+  --brand: #c2410c; --brand-ink: #fff;
+  --display: "Fraunces", Georgia, serif;
+  --sans: "IBM Plex Sans", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", sans-serif;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+html[lang="ar"] { --display: "IBM Plex Sans Arabic", serif; --sans: "IBM Plex Sans Arabic", "IBM Plex Sans", -apple-system, sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: var(--paper-2); -webkit-text-size-adjust: 100%; }
+body { font-family: var(--sans); color: var(--ink); background: var(--paper-2); -webkit-font-smoothing: antialiased; font-size: 15.5px; line-height: 1.5; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+input, select { font: inherit; color: inherit; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.num { font-family: var(--display); font-variant-numeric: lining-nums tabular-nums; direction: ltr; unicode-bidi: isolate; }
+html[lang="ar"] .num { font-family: "Fraunces", serif; }
+
+/* ---------- shell ---------- */
+.shell { min-height: 100svh; display: grid; grid-template-columns: 248px minmax(0, 1fr); }
+.side { position: sticky; top: 0; height: 100svh; background: var(--paper); border-inline-end: 1px solid var(--line); padding: 18px 14px; display: flex; flex-direction: column; gap: 4px; }
+.rest { display: flex; align-items: center; gap: 10px; padding: 6px 8px 18px; }
+.rlogo { width: 38px; height: 38px; border-radius: 11px; background: var(--brand); color: var(--brand-ink); display: grid; place-items: center; font-family: "Fraunces", serif; font-weight: 600; font-size: 18px; flex: none; overflow: hidden; }
+.rlogo img { width: 100%; height: 100%; object-fit: cover; }
+.rest b { display: block; font-size: 15px; font-weight: 600; line-height: 1.25; }
+.rest span { font-size: 12.5px; color: var(--grey); }
+.nav a { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 12px; text-decoration: none; color: var(--grey); font-weight: 500; }
+.nav a:hover { background: var(--paper-2); color: var(--ink); }
+.nav a[aria-current="page"] { background: var(--ink); color: #fff; }
+.nav svg { width: 20px; height: 20px; flex: none; }
+.nav .badge { margin-inline-start: auto; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); }
+.nav a[aria-current="page"] .badge { background: rgba(255,255,255,.18); color: #fff; }
+.side .cashier-btn { margin-top: 14px; height: 48px; border-radius: 14px; background: var(--ready-deep); color: #fff; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 600; text-decoration: none; }
+.side .cashier-btn svg { width: 18px; height: 18px; }
+.side-foot { margin-top: auto; display: grid; gap: 2px; }
+.side-foot a, .side-foot button { display: flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 10px; font-size: 14px; color: var(--grey); text-decoration: none; text-align: start; }
+.side-foot a:hover, .side-foot button:hover { background: var(--paper-2); color: var(--ink); }
+
+.main { min-width: 0; padding: 22px clamp(16px, 3vw, 36px) 60px; }
+.topbar { display: none; }
+
+/* ---------- trial banner ---------- */
+.trial { display: flex; align-items: center; gap: 16px; padding: 14px 18px; border-radius: 16px; background: var(--ink); color: #fff; margin-bottom: 22px; }
+.trial .t-txt b { font-weight: 600; }
+.trial .t-txt span { display: block; font-size: 13.5px; color: #a1a1a6; }
+.trial .t-days { display: flex; gap: 4px; }
+.trial .t-days i { width: 26px; height: 6px; border-radius: 6px; background: rgba(255,255,255,.18); }
+.trial .t-days i.on { background: #fff; }
+.trial a { margin-inline-start: auto; height: 42px; padding: 0 18px; border-radius: 12px; background: #fff; color: var(--ink); font-weight: 600; display: inline-flex; align-items: center; text-decoration: none; white-space: nowrap; }
+.trial.expired { background: var(--error-soft); color: var(--error); }
+.trial.expired .t-txt span { color: var(--error); opacity: .8; }
+.trial.expired a { background: var(--error); color: #fff; }
+
+/* ---------- headings ---------- */
+.ph { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+.ph h1 { font-family: var(--display); font-weight: 500; font-size: 32px; line-height: 1.1; letter-spacing: -.01em; }
+html[lang="ar"] .ph h1 { font-weight: 600; letter-spacing: 0; }
+.ph p { color: var(--grey); margin-top: 4px; }
+.card { background: var(--paper); border-radius: 20px; box-shadow: 0 0 0 1px var(--line); }
+.card-h { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px 0; }
+.card-h h2 { font-size: 16.5px; font-weight: 600; }
+.card-h .muted { font-size: 13.5px; color: var(--grey); }
+.btn { height: 44px; padding: 0 18px; border-radius: 12px; font-weight: 600; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; text-decoration: none; transition: background .15s, transform .1s; }
+.btn:active { transform: scale(.98); }
+.btn-ink { background: var(--ink); color: #fff; } .btn-ink:hover { background: #333336; }
+.btn-line { box-shadow: 0 0 0 1.5px var(--line) inset; } .btn-line:hover { box-shadow: 0 0 0 1.5px var(--ink) inset; }
+.btn-quiet { color: var(--grey); padding: 0 10px; } .btn-quiet:hover { color: var(--ink); background: var(--paper-2); }
+.btn-danger { color: var(--error); padding: 0 10px; } .btn-danger:hover { background: var(--error-soft); }
+.btn svg { width: 18px; height: 18px; }
+
+/* ---------- overview ---------- */
+.quick { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.quick .card { padding: 16px 18px; display: flex; align-items: center; gap: 14px; }
+.quick .ic { width: 42px; height: 42px; border-radius: 12px; background: var(--paper-2); display: grid; place-items: center; flex: none; }
+.quick .ic svg { width: 20px; height: 20px; }
+.quick b { display: block; font-weight: 600; }
+.quick span { font-size: 13.5px; color: var(--grey); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.quick .card > div:not(.ic) { min-width: 0; flex: 1; }
+.quick .act { flex: none; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.stat { padding: 16px 18px 18px; }
+.stat .k { font-size: 13.5px; color: var(--grey); }
+.stat .v { margin-top: 6px; font-size: 36px; font-weight: 500; line-height: 1; }
+.stat .v small { font-family: var(--sans); font-size: 14px; font-weight: 500; color: var(--grey); margin-inline-start: 4px; }
+.stat .d { margin-top: 8px; font-size: 13px; color: var(--grey); }
+.stat .d.up { color: var(--ready-deep); }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px; }
+.chart-wrap { padding: 8px 20px 18px; position: relative; }
+.chart { width: 100%; height: 220px; display: block; overflow: visible; }
+.chart .gl { stroke: var(--line); stroke-width: 1; }
+.chart .ax { fill: var(--grey-2); font-size: 11px; font-family: var(--sans); }
+.chart .bar { fill: var(--ink); }
+.chart .bar.dim { fill: #c7c7cc; }
+.chart .hit { fill: transparent; cursor: default; }
+.chart .hit:hover + .bar, .chart g:hover .bar { fill: #444; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: #fff; font-size: 13px; padding: 6px 10px; border-radius: 8px; white-space: nowrap; transform: translate(-50%, -110%); }
+.recent { list-style: none; padding: 6px 8px 10px; }
+.recent li { display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; }
+.recent li + li { border-top: 1px solid var(--line); border-radius: 0; }
+.recent .n { font-size: 24px; font-weight: 500; }
+.recent .m { font-size: 13.5px; color: var(--grey); }
+.pill { font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--paper-2); color: var(--grey); white-space: nowrap; }
+.pill.ring { background: var(--ready-soft); color: var(--ready-deep); }
+.pill.way { background: var(--ink); color: #fff; }
+.pill.done { background: var(--paper-2); color: var(--grey); }
+
+/* ---------- orders ---------- */
+.filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.seg { display: inline-flex; background: var(--paper-2); border-radius: 12px; padding: 3px; }
+.seg button { height: 36px; padding: 0 14px; border-radius: 9px; font-size: 14px; font-weight: 500; color: var(--grey); }
+.seg button[aria-pressed="true"] { background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.search { margin-inline-start: auto; position: relative; }
+.search input { height: 42px; width: 220px; border: 0; border-radius: 12px; background: var(--paper-2); padding: 0 14px; outline: none; }
+.search input:focus { background: #fff; box-shadow: 0 0 0 2px var(--ink) inset; }
+.select { height: 42px; border: 0; border-radius: 12px; background: var(--paper-2); padding: 0 12px; outline: none; }
+table.t { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+.t th { text-align: start; font-weight: 500; font-size: 13px; color: var(--grey); padding: 12px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.t td { padding: 13px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.t tr:last-child td { border-bottom: 0; }
+.t .n { font-size: 20px; font-weight: 500; }
+.t .sub { color: var(--grey); font-size: 13.5px; }
+.t .late { color: var(--warn); font-weight: 500; }
+.t .yes { color: var(--ready-deep); } .t .no { color: var(--grey-2); }
+.table-scroll { overflow-x: auto; }
+.pager { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; font-size: 13.5px; color: var(--grey); border-top: 1px solid var(--line); }
+
+/* ---------- subscription ---------- */
+.status-card { padding: 20px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 18px; }
+.status-card .k { font-size: 13.5px; color: var(--grey); }
+.status-card .v { font-size: 22px; font-weight: 600; margin-top: 2px; }
+.status-card .tag { font-size: 12.5px; font-weight: 600; padding: 3px 10px; border-radius: 999px; }
+.tag.tag-trial { background: var(--warn-soft); color: var(--warn); }
+.tag.active { background: var(--ready-soft); color: var(--ready-deep); }
+.status-card .grow { flex: 1; min-width: 200px; }
+.status-card .facts { display: flex; gap: 28px; flex-wrap: wrap; }
+.status-card .facts div span { display: block; font-size: 13px; color: var(--grey); }
+.status-card .facts div b { font-weight: 600; }
+.h3 { font-size: 17px; font-weight: 600; margin: 26px 0 12px; }
+.plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.plan { position: relative; text-align: start; padding: 20px; border-radius: 20px; background: var(--paper); box-shadow: 0 0 0 1px var(--line); display: flex; flex-direction: column; gap: 4px; transition: box-shadow .15s; }
+.plan:hover { box-shadow: 0 0 0 1.5px #b9b9be; }
+.plan[aria-checked="true"] { box-shadow: 0 0 0 2px var(--ink); }
+.plan .radio { position: absolute; top: 20px; inset-inline-end: 20px; width: 22px; height: 22px; border-radius: 50%; box-shadow: 0 0 0 1.5px var(--line) inset; }
+.plan[aria-checked="true"] .radio { box-shadow: 0 0 0 7px var(--ink) inset; }
+.plan h4 { font-size: 16.5px; font-weight: 600; }
+.plan .for { font-size: 13.5px; color: var(--grey); min-height: 2.8em; padding-inline-end: 28px; }
+.plan .price { margin-top: 8px; display: flex; align-items: baseline; gap: 6px; direction: ltr; justify-content: flex-start; }
+html[dir="rtl"] .plan .price { justify-content: flex-end; }
+.plan .price b { font-family: "Fraunces", serif; font-size: 36px; font-weight: 500; line-height: 1; }
+.plan .price span { font-size: 13.5px; color: var(--grey); }
+.plan .save { font-size: 13px; font-weight: 600; color: var(--ready-deep); min-height: 1.4em; }
+.plan .cur-tag { position: absolute; top: -11px; inset-inline-start: 18px; font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 999px; background: var(--ink); color: #fff; }
+
+.checkout { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 12px; margin-top: 12px; align-items: start; }
+.box { padding: 20px; }
+.box h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+.packs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.pack { padding: 14px 12px; border-radius: 14px; box-shadow: 0 0 0 1px var(--line); text-align: center; }
+.pack[aria-checked="true"] { box-shadow: 0 0 0 2px var(--ink); }
+.pack b { display: block; font-size: 22px; font-weight: 500; }
+.pack span { font-size: 13px; color: var(--grey); }
+.mode { display: grid; gap: 8px; margin-bottom: 16px; }
+.mode label { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: 14px; box-shadow: 0 0 0 1px var(--line); cursor: pointer; }
+.mode label:has(input:checked) { box-shadow: 0 0 0 2px var(--ink); }
+.mode input { margin-top: 3px; accent-color: var(--ink); width: 18px; height: 18px; flex: none; }
+.mode b { display: block; font-weight: 600; font-size: 15px; }
+.mode span { font-size: 13.5px; color: var(--grey); }
+.card-field { margin-top: 4px; border-radius: 14px; background: var(--paper-2); padding: 14px; display: grid; gap: 10px; }
+.card-field .fake { height: 44px; border-radius: 10px; background: #fff; box-shadow: 0 0 0 1px var(--line) inset; display: flex; align-items: center; padding: 0 12px; color: var(--grey-2); font-size: 14.5px; direction: ltr; }
+.card-field .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.card-field small { font-size: 12.5px; color: var(--grey); }
+.check { display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; font-size: 14px; }
+.check input { accent-color: var(--ink); width: 18px; height: 18px; margin-top: 2px; flex: none; }
+.sum { display: grid; gap: 10px; font-size: 14.5px; }
+.sum div { display: flex; justify-content: space-between; gap: 12px; }
+.sum .tot { padding-top: 12px; border-top: 1px solid var(--line); font-size: 16px; font-weight: 600; }
+.sum .tot b { font-family: "Fraunces", serif; font-size: 26px; font-weight: 500; direction: ltr; }
+.sum .muted { color: var(--grey); font-size: 13.5px; }
+.pay { margin-top: 16px; width: 100%; height: 52px; font-size: 16px; }
+.secure { margin-top: 10px; font-size: 12.5px; color: var(--grey); text-align: center; }
+
+.wallet { padding: 20px; display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center; margin-bottom: 18px; }
+.wallet .bal b { font-family: "Fraunces", serif; font-size: 46px; font-weight: 500; line-height: 1; display: block; direction: ltr; }
+.wallet .bal span { font-size: 13.5px; color: var(--grey); }
+.meter { height: 8px; border-radius: 8px; background: var(--paper-3); overflow: hidden; }
+.meter i { display: block; height: 100%; border-radius: inherit; background: var(--ink); }
+.wallet .meta { margin-top: 8px; display: flex; justify-content: space-between; font-size: 13px; color: var(--grey); gap: 10px; flex-wrap: wrap; }
+.wallet.low .meter i { background: var(--warn); }
+.wallet .warnline { margin-top: 8px; font-size: 13.5px; color: var(--warn); font-weight: 500; }
+.savedcard { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 14px; box-shadow: 0 0 0 1px var(--line); }
+.savedcard .brandmark { width: 44px; height: 30px; border-radius: 6px; background: var(--ink); color: #fff; font-size: 11px; font-weight: 700; display: grid; place-items: center; letter-spacing: .04em; flex: none; }
+.savedcard b { font-weight: 600; direction: ltr; unicode-bidi: isolate; }
+.savedcard span { display: block; font-size: 13px; color: var(--grey); }
+.savedcard .grow { flex: 1; }
+
+/* ---------- settings ---------- */
+.set-grid { display: grid; gap: 12px; max-width: 860px; }
+.set { padding: 20px; display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 24px; }
+.set > header h2 { font-size: 16px; font-weight: 600; }
+.set > header p { font-size: 13.5px; color: var(--grey); margin-top: 4px; }
+.fields { display: grid; gap: 14px; }
+.f label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+.f .in { width: 100%; height: 46px; border: 0; border-radius: 12px; background: var(--paper-2); padding: 0 14px; outline: none; }
+.f .in:focus { background: #fff; box-shadow: 0 0 0 2px var(--ink) inset; }
+.f .help { margin-top: 6px; font-size: 13px; color: var(--grey); }
+.f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.brand-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.big-logo { width: 72px; height: 72px; border-radius: 18px; background: var(--brand); color: var(--brand-ink); display: grid; place-items: center; font-family: "Fraunces", serif; font-weight: 600; font-size: 32px; overflow: hidden; flex: none; }
+.big-logo img { width: 100%; height: 100%; object-fit: cover; }
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.swatch { width: 36px; height: 36px; border-radius: 10px; background: var(--c); position: relative; box-shadow: 0 0 0 1px rgba(0,0,0,.08) inset; }
+.swatch[aria-checked="true"]::after { content: ""; position: absolute; inset: -4px; border-radius: 13px; box-shadow: 0 0 0 2px var(--ink); }
+.linkbox { display: flex; align-items: center; gap: 8px; height: 46px; border-radius: 12px; background: var(--paper-2); padding: 0 6px 0 14px; direction: ltr; }
+.linkbox span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14.5px; }
+.linkbox .btn { height: 36px; padding: 0 12px; font-size: 13.5px; background: #fff; box-shadow: 0 0 0 1px var(--line) inset; }
+.pinrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.pinval { display: flex; align-items: center; gap: 8px; height: 46px; padding: 0 6px 0 16px; border-radius: 12px; background: var(--paper-2); }
+.pinval .num { font-size: 22px; letter-spacing: .28em; min-width: 7.5ch; }
+.pinwarn { font-size: 13.5px; color: var(--warn); background: var(--warn-soft); padding: 10px 12px; border-radius: 10px; }
+.pinedit { display: grid; gap: 12px; }
+.devices { border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 8px; justify-items: start; }
+.dev-h { font-size: 14px; font-weight: 500; display: flex; gap: 8px; align-items: center; }
+.dev-h .num { font-size: 13px; background: var(--paper-2); padding: 1px 8px; border-radius: 999px; }
+.devices ul { list-style: none; display: grid; gap: 2px; width: 100%; }
+.devices li { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.devices li span { color: var(--grey); font-size: 13.5px; }
+.devices .btn-danger { padding: 0; height: 36px; }
+.devices .btn-danger:hover { background: none; text-decoration: underline; }
+.save-bar { position: sticky; bottom: 16px; margin-top: 16px; max-width: 860px; display: flex; align-items: center; gap: 12px; padding: 12px 12px 12px 18px; border-radius: 16px; background: var(--ink); color: #fff; box-shadow: 0 16px 40px -14px rgba(0,0,0,.45); animation: up .25s var(--ease); }
+@keyframes up { from { opacity: 0; transform: translateY(8px); } }
+.save-bar span { flex: 1; font-size: 14.5px; }
+.save-bar .btn-line { color: #fff; box-shadow: 0 0 0 1px rgba(255,255,255,.3) inset; }
+.save-bar .btn-white { background: #fff; color: var(--ink); }
+
+.toast { position: fixed; z-index: 60; bottom: 22px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 12px; font-size: 14.5px; box-shadow: 0 16px 40px -12px rgba(0,0,0,.4); }
+
+/* prototype switcher (remove in production) */
+.proto { position: fixed; z-index: 70; bottom: 10px; inset-inline-end: 10px; display: flex; gap: 4px; padding: 5px; border-radius: 12px; background: rgba(255,255,255,.96); box-shadow: 0 0 0 1px var(--line), 0 10px 30px -10px rgba(0,0,0,.25); font-size: 12px; }
+.proto button { padding: 6px 9px; border-radius: 8px; }
+.proto button.on { background: var(--ink); color: #fff; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 1100px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid2, .checkout { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 900px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .side { position: fixed; inset-block: 0; inset-inline-start: 0; z-index: 50; width: 270px; transform: translateX(-105%); transition: transform .25s var(--ease); box-shadow: 0 0 40px rgba(0,0,0,.2); }
+  html[dir="rtl"] .side { transform: translateX(105%); }
+  .side.open { transform: none !important; }
+  .topbar { display: flex; align-items: center; gap: 10px; margin: -6px 0 16px; }
+  .topbar .btn-quiet { height: 42px; }
+  .quick, .plans { grid-template-columns: minmax(0, 1fr); }
+  .set { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .search { margin-inline-start: 0; width: 100%; } .search input { width: 100%; }
+  .wallet { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) {
+  .stats { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  .stat .v { font-size: 30px; }
+  .trial { flex-wrap: wrap; } .trial a { margin-inline-start: 0; width: 100%; justify-content: center; }
+  .f-row, .packs { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 20 20"><path d="M3 9l7-5.5L17 9v7.5a1 1 0 0 1-1 1h-3.5v-5h-5v5H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+  <symbol id="i-list" viewBox="0 0 20 20"><path d="M7 5h10M7 10h10M7 15h10M3.5 5h.01M3.5 10h.01M3.5 15h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-card" viewBox="0 0 20 20"><rect x="2.5" y="4.5" width="15" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 8h15M5.5 12.5h3" stroke="currentColor" stroke-width="1.5"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 20 20"><circle cx="10" cy="10" r="2.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-cashier" viewBox="0 0 20 20"><rect x="3" y="3.5" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 17h6M10 13.5V17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-qr" viewBox="0 0 20 20"><path d="M3 3h5v5H3zM12 3h5v5h-5zM3 12h5v5H3z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 12h2v2h-2zM15 15h2v2h-2zM12 16h1M16 12h1" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="i-link" viewBox="0 0 20 20"><path d="M8.5 11.5a3 3 0 0 0 4.2 0l2.6-2.6a3 3 0 0 0-4.2-4.2l-.9.9M11.5 8.5a3 3 0 0 0-4.2 0L4.7 11.1a3 3 0 0 0 4.2 4.2l.9-.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 20 20"><path d="M3 6h14M3 10h14M3 14h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 20 20"><path d="M10 3v10M6 9l4 4 4-4M4 16h12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="shell">
+  <!-- ======================= SIDEBAR ======================= -->
+  <aside class="side" id="side">
+    <div class="rest">
+      <div class="rlogo" id="sideLogo">K</div>
+      <div><b>Karak House</b><span data-t="owner">Restaurant account</span></div>
+    </div>
+    <nav class="nav" aria-label="Dashboard">
+      <a href="#overview" data-view="overview" aria-current="page"><svg><use href="#i-home"/></svg><span data-t="nOverview">Overview</span></a>
+      <a href="#orders" data-view="orders"><svg><use href="#i-list"/></svg><span data-t="nOrders">Orders</span></a>
+      <a href="#subscription" data-view="subscription"><svg><use href="#i-card"/></svg><span data-t="nSub">Subscription</span><span class="badge" id="navBadge" data-t="trialBadge">Trial</span></a>
+      <a href="#settings" data-view="settings"><svg><use href="#i-gear"/></svg><span data-t="nSettings">Settings</span></a>
+    </nav>
+    <a class="cashier-btn" href="/r/karak-house/cashier"><svg><use href="#i-cashier"/></svg><span data-t="openCashier">Open cashier</span></a>
+    <div class="side-foot">
+      <button type="button" id="langBtn">العربية</button>
+      <a href="/p/contact-support" data-t="help">Help</a>
+      <a href="/logout" data-t="logout">Log out</a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <button class="btn btn-quiet" id="menuBtn" type="button" aria-label="Menu"><svg><use href="#i-menu"/></svg></button>
+      <b>Karak House</b>
+    </div>
+
+    <!-- trial banner: shown on every section while trialing / expired -->
+    <div class="trial" id="trialBar">
+      <div class="t-days" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i></div>
+      <div class="t-txt"><b id="trialTitle">2 days left in your free trial</b><span id="trialSub">Ends Monday, 9 November. Pick a plan to keep paging without a break.</span></div>
+      <a href="#subscription" data-view="subscription" data-t="choosePlan">Choose a plan</a>
+    </div>
+
+    <!-- ======================= OVERVIEW ======================= -->
+    <section id="vOverview">
+      <div class="ph"><div><h1 data-t="hello">Good afternoon</h1><p data-t="todaySub">Here’s how today is going.</p></div></div>
+
+      <div class="quick">
+        <div class="card"><div class="ic"><svg><use href="#i-cashier"/></svg></div><div><b data-t="qCashier">Cashier screen</b><span data-t="qCashierSub">Open it on your iPad</span></div><a class="btn btn-ink act" href="/r/karak-house/cashier" data-t="open">Open</a></div>
+        <div class="card"><div class="ic"><svg><use href="#i-qr"/></svg></div><div><b data-t="qStand">Counter QR stand</b><span data-t="qStandSub">Print and place it at the till</span></div><a class="btn btn-line act" href="/r/karak-house/print" data-t="print">Print</a></div>
+        <div class="card"><div class="ic"><svg><use href="#i-link"/></svg></div><div><b data-t="qLink">Customer link</b><span>pager.rahapp.com/r/karak-house</span></div><button class="btn btn-line act" type="button" data-copy="https://pager.rahapp.com/r/karak-house" data-t="copy">Copy</button></div>
+      </div>
+
+      <div class="stats">
+        <div class="card stat"><p class="k" data-t="sOrders">Orders today</p><p class="v num">64</p><p class="d up" data-t="sOrdersD">12 more than last Friday</p></div>
+        <div class="card stat"><p class="k" data-t="sPrep">Average prep time</p><p class="v"><span class="num">6.4</span><small data-t="minLong">min</small></p><p class="d" data-t="sPrepD">From order to ready</p></div>
+        <div class="card stat"><p class="k" data-t="sPick">Average pickup time</p><p class="v"><span class="num">1.2</span><small data-t="minLong">min</small></p><p class="d" data-t="sPickD">From ready to picked up</p></div>
+        <div class="card stat"><p class="k" data-t="sScan">Customers who scanned</p><p class="v"><span class="num">88</span><small>%</small></p><p class="d" data-t="sScanD">The rest had their number called</p></div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="card-h"><h2 data-t="byHour">Orders by hour</h2><span class="muted" data-t="todayLbl">Today</span></div>
+          <div class="chart-wrap" id="chartWrap">
+            <svg class="chart" id="chart" role="img" aria-label="Orders by hour today"></svg>
+            <div class="tip" id="tip" hidden></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h2 data-t="recent">Latest orders</h2><a class="muted" href="#orders" data-view="orders" data-t="seeAll">See all</a></div>
+          <ul class="recent" id="recent"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= ORDERS ======================= -->
+    <section id="vOrders" hidden>
+      <div class="ph"><div><h1 data-t="nOrders">Orders</h1><p data-t="ordersSub">Every order you paged, with its timings.</p></div><button class="btn btn-line" type="button"><svg><use href="#i-dl"/></svg><span data-t="export">Export CSV</span></button></div>
+      <div class="card">
+        <div class="filters">
+          <div class="seg" role="group" aria-label="Range">
+            <button type="button" aria-pressed="true" data-t="rToday">Today</button>
+            <button type="button" aria-pressed="false" data-t="r7">7 days</button>
+            <button type="button" aria-pressed="false" data-t="r30">30 days</button>
+          </div>
+          <select class="select" aria-label="Status">
+            <option data-t="allStatus">All statuses</option><option data-t="stWaiting">Preparing</option><option data-t="stRinging">Ringing</option><option data-t="stDone">Picked up</option>
+          </select>
+          <div class="search"><input type="search" data-tp="searchPh" placeholder="Search order number" aria-label="Search"></div>
+        </div>
+        <div class="table-scroll">
+          <table class="t">
+            <thead><tr><th data-t="cOrder">Order</th><th data-t="cTime">Created</th><th data-t="cPrep">Prep time</th><th data-t="cPick">Pickup time</th><th data-t="cScan">Scanned</th><th data-t="cCalls">Rings</th><th data-t="cStatus">Status</th></tr></thead>
+            <tbody id="ordersBody"></tbody>
+          </table>
+        </div>
+        <div class="pager"><span id="ordersCount"></span><div><button class="btn btn-quiet" type="button" data-t="prev">Previous</button><button class="btn btn-quiet" type="button" data-t="next">Next</button></div></div>
+      </div>
+    </section>
+
+    <!-- ======================= SUBSCRIPTION ======================= -->
+    <section id="vSubscription" hidden>
+      <div class="ph"><div><h1 data-t="nSub">Subscription</h1><p data-t="subSub">Your plan, payment card and invoices.</p></div></div>
+
+      <!-- current status -->
+      <div class="card status-card" id="statusCard"></div>
+
+      <!-- points wallet (pay per order, active) -->
+      <div class="card wallet" id="wallet" hidden>
+        <div class="bal"><b id="walBal">142</b><span data-t="pointsLeft">points left</span></div>
+        <div>
+          <div class="meter"><i id="walMeter" style="width:14%"></i></div>
+          <div class="meta"><span id="walUsed">858 used this month</span><span data-t="pointRate">1 point = 1 order = BHD 0.100</span></div>
+          <p class="warnline" id="walWarn" data-t="lowWarn">Running low. At today’s pace this lasts about 2 days.</p>
+        </div>
+        <button class="btn btn-ink" type="button" id="topupBtn" data-t="topUp">Top up points</button>
+      </div>
+
+      <h2 class="h3" id="plansTitle" data-t="pickPlan">Pick your plan</h2>
+      <div class="plans" role="radiogroup" aria-labelledby="plansTitle" id="plans">
+        <button type="button" class="plan" role="radio" data-plan="monthly" aria-checked="true"><span class="radio"></span>
+          <h4 data-t="pMonthly">Monthly</h4><p class="for" data-t="pMonthlyFor">Unlimited orders, billed every month.</p>
+          <p class="price"><span>BHD</span><b>15</b><span data-t="perMonth">/ month</span></p><p class="save"></p></button>
+        <button type="button" class="plan" role="radio" data-plan="yearly" aria-checked="false"><span class="radio"></span>
+          <h4 data-t="pYearly">Yearly</h4><p class="for" data-t="pYearlyFor">Unlimited orders, two months free.</p>
+          <p class="price"><span>BHD</span><b>150</b><span data-t="perYear">/ year</span></p><p class="save" data-t="pYearlySave">Save BHD 30</p></button>
+        <button type="button" class="plan" role="radio" data-plan="points" aria-checked="false"><span class="radio"></span>
+          <h4 data-t="pPoints">Pay per order</h4><p class="for" data-t="pPointsFor">No subscription. 1 order uses 1 point.</p>
+          <p class="price"><span>BHD</span><b>0.100</b><span data-t="perOrder">/ order</span></p><p class="save"></p></button>
+      </div>
+
+      <div class="checkout" id="checkout">
+        <div class="card box">
+          <!-- points options -->
+          <div id="pointsOpts" hidden>
+            <h3 data-t="howPay">How do you want to pay for points?</h3>
+            <div class="mode">
+              <label><input type="radio" name="mode" value="prepaid" checked><div><b data-t="mPre">Top up in advance</b><span data-t="mPreSub">Buy a pack now. We’ll remind you before it runs out.</span></div></label>
+              <label><input type="radio" name="mode" value="postpaid"><div><b data-t="mPost">Pay at the end of the month</b><span data-t="mPostSub">We charge your card for the orders you used that month.</span></div></label>
+            </div>
+            <div id="packsWrap">
+              <div class="packs" role="radiogroup" aria-label="Packs" id="packs">
+                <button type="button" class="pack" role="radio" data-pts="500" aria-checked="false"><b class="num">500</b><span>BHD 50</span></button>
+                <button type="button" class="pack" role="radio" data-pts="1000" aria-checked="true"><b class="num">1,000</b><span>BHD 100</span></button>
+                <button type="button" class="pack" role="radio" data-pts="2500" aria-checked="false"><b class="num">2,500</b><span>BHD 250</span></button>
+              </div>
+            </div>
+            <div style="height:16px"></div>
+          </div>
+
+          <h3 data-t="payCard">Payment card</h3>
+          <div class="savedcard" id="savedCard" hidden>
+            <div class="brandmark">VISA</div>
+            <div class="grow"><b>•••• 4242</b><span data-t="expires">Expires 08/28</span></div>
+            <button class="btn btn-quiet" type="button" id="changeCard" data-t="change">Change</button>
+          </div>
+          <div class="card-field" id="cardField">
+            <!-- MyFatoorah embedded card form (session.js) renders here -->
+            <div class="fake" data-t="cardNo">Card number</div>
+            <div class="row"><div class="fake">MM / YY</div><div class="fake">CVV</div></div>
+            <small data-t="cardNote">Card details are handled by MyFatoorah. Paiger never sees your full card number.</small>
+          </div>
+          <label class="check"><input type="checkbox" id="saveCard" checked><span id="saveCardTxt" data-t="saveCard">Save this card and renew automatically. Cancel any time.</span></label>
+        </div>
+
+        <div class="card box">
+          <h3 data-t="summary">Summary</h3>
+          <div class="sum" id="sum"></div>
+          <button class="btn btn-ink pay" type="button" id="payBtn"></button>
+          <p class="secure" data-t="secure">Secure payment by MyFatoorah. Prices in Bahraini dinar, no VAT.</p>
+        </div>
+      </div>
+
+      <!-- active subscription management -->
+      <div class="card box" id="manage" hidden style="margin-top:12px">
+        <h3 data-t="payCard">Payment card</h3>
+        <div class="savedcard">
+          <div class="brandmark">VISA</div>
+          <div class="grow"><b>•••• 4242</b><span data-t="expires">Expires 08/28</span></div>
+          <button class="btn btn-quiet" type="button" data-t="change">Change</button>
+          <button class="btn btn-danger" type="button" data-t="removeCard">Remove</button>
+        </div>
+      </div>
+
+      <h2 class="h3" data-t="invoices">Invoices</h2>
+      <div class="card">
+        <div class="table-scroll">
+          <table class="t">
+            <thead><tr><th data-t="iDate">Date</th><th data-t="iDesc">Description</th><th data-t="iAmount">Amount</th><th data-t="iStatus">Status</th><th></th></tr></thead>
+            <tbody id="invBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================= SETTINGS ======================= -->
+    <section id="vSettings" hidden>
+      <div class="ph"><div><h1 data-t="nSettings">Settings</h1><p data-t="setSub">Your restaurant details, brand and account.</p></div></div>
+      <div class="set-grid">
+        <div class="card set">
+          <header><h2 data-t="sRest">Restaurant</h2><p data-t="sRestSub">Shown on the cashier and your customers’ phones.</p></header>
+          <div class="fields">
+            <div class="f"><label for="sName" data-t="restName">Restaurant name</label><input class="in" id="sName" value="Karak House"></div>
+            <div class="f-row">
+              <div class="f"><label for="sPhone" data-t="phone">Mobile number</label><input class="in" id="sPhone" value="+973 3355 1234" dir="ltr"></div>
+              <div class="f"><label for="sPrep" data-t="prepTime">Usual prep time</label><select class="in" id="sPrep"><option>3</option><option>5</option><option selected>6</option><option>8</option><option>10</option><option>15</option></select><p class="help" data-t="prepHelp">Minutes. Orders past this turn amber on the cashier.</p></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card set">
+          <header><h2 data-t="sBrand">Brand</h2><p data-t="sBrandSub">Your logo and colour on the customer page.</p></header>
+          <div class="fields">
+            <div class="brand-row">
+              <div class="big-logo" id="bigLogo">K</div>
+              <div style="display:grid;gap:8px">
+                <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="btn btn-line" for="logoIn"><span data-t="upload">Upload logo</span></label><button class="btn btn-quiet" type="button" id="logoDel" hidden data-t="remove">Remove</button></div>
+                <span style="font-size:13px;color:var(--grey)" data-t="uploadHint">PNG, JPG or WEBP, up to 2 MB.</span>
+                <input type="file" id="logoIn" accept="image/png,image/jpeg,image/webp" hidden>
+              </div>
+            </div>
+            <div class="f"><label data-t="color">Brand colour</label>
+              <div class="swatches" id="swatches" role="radiogroup">
+                <button type="button" class="swatch" role="radio" style="--c:#111111" data-c="#111111" aria-checked="false" aria-label="Black"></button>
+                <button type="button" class="swatch" role="radio" style="--c:#7a4b2a" data-c="#7a4b2a" aria-checked="false" aria-label="Coffee"></button>
+                <button type="button" class="swatch" role="radio" style="--c:#b91c1c" data-c="#b91c1c" aria-checked="false" aria-label="Red"></button>
+                <button type="button" class="swatch" role="radio" style="--c:#c2410c" data-c="#c2410c" aria-checked="true" aria-label="Orange"></button>
+                <button type="button" class="swatch" role="radio" style="--c:#166534" data-c="#166534" aria-checked="false" aria-label="Green"></button>
+                <button type="button" class="swatch" role="radio" style="--c:#1d4ed8" data-c="#1d4ed8" aria-checked="false" aria-label="Blue"></button>
+                <button type="button" class="swatch" role="radio" style="--c:#6d28d9" data-c="#6d28d9" aria-checked="false" aria-label="Purple"></button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card set">
+          <header><h2 data-t="sLinks">Links and QR</h2><p data-t="sLinksSub">Your customer link can’t be changed after sign up.</p></header>
+          <div class="fields">
+            <div class="f"><label data-t="qLink">Customer link</label><div class="linkbox"><span>pager.rahapp.com/r/karak-house</span><button class="btn" type="button" data-copy="https://pager.rahapp.com/r/karak-house" data-t="copy">Copy</button></div></div>
+            <div><a class="btn btn-line" href="/r/karak-house/print"><svg><use href="#i-qr"/></svg><span data-t="qStand">Counter QR stand</span></a></div>
+          </div>
+        </div>
+
+        <div class="card set">
+          <header><h2 data-t="sPin">Cashier access</h2><p data-t="sPinSub">Staff open the cashier link and enter this PIN once per device.</p></header>
+          <div class="fields">
+            <div class="pinrow" id="pinView">
+              <div class="pinval"><span class="num" id="pinShown">••••••</span><button class="btn btn-quiet" type="button" id="pinEye" data-t="show">Show</button></div>
+              <button class="btn btn-line" type="button" id="pinChange" data-t="changePin">Change PIN</button>
+            </div>
+            <div class="pinedit" id="pinEdit" hidden>
+              <div class="f"><label for="pinIn" data-t="newPin">New 6-digit PIN</label>
+                <div style="display:flex;gap:8px"><input class="in num" id="pinIn" inputmode="numeric" maxlength="6" autocomplete="off" dir="ltr" style="letter-spacing:.3em;font-size:20px"><button class="btn btn-line" type="button" id="pinGen" data-t="generate">Generate</button></div>
+                <p class="help" id="pinHelp" data-t="pinHelp">Avoid easy ones like 123456 or 000000.</p></div>
+              <p class="pinwarn" data-t="pinWarn">Saving a new PIN signs out every cashier device. Staff will need the new PIN.</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ink" type="button" id="pinSave" data-t="savePin">Save new PIN</button><button class="btn btn-quiet" type="button" id="pinCancel" data-t="cancel">Cancel</button></div>
+            </div>
+            <div class="devices">
+              <p class="dev-h"><span data-t="devices">Signed-in cashier devices</span> <span class="num" id="devCount">2</span></p>
+              <ul id="devList">
+                <li><b>iPad · Safari</b><span data-t="dev1">Last used 3 min ago</span></li>
+                <li><b>iPad · Safari</b><span data-t="dev2">Last used yesterday</span></li>
+              </ul>
+              <button class="btn btn-danger" type="button" id="devOut" data-t="signOutAll">Sign out all devices</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card set">
+          <header><h2 data-t="sAcc">Account</h2><p data-t="sAccSub">How you log in.</p></header>
+          <div class="fields">
+            <div class="f"><label for="sEmail" data-t="email">Email</label><input class="in" id="sEmail" value="owner@karak.bh" type="email" dir="ltr"></div>
+            <div class="f-row">
+              <div class="f"><label for="sPass" data-t="newPass">New password</label><input class="in" id="sPass" type="password" autocomplete="new-password"></div>
+              <div class="f"><label for="sPass2" data-t="confirmPass">Confirm new password</label><input class="in" id="sPass2" type="password" autocomplete="new-password"></div>
+            </div>
+            <p class="help" style="font-size:13px;color:var(--grey);margin-top:-6px" data-t="passHelp">Leave empty to keep your current password.</p>
+          </div>
+        </div>
+      </div>
+      <div class="save-bar" id="saveBar" hidden><span data-t="unsaved">You have unsaved changes.</span><button class="btn btn-line" type="button" id="discard" data-t="discard">Discard</button><button class="btn btn-white" type="button" id="saveBtn" data-t="saveChanges">Save changes</button></div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast" hidden role="status"></div>
+
+<div class="proto" aria-label="Prototype account states">
+  <button type="button" data-acct="trial" class="on">Trial</button>
+  <button type="button" data-acct="expired">Expired</button>
+  <button type="button" data-acct="monthly">Monthly</button>
+  <button type="button" data-acct="points">Points</button>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const T = {
+    en: {
+      owner: "Restaurant account", nOverview: "Overview", nOrders: "Orders", nSub: "Subscription", nSettings: "Settings", trialBadge: "Trial", expiredBadge: "Expired",
+      openCashier: "Open cashier", help: "Help", logout: "Log out",
+      trialTitle: (d) => d === 1 ? "1 day left in your free trial" : `${d} days left in your free trial`,
+      trialSub: "Ends Monday, 9 November. Pick a plan to keep paging without a break.",
+      expTitle: "Your free trial has ended", expSub: "The cashier is paused. Pick a plan to start paging again, your settings are saved.",
+      choosePlan: "Choose a plan", hello: "Good afternoon", todaySub: "Here’s how today is going.",
+      qCashier: "Cashier screen", qCashierSub: "Open it on your iPad", open: "Open", qStand: "Counter QR stand", qStandSub: "Print and place it at the till", print: "Print",
+      qLink: "Customer link", copy: "Copy", copied: "Link copied",
+      sOrders: "Orders today", sOrdersD: "12 more than last Friday", sPrep: "Average prep time", sPrepD: "From order to ready", minLong: "min",
+      sPick: "Average pickup time", sPickD: "From ready to picked up", sScan: "Customers who scanned", sScanD: "The rest had their number called",
+      byHour: "Orders by hour", todayLbl: "Today", recent: "Latest orders", seeAll: "See all",
+      ordersTip: (h, n) => `${h}: ${n} orders`,
+      stWaiting: "Preparing", stRinging: "Ringing", stOnway: "On the way", stDone: "Picked up", ago: (m) => `${m} min ago`,
+      ordersSub: "Every order you paged, with its timings.", export: "Export CSV", rToday: "Today", r7: "7 days", r30: "30 days", allStatus: "All statuses", searchPh: "Search order number",
+      cOrder: "Order", cTime: "Created", cPrep: "Prep time", cPick: "Pickup time", cScan: "Scanned", cCalls: "Rings", cStatus: "Status", yes: "Yes", no: "No",
+      prev: "Previous", next: "Next", showing: (a, b) => `Showing ${a} of ${b} orders`,
+      subSub: "Your plan, payment card and invoices.",
+      curPlan: "Current plan", freeTrial: "Free trial", trialTag: "Trial", activeTag: "Active", expiredTag: "Ended",
+      trialEnds: "Trial ends", nextCharge: "Next charge", amount: "Amount", card: "Card", billing: "Billing",
+      pickPlan: "Pick your plan", changePlan: "Change plan", pMonthly: "Monthly", pMonthlyFor: "Unlimited orders, billed every month.", perMonth: "/ month",
+      pYearly: "Yearly", pYearlyFor: "Unlimited orders, two months free.", perYear: "/ year", pYearlySave: "Save BHD 30",
+      pPoints: "Pay per order", pPointsFor: "No subscription. 1 order uses 1 point.", perOrder: "/ order", currentTag: "Current",
+      howPay: "How do you want to pay for points?", mPre: "Top up in advance", mPreSub: "Buy a pack now. We’ll remind you before it runs out.",
+      mPost: "Pay at the end of the month", mPostSub: "We charge your card for the orders you used that month.",
+      payCard: "Payment card", expires: "Expires 08/28", change: "Change", removeCard: "Remove", cardNo: "Card number",
+      cardNote: "Card details are handled by MyFatoorah. Paiger never sees your full card number.",
+      saveCard: "Save this card and renew automatically. Cancel any time.", saveCardPost: "Save this card. We charge it on the 1st of each month for last month’s orders.",
+      saveCardPre: "Save this card for faster top-ups.",
+      summary: "Summary", plan: "Plan", sumMonthly: "Monthly plan", sumYearly: "Yearly plan", sumPack: (p) => `${p} points`, sumPost: "Pay per order, billed monthly",
+      startsToday: "Starts today", renews: (d) => `Renews ${d}`, today: "Due today", payNow: (a) => `Pay BHD ${a}`, confirmPost: "Save card and switch",
+      postNote: "Nothing to pay today. First charge on 1 December.", trialNote: "Your 2 trial days are added on top, so your first period starts on 9 November.",
+      secure: "Secure payment by MyFatoorah. Prices in Bahraini dinar, no VAT.",
+      pointsLeft: "points left", pointRate: "1 point = 1 order = BHD 0.100", usedMonth: (n) => `${n} used this month`, lowWarn: "Running low. At today’s pace this lasts about 2 days.", topUp: "Top up points",
+      invoices: "Invoices", iDate: "Date", iDesc: "Description", iAmount: "Amount", iStatus: "Status", paid: "Paid", download: "PDF", noInv: "No invoices yet. They appear here after your first payment.",
+      setSub: "Your restaurant details, brand and account.", sRest: "Restaurant", sRestSub: "Shown on the cashier and your customers’ phones.", restName: "Restaurant name", phone: "Mobile number",
+      prepTime: "Usual prep time", prepHelp: "Minutes. Orders past this turn amber on the cashier.", sBrand: "Brand", sBrandSub: "Your logo and colour on the customer page.",
+      upload: "Upload logo", replace: "Replace logo", remove: "Remove", uploadHint: "PNG, JPG or WEBP, up to 2 MB.", color: "Brand colour",
+      sLinks: "Links and QR", sLinksSub: "Your customer link can’t be changed after sign up.", sAcc: "Account", sAccSub: "How you log in.", email: "Email",
+      newPass: "New password", confirmPass: "Confirm new password", passHelp: "Leave empty to keep your current password.",
+      unsaved: "You have unsaved changes.", discard: "Discard", saveChanges: "Save changes", saved: "Changes saved",
+      paidOk: "Payment received. Your plan is active.",
+      sPin: "Cashier access", sPinSub: "Staff open the cashier link and enter this PIN once per device.", show: "Show", hide: "Hide", changePin: "Change PIN",
+      newPin: "New 6-digit PIN", generate: "Generate", pinHelp: "Avoid easy ones like 123456 or 000000.", pinWeak: "Too easy to guess. Pick another one.", pinShort: "The PIN needs 6 digits.",
+      pinWarn: "Saving a new PIN signs out every cashier device. Staff will need the new PIN.", savePin: "Save new PIN", cancel: "Cancel", pinSaved: "New PIN saved. All cashier devices were signed out.",
+      devices: "Signed-in cashier devices", dev1: "Last used 3 min ago", dev2: "Last used yesterday", signOutAll: "Sign out all devices", noDevices: "No devices signed in.", devOutDone: "All cashier devices were signed out.",
+    },
+    ar: {
+      owner: "حساب المطعم", nOverview: "نظرة عامة", nOrders: "الطلبات", nSub: "الاشتراك", nSettings: "الإعدادات", trialBadge: "تجربة", expiredBadge: "منتهي",
+      openCashier: "افتح الكاشير", help: "المساعدة", logout: "تسجيل الخروج",
+      trialTitle: (d) => d === 1 ? "باقي يوم واحد في تجربتك المجانية" : d === 2 ? "باقي يومين في تجربتك المجانية" : `باقي ${d} أيام في تجربتك المجانية`,
+      trialSub: "تخلص يوم الاثنين ٩ نوفمبر. اختار باقة عشان تكمل بدون انقطاع.",
+      expTitle: "تجربتك المجانية خلصت", expSub: "الكاشير موقّف. اختار باقة عشان ترجع تشتغل، وإعداداتك محفوظة.",
+      choosePlan: "اختار باقة", hello: "مساء الخير", todaySub: "هذي أحوال اليوم.",
+      qCashier: "شاشة الكاشير", qCashierSub: "افتحها على الآيباد", open: "افتح", qStand: "كود QR للكاونتر", qStandSub: "اطبعه وحطه عند الكاشير", print: "طباعة",
+      qLink: "رابط العملاء", copy: "نسخ", copied: "تم نسخ الرابط",
+      sOrders: "طلبات اليوم", sOrdersD: "١٢ أكثر من الجمعة اللي طافت", sPrep: "متوسط وقت التحضير", sPrepD: "من الطلب لين يجهز", minLong: "دقائق",
+      sPick: "متوسط وقت الاستلام", sPickD: "من الجاهزية لين الاستلام", sScan: "العملاء اللي مسحوا الكود", sScanD: "الباقين انادى رقمهم",
+      byHour: "الطلبات حسب الساعة", todayLbl: "اليوم", recent: "آخر الطلبات", seeAll: "عرض الكل",
+      ordersTip: (h, n) => `${h}: ${n} طلبات`,
+      stWaiting: "قيد التحضير", stRinging: "يرن", stOnway: "في الطريق", stDone: "تم الاستلام", ago: (m) => `قبل ${m} د`,
+      ordersSub: "كل الطلبات اللي استخدمت فيها البيجر، مع أوقاتها.", export: "تصدير CSV", rToday: "اليوم", r7: "٧ أيام", r30: "٣٠ يوم", allStatus: "كل الحالات", searchPh: "ابحث برقم الطلب",
+      cOrder: "الطلب", cTime: "الوقت", cPrep: "وقت التحضير", cPick: "وقت الاستلام", cScan: "مسح الكود", cCalls: "مرات الرنين", cStatus: "الحالة", yes: "نعم", no: "لا",
+      prev: "السابق", next: "التالي", showing: (a, b) => `عرض ${a} من ${b} طلب`,
+      subSub: "باقتك وبطاقة الدفع والفواتير.",
+      curPlan: "الباقة الحالية", freeTrial: "تجربة مجانية", trialTag: "تجربة", activeTag: "فعّالة", expiredTag: "منتهية",
+      trialEnds: "نهاية التجربة", nextCharge: "الخصم الجاي", amount: "المبلغ", card: "البطاقة", billing: "طريقة الدفع",
+      pickPlan: "اختار باقتك", changePlan: "تغيير الباقة", pMonthly: "شهري", pMonthlyFor: "طلبات بلا حدود، تدفع كل شهر.", perMonth: "/ شهرياً",
+      pYearly: "سنوي", pYearlyFor: "طلبات بلا حدود، وشهرين مجاناً.", perYear: "/ سنوياً", pYearlySave: "توفّر ٣٠ دينار",
+      pPoints: "الدفع لكل طلب", pPointsFor: "بدون اشتراك. كل طلب ياخذ نقطة وحدة.", perOrder: "/ للطلب", currentTag: "الحالية",
+      howPay: "شلون تبي تدفع للنقاط؟", mPre: "اشحن مقدماً", mPreSub: "اشترِ باقة نقاط الحين، وبننبهك قبل ما تخلص.",
+      mPost: "ادفع نهاية الشهر", mPostSub: "نخصم من بطاقتك على الطلبات اللي استخدمتها في الشهر.",
+      payCard: "بطاقة الدفع", expires: "تنتهي ٠٨/٢٨", change: "تغيير", removeCard: "حذف", cardNo: "رقم البطاقة",
+      cardNote: "بيانات البطاقة تتعامل معها MyFatoorah. Paiger ما يشوف رقم بطاقتك كامل.",
+      saveCard: "احفظ البطاقة وجدّد تلقائياً. تقدر تلغي متى ما تبي.", saveCardPost: "احفظ البطاقة. نخصم منها أول كل شهر على طلبات الشهر اللي طاف.",
+      saveCardPre: "احفظ البطاقة عشان الشحن يكون أسرع.",
+      summary: "الملخص", plan: "الباقة", sumMonthly: "الباقة الشهرية", sumYearly: "الباقة السنوية", sumPack: (p) => `${p} نقطة`, sumPost: "الدفع لكل طلب، شهرياً",
+      startsToday: "تبدأ اليوم", renews: (d) => `تتجدد ${d}`, today: "المطلوب اليوم", payNow: (a) => `ادفع ${a} دينار`, confirmPost: "احفظ البطاقة وحوّل",
+      postNote: "ما في شي تدفعه اليوم. أول خصم يوم ١ ديسمبر.", trialNote: "يومين التجربة الباقية تنضاف لك، فأول فترة تبدأ يوم ٩ نوفمبر.",
+      secure: "دفع آمن عن طريق MyFatoorah. الأسعار بالدينار البحريني، بدون ضريبة.",
+      pointsLeft: "نقطة باقية", pointRate: "نقطة = طلب = ٠٫١٠٠ دينار", usedMonth: (n) => `${n} مستخدمة هالشهر`, lowWarn: "رصيدك قليل. على معدل اليوم، يكفي تقريباً يومين.", topUp: "اشحن نقاط",
+      invoices: "الفواتير", iDate: "التاريخ", iDesc: "الوصف", iAmount: "المبلغ", iStatus: "الحالة", paid: "مدفوعة", download: "PDF", noInv: "ما في فواتير لسا. بتطلع هني بعد أول دفعة.",
+      setSub: "بيانات مطعمك وعلامتك وحسابك.", sRest: "المطعم", sRestSub: "تطلع في الكاشير وعلى تلفونات عملائك.", restName: "اسم المطعم", phone: "رقم الجوال",
+      prepTime: "وقت التحضير المعتاد", prepHelp: "بالدقائق. الطلبات اللي تتجاوزه تتلوّن برتقالي في الكاشير.", sBrand: "العلامة", sBrandSub: "شعارك ولونك في صفحة العميل.",
+      upload: "حمّل الشعار", replace: "تغيير الشعار", remove: "حذف", uploadHint: "PNG أو JPG أو WEBP، لين ٢ ميجا.", color: "لون العلامة",
+      sLinks: "الروابط والكود", sLinksSub: "رابط العملاء ما يتغير بعد التسجيل.", sAcc: "الحساب", sAccSub: "طريقة دخولك.", email: "الإيميل",
+      newPass: "كلمة مرور جديدة", confirmPass: "أكّد كلمة المرور", passHelp: "خلّها فاضية إذا ما تبي تغيّرها.",
+      unsaved: "عندك تغييرات ما انحفظت.", discard: "تجاهل", saveChanges: "حفظ التغييرات", saved: "تم حفظ التغييرات",
+      paidOk: "تم استلام الدفع. باقتك فعّالة.",
+      sPin: "دخول الكاشير", sPinSub: "الموظف يفتح رابط الكاشير ويدخل هذا الرمز مرة وحدة لكل جهاز.", show: "إظهار", hide: "إخفاء", changePin: "تغيير الرمز",
+      newPin: "رمز جديد من ٦ أرقام", generate: "توليد", pinHelp: "تجنّب الرموز السهلة مثل 123456 أو 000000.", pinWeak: "الرمز سهل ينخمّن. اختار غيره.", pinShort: "الرمز لازم يكون ٦ أرقام.",
+      pinWarn: "حفظ رمز جديد يطلّع كل أجهزة الكاشير. الموظفين بيحتاجون الرمز الجديد.", savePin: "احفظ الرمز الجديد", cancel: "إلغاء", pinSaved: "انحفظ الرمز الجديد، وطلعت كل أجهزة الكاشير.",
+      devices: "أجهزة الكاشير المسجّلة", dev1: "آخر استخدام قبل ٣ دقائق", dev2: "آخر استخدام أمس", signOutAll: "طلّع كل الأجهزة", noDevices: "ما في أجهزة مسجّلة.", devOutDone: "طلعت كل أجهزة الكاشير.",
+    },
+  };
+  let lang = "en"; try { lang = localStorage.getItem("paiger.lang") || "en"; } catch (_) {}
+  const t = (k, ...a) => { const v = (T[lang] && T[lang][k]) ?? T.en[k] ?? k; return typeof v === "function" ? v(...a) : v; };
+  const $ = (id) => document.getElementById(id);
+
+  /* ---------------- state (mock) ---------------- */
+  let acct = "trial";          // trial | expired | monthly | points
+  let view = "overview";
+  let plan = "monthly", mode = "prepaid", pack = 1000;
+  const HOURS = [["7", 2], ["8", 6], ["9", 9], ["10", 7], ["11", 5], ["12", 8], ["13", 11], ["14", 7], ["15", 4], ["16", 3], ["17", 2]];
+  const NOW_HOUR = "14";
+  const ORDERS = [
+    [88, "14:52", 5.8, 0.9, true, 1, "ringing"], [87, "14:47", 6.2, null, true, 0, "waiting"], [86, "14:40", 4.9, 1.1, true, 1, "done"],
+    [85, "14:33", 9.4, 2.6, false, 3, "done"], [84, "14:25", 6.0, 0.7, true, 1, "done"], [83, "14:18", 5.1, 1.4, true, 1, "done"],
+    [82, "14:09", 7.7, 0.8, true, 1, "done"], [81, "14:02", 6.6, 1.9, true, 2, "done"], [80, "13:55", 5.5, 1.0, true, 1, "done"],
+  ];
+  const INVOICES = [["1 Nov 2026", "Points top-up, 1,000 points", "100.000"], ["12 Oct 2026", "Points top-up, 1,000 points", "100.000"], ["20 Sep 2026", "Points top-up, 500 points", "50.000"]];
+
+  /* ---------------- i18n ---------------- */
+  function applyLang() {
+    document.documentElement.lang = lang; document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    document.querySelectorAll("[data-t]").forEach((n) => { const v = t(n.dataset.t); if (typeof v === "string") n.textContent = v; });
+    document.querySelectorAll("[data-tp]").forEach((n) => (n.placeholder = t(n.dataset.tp)));
+    $("langBtn").textContent = lang === "ar" ? "English" : "العربية";
+    renderAll();
+  }
+  $("langBtn").addEventListener("click", () => { lang = lang === "ar" ? "en" : "ar"; try { localStorage.setItem("paiger.lang", lang); } catch (_) {} applyLang(); });
+
+  /* ---------------- navigation ---------------- */
+  function go(v) {
+    view = v;
+    ["overview", "orders", "subscription", "settings"].forEach((x) => ($("v" + x[0].toUpperCase() + x.slice(1)).hidden = x !== v));
+    document.querySelectorAll(".nav a").forEach((a) => a.toggleAttribute("aria-current", a.dataset.view === v) || a.removeAttribute("aria-current"));
+    document.querySelectorAll(".nav a").forEach((a) => { if (a.dataset.view === v) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current"); });
+    $("side").classList.remove("open");
+    scrollTo(0, 0);
+    if (v === "overview") drawChart();
+  }
+  document.addEventListener("click", (e) => { const a = e.target.closest("[data-view]"); if (a) { e.preventDefault(); go(a.dataset.view); } });
+  $("menuBtn").addEventListener("click", () => $("side").classList.toggle("open"));
+
+  /* ---------------- copy ---------------- */
+  document.addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-copy]"); if (!b) return;
+    try { await navigator.clipboard.writeText(b.dataset.copy); } catch (_) {}
+    toast(t("copied"));
+  });
+  let toastT; function toast(m) { const el = $("toast"); el.textContent = m; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => (el.hidden = true), 2400); }
+
+  /* ---------------- trial banner + nav badge ---------------- */
+  function renderTrial() {
+    const bar = $("trialBar"), badge = $("navBadge");
+    bar.hidden = !(acct === "trial" || acct === "expired"); badge.hidden = bar.hidden;
+    bar.classList.toggle("expired", acct === "expired");
+    if (acct === "trial") { $("trialTitle").textContent = t("trialTitle", 2); $("trialSub").textContent = t("trialSub"); badge.textContent = t("trialBadge"); }
+    if (acct === "expired") { $("trialTitle").textContent = t("expTitle"); $("trialSub").textContent = t("expSub"); badge.textContent = t("expiredBadge"); }
+    bar.querySelectorAll(".t-days i").forEach((i, n) => i.classList.toggle("on", acct === "trial" ? n < 2 : false));
+  }
+
+  /* ---------------- overview ---------------- */
+  function drawChart() {
+    const svg = $("chart"), w = svg.clientWidth || 600, h = 220, padL = 28, padB = 24, padT = 8;
+    const max = 12, n = HOURS.length, slot = (w - padL) / n, bw = Math.min(28, slot * 0.56);
+    let s = "";
+    [0, 4, 8, 12].forEach((v) => { const y = padT + (h - padB - padT) * (1 - v / max); s += `<line class="gl" x1="${padL}" x2="${w}" y1="${y}" y2="${y}"/><text class="ax" x="${padL - 8}" y="${y + 4}" text-anchor="end">${v}</text>`; });
+    const rtl = document.documentElement.dir === "rtl";
+    HOURS.forEach(([hr, v], i) => {
+      const idx = rtl ? n - 1 - i : i;
+      const x = padL + idx * slot + (slot - bw) / 2, bh = (h - padB - padT) * (v / max), y = h - padB - bh, r = 4;
+      const future = Number(hr) > Number(NOW_HOUR);
+      // rounded top only, square at baseline
+      const path = `M${x},${h - padB} V${y + r} Q${x},${y} ${x + r},${y} H${x + bw - r} Q${x + bw},${y} ${x + bw},${y + r} V${h - padB} Z`;
+      s += `<g data-h="${hr}:00" data-v="${v}"><rect class="hit" x="${padL + idx * slot}" y="${padT}" width="${slot}" height="${h - padT - padB}"/><path class="bar${future ? " dim" : ""}" d="${path}"/></g>`;
+      s += `<text class="ax" x="${x + bw / 2}" y="${h - 6}" text-anchor="middle">${hr}</text>`;
+    });
+    svg.setAttribute("viewBox", `0 0 ${w} ${h}`); svg.innerHTML = s;
+  }
+  $("chart").addEventListener("mousemove", (e) => {
+    const g = e.target.closest("g[data-h]"), tip = $("tip");
+    if (!g) { tip.hidden = true; return; }
+    const r = g.querySelector(".bar").getBoundingClientRect(), wr = $("chartWrap").getBoundingClientRect();
+    tip.textContent = t("ordersTip", g.dataset.h, g.dataset.v); tip.hidden = false;
+    tip.style.left = (r.left - wr.left + r.width / 2) + "px"; tip.style.top = (r.top - wr.top) + "px";
+  });
+  $("chart").addEventListener("mouseleave", () => ($("tip").hidden = true));
+  addEventListener("resize", () => view === "overview" && drawChart());
+
+  const pillFor = (st) => ({ waiting: ["", "stWaiting"], ringing: ["ring", "stRinging"], onway: ["way", "stOnway"], done: ["done", "stDone"] }[st]);
+  function renderRecent() {
+    $("recent").innerHTML = ORDERS.slice(0, 5).map(([no, time, prep, pick, sc, calls, st], i) => {
+      const [cls, key] = pillFor(st);
+      return `<li><span class="n num">${no}</span><span class="m">${t("ago", i * 6 + 2)}</span><span class="pill ${cls}">${t(key)}</span></li>`;
+    }).join("");
+  }
+
+  /* ---------------- orders ---------------- */
+  function renderOrders() {
+    $("ordersBody").innerHTML = ORDERS.map(([no, time, prep, pick, sc, calls, st]) => {
+      const [cls, key] = pillFor(st);
+      const late = prep > 6;
+      return `<tr><td><span class="n num">${no}</span></td><td class="sub"><span class="num" style="font-family:inherit">${time}</span></td>
+        <td class="${late ? "late" : ""}"><span class="num" style="font-family:inherit">${prep.toFixed(1)}</span> ${t("minLong")}</td>
+        <td>${pick == null ? "<span class='sub'>—</span>" : `<span class="num" style="font-family:inherit">${pick.toFixed(1)}</span> ${t("minLong")}`}</td>
+        <td class="${sc ? "yes" : "no"}">${t(sc ? "yes" : "no")}</td><td><span class="num" style="font-family:inherit">${calls}</span></td>
+        <td><span class="pill ${cls}">${t(key)}</span></td></tr>`;
+    }).join("");
+    $("ordersCount").textContent = t("showing", ORDERS.length, 64);
+  }
+  document.querySelector(".seg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; b.parentElement.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b)); });
+
+  /* ---------------- subscription ---------------- */
+  const PRICE = { monthly: "15.000", yearly: "150.000" }, PACK_PRICE = { 500: "50.000", 1000: "100.000", 2500: "250.000" };
+  function renderStatus() {
+    const c = $("statusCard");
+    if (acct === "trial" || acct === "expired") {
+      c.innerHTML = `<div class="grow"><p class="k">${t("curPlan")}</p><p class="v">${t("freeTrial")} <span class="tag tag-trial" style="vertical-align:middle">${t(acct === "trial" ? "trialTag" : "expiredTag")}</span></p></div>
+        <div class="facts"><div><span>${t("trialEnds")}</span><b>9 Nov 2026</b></div></div>`;
+    } else if (acct === "monthly") {
+      c.innerHTML = `<div class="grow"><p class="k">${t("curPlan")}</p><p class="v">${t("pMonthly")} <span class="tag active" style="vertical-align:middle">${t("activeTag")}</span></p></div>
+        <div class="facts"><div><span>${t("nextCharge")}</span><b>6 Dec 2026</b></div><div><span>${t("amount")}</span><b dir="ltr">BHD 15.000</b></div><div><span>${t("card")}</span><b dir="ltr">Visa •••• 4242</b></div></div>`;
+    } else {
+      c.innerHTML = `<div class="grow"><p class="k">${t("curPlan")}</p><p class="v">${t("pPoints")} <span class="tag active" style="vertical-align:middle">${t("activeTag")}</span></p></div>
+        <div class="facts"><div><span>${t("billing")}</span><b>${t("mPre")}</b></div><div><span>${t("card")}</span><b dir="ltr">Visa •••• 4242</b></div></div>`;
+    }
+  }
+  function renderPlans() {
+    document.querySelectorAll(".plan").forEach((p) => {
+      p.setAttribute("aria-checked", p.dataset.plan === plan);
+      const cur = (acct === "monthly" && p.dataset.plan === "monthly") || (acct === "points" && p.dataset.plan === "points");
+      let tag = p.querySelector(".cur-tag");
+      if (cur && !tag) p.insertAdjacentHTML("afterbegin", `<span class="cur-tag">${t("currentTag")}</span>`);
+      if (!cur && tag) tag.remove();
+      if (tag && cur) tag.textContent = t("currentTag");
+    });
+    $("plansTitle").textContent = t(acct === "trial" || acct === "expired" ? "pickPlan" : "changePlan");
+    $("pointsOpts").hidden = plan !== "points";
+    $("packsWrap").hidden = mode !== "prepaid";
+    document.querySelectorAll(".pack").forEach((p) => p.setAttribute("aria-checked", Number(p.dataset.pts) === pack));
+    const hasCard = acct === "monthly" || acct === "points";
+    $("savedCard").hidden = !hasCard; $("cardField").hidden = hasCard;
+    $("saveCardTxt").textContent = t(plan === "points" ? (mode === "postpaid" ? "saveCardPost" : "saveCardPre") : "saveCard");
+    $("saveCard").closest(".check").hidden = hasCard;
+    // checkout hidden when the chosen plan is already the current one (and not a top-up)
+    const same = (acct === "monthly" && plan === "monthly") || (acct === "points" && plan === "points" && mode === "postpaid");
+    $("checkout").hidden = same;
+    $("manage").hidden = !(acct === "monthly" || acct === "points") || !same;
+    renderSummary();
+  }
+  function renderSummary() {
+    let rows = "", due = "0.000", btn = "";
+    if (plan === "monthly" || plan === "yearly") {
+      due = PRICE[plan];
+      rows += `<div><span>${t("plan")}</span><span>${t(plan === "monthly" ? "sumMonthly" : "sumYearly")}</span></div>`;
+      rows += `<div><span class="muted">${t("renews", acct === "trial" ? (plan === "monthly" ? "9 Dec 2026" : "9 Nov 2027") : (plan === "monthly" ? "6 Dec 2026" : "6 Nov 2027"))}</span><span></span></div>`;
+      if (acct === "trial") rows += `<div><span class="muted">${t("trialNote")}</span></div>`;
+      btn = t("payNow", due);
+    } else if (mode === "prepaid") {
+      due = PACK_PRICE[pack];
+      rows += `<div><span>${t("plan")}</span><span>${t("sumPack", pack.toLocaleString("en"))}</span></div>`;
+      btn = t("payNow", due);
+    } else {
+      rows += `<div><span>${t("plan")}</span><span>${t("sumPost")}</span></div><div><span class="muted">${t("postNote")}</span></div>`;
+      btn = t("confirmPost");
+    }
+    rows += `<div class="tot"><span>${t("today")}</span><b>BHD ${due}</b></div>`;
+    $("sum").innerHTML = rows; $("payBtn").textContent = btn;
+  }
+  $("plans").addEventListener("click", (e) => { const p = e.target.closest(".plan"); if (!p) return; plan = p.dataset.plan; renderPlans(); });
+  $("packs").addEventListener("click", (e) => { const p = e.target.closest(".pack"); if (!p) return; pack = Number(p.dataset.pts); renderPlans(); });
+  document.querySelectorAll('input[name="mode"]').forEach((r) => r.addEventListener("change", () => { mode = r.value; renderPlans(); }));
+  $("topupBtn").addEventListener("click", () => { plan = "points"; mode = "prepaid"; renderPlans(); $("checkout").scrollIntoView({ behavior: "smooth", block: "start" }); });
+  $("payBtn").addEventListener("click", () => { // PROTOTYPE: MyFatoorah execute payment -> webhook -> plan active
+    $("payBtn").disabled = true; setTimeout(() => { $("payBtn").disabled = false; setAcct(plan === "points" ? "points" : "monthly"); toast(t("paidOk")); }, 900);
+  });
+  function renderWallet() {
+    $("wallet").hidden = acct !== "points";
+    $("wallet").classList.toggle("low", true);
+    $("walUsed").textContent = t("usedMonth", 858);
+  }
+  function renderInvoices() {
+    const list = acct === "points" ? INVOICES : acct === "monthly" ? [["6 Nov 2026", "Monthly plan, Nov 2026", "15.000"]] : [];
+    $("invBody").innerHTML = list.length ? list.map(([d, desc, a]) => `<tr><td class="sub">${d}</td><td>${desc}</td><td dir="ltr" style="text-align:start">BHD ${a}</td><td><span class="pill ring">${t("paid")}</span></td><td><a class="btn btn-quiet" href="#"><svg><use href="#i-dl"/></svg>${t("download")}</a></td></tr>`).join("")
+      : `<tr><td colspan="5" class="sub" style="padding:22px 16px">${t("noInv")}</td></tr>`;
+  }
+
+  /* ---------------- settings ---------------- */
+  let dirty = false, hasLogo = false;
+  const initial = { brand: "#c2410c" };
+  function markDirty() { dirty = true; $("saveBar").hidden = false; }
+  document.querySelectorAll("#vSettings .in").forEach((i) => i.addEventListener("input", markDirty));
+  function contrastInk(hex) { const n = parseInt(hex.slice(1), 16); return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) > 170 ? "#111" : "#fff"; }
+  function setBrand(hex) { document.documentElement.style.setProperty("--brand", hex); document.documentElement.style.setProperty("--brand-ink", contrastInk(hex)); }
+  $("swatches").addEventListener("click", (e) => { const s = e.target.closest(".swatch"); if (!s) return; $("swatches").querySelectorAll(".swatch").forEach((x) => x.setAttribute("aria-checked", x === s)); setBrand(s.dataset.c); markDirty(); });
+  $("logoIn").addEventListener("change", (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const url = URL.createObjectURL(f);
+    $("bigLogo").innerHTML = `<img src="${url}" alt="">`; $("sideLogo").innerHTML = `<img src="${url}" alt="">`;
+    hasLogo = true; $("logoDel").hidden = false; markDirty();
+  });
+  $("logoDel").addEventListener("click", () => { hasLogo = false; $("bigLogo").textContent = "K"; $("sideLogo").textContent = "K"; $("logoDel").hidden = true; $("logoIn").value = ""; markDirty(); });
+  $("discard").addEventListener("click", () => { dirty = false; $("saveBar").hidden = true; setBrand(initial.brand); $("swatches").querySelectorAll(".swatch").forEach((x) => x.setAttribute("aria-checked", x.dataset.c === initial.brand)); });
+  $("saveBtn").addEventListener("click", () => { dirty = false; $("saveBar").hidden = true; toast(t("saved")); });
+
+
+  /* ---------------- cashier PIN ---------------- */
+  let curPin = "246810", pinVisible = false;
+  const paintPin = () => { $("pinShown").textContent = pinVisible ? curPin : "••••••"; $("pinEye").textContent = t(pinVisible ? "hide" : "show"); };
+  $("pinEye").onclick = () => { pinVisible = !pinVisible; paintPin(); };
+  $("pinChange").onclick = () => { $("pinView").hidden = true; $("pinEdit").hidden = false; $("pinIn").value = ""; $("pinIn").focus(); };
+  $("pinCancel").onclick = () => { $("pinView").hidden = false; $("pinEdit").hidden = true; $("pinHelp").textContent = t("pinHelp"); $("pinHelp").style.color = ""; };
+  $("pinIn").addEventListener("input", (e) => (e.target.value = e.target.value.replace(/[^0-9]/g, "").slice(0, 6)));
+  $("pinGen").onclick = () => { let p; do { p = String(Math.floor(Math.random() * 1e6)).padStart(6, "0"); } while (weak(p)); $("pinIn").value = p; };
+  function weak(p) { return /^(\d)\1{5}$/.test(p) || "0123456789".includes(p) || "9876543210".includes(p) || ["121212", "112233", "123123"].includes(p); }
+  $("pinSave").onclick = () => {
+    const p = $("pinIn").value, h = $("pinHelp");
+    if (p.length !== 6) { h.textContent = t("pinShort"); h.style.color = "var(--error)"; return; }
+    if (weak(p)) { h.textContent = t("pinWeak"); h.style.color = "var(--error)"; return; }
+    curPin = p; pinVisible = true; paintPin(); $("pinCancel").onclick(); signOutAll(); toast(t("pinSaved"));
+  };
+  function signOutAll() { $("devList").innerHTML = `<li><span>${t("noDevices")}</span></li>`; $("devCount").textContent = "0"; $("devOut").hidden = true; }
+  $("devOut").onclick = () => { signOutAll(); toast(t("devOutDone")); };
+
+  /* ---------------- prototype account states ---------------- */
+  function setAcct(a) {
+    acct = a; plan = a === "points" ? "points" : "monthly"; mode = a === "points" ? "prepaid" : mode;
+    document.querySelectorAll(".proto button").forEach((b) => b.classList.toggle("on", b.dataset.acct === a));
+    renderAll();
+  }
+  document.querySelector(".proto").addEventListener("click", (e) => { const b = e.target.closest("button"); if (b) setAcct(b.dataset.acct); });
+
+  function renderAll() { if (typeof paintPin === "function") paintPin(); renderTrial(); renderRecent(); renderOrders(); renderStatus(); renderPlans(); renderWallet(); renderInvoices(); if (view === "overview") drawChart(); }
+
+  setBrand("#c2410c");
+  applyLang();
+  const h = location.hash.replace("#", ""); if (["orders", "subscription", "settings"].includes(h)) go(h);
+})();
+</script>
+</body>
+</html>

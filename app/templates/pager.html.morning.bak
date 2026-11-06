@@ -1,0 +1,1498 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="{{ theme }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1220">
+<title>بيجر #{{ order.order_number }}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="/static/img/brand-logo.png?v=dawrak">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="بيجر المطعم">
+<meta name="apple-itunes-app" content="app-clip-bundle-id=com.dawrak.app.Clip">
+<style>
+:root{
+  --wait:#ffb547;--ring:#ff4d6d;--go:#8b7bff;--done:#36d9a0;
+  --bg-dark-base:#090b13;
+  --widget-dark-bg:rgba(18, 22, 38, 0.85);
+  --widget-dark-border:rgba(255,255,255,.16);
+  --ink:#ffffff;
+  --mute:#94a3b8;
+}
+
+/* Luxury Espresso Light Mode Theme Variables */
+:root[data-theme="light"], body[data-theme="light"]{
+  --wait:#c05621;--ring:#dc2626;--go:#6d28d9;--done:#0f766e;
+  --ink:#24160f;
+  --mute:#7c6958;
+}
+
+body[data-theme="light"]{
+  background:
+    radial-gradient(110% 70% at 50% 12%, rgba(192, 86, 33, 0.14), transparent 65%),
+    radial-gradient(100% 60% at 10% 85%, rgba(140, 50, 20, 0.08), transparent 65%),
+    #f7f4ee;
+  color:#24160f;
+}
+
+body[data-theme="light"].ring{
+  background:
+    radial-gradient(120% 70% at 50% 30%, rgba(220, 38, 38, 0.16), transparent 70%),
+    #faf6f0;
+}
+
+body[data-theme="light"] .widget-box{
+  background:rgba(255, 255, 255, 0.92);
+  border:1.5px solid rgba(43, 29, 22, 0.12);
+  box-shadow:0 25px 65px rgba(43, 29, 22, 0.09), 0 0 40px rgba(192, 86, 33, 0.08);
+  color:#24160f;
+}
+
+body[data-theme="light"].ring .widget-box{
+  border-color:rgba(220, 38, 38, 0.55);
+  box-shadow:0 25px 65px rgba(220, 38, 38, 0.18), 0 0 45px rgba(220, 38, 38, 0.25);
+}
+
+body[data-theme="light"] .widget-header-brand{
+  border-bottom:1px solid rgba(43, 29, 22, 0.08);
+}
+body[data-theme="light"] .brand-title{
+  color:#24160f;
+}
+body[data-theme="light"] .brand-sub{
+  color:#7c6958;
+}
+body[data-theme="light"] .brand-clock{
+  background:rgba(43, 29, 22, 0.06);
+  border-color:rgba(43, 29, 22, 0.1);
+  color:#3a251a;
+}
+body[data-theme="light"] .brand-clock b{
+  color:#24160f;
+}
+
+body[data-theme="light"] .widget-body{
+  background:rgba(247, 244, 238, 0.85);
+  border-color:rgba(43, 29, 22, 0.1);
+}
+body[data-theme="light"] .widget-num{
+  color:#1e130c;
+  text-shadow:0 3px 12px rgba(43, 29, 22, 0.12);
+}
+body[data-theme="light"] .widget-label{
+  color:#7c6958;
+}
+body[data-theme="light"] .widget-name{
+  color:#3a251a;
+  background:rgba(43, 29, 22, 0.05);
+}
+body[data-theme="light"] .widget-status-title{
+  color:#1e130c;
+}
+body[data-theme="light"] .widget-status-sub{
+  color:#665446;
+}
+body[data-theme="light"] .widget-steps i{
+  background:rgba(43, 29, 22, 0.16);
+}
+body[data-theme="light"] .widget-steps i.on{
+  background:#24160f;
+  box-shadow:0 0 8px rgba(36, 22, 15, 0.35);
+}
+
+/* Queue Card in Espresso Light */
+body[data-theme="light"] .queue-card{
+  background:#ffffff;
+  border-color:rgba(43, 29, 22, 0.1);
+  box-shadow:0 12px 32px rgba(43, 29, 22, 0.06);
+}
+body[data-theme="light"] .queue-card:hover{
+  background:#faf7f2;
+}
+body[data-theme="light"] .queue-icon-circle{
+  background:rgba(15, 118, 110, 0.1);
+  border-color:rgba(15, 118, 110, 0.28);
+  color:#0f766e;
+}
+body[data-theme="light"] .queue-label{
+  color:#7c6958;
+}
+body[data-theme="light"] .queue-val{
+  color:#24160f;
+}
+body[data-theme="light"] .queue-val.time-val{
+  color:#24160f;
+}
+body[data-theme="light"] .queue-update-pill{
+  background:rgba(15, 118, 110, 0.08);
+  border-color:rgba(15, 118, 110, 0.22);
+  color:#0f766e;
+}
+body[data-theme="light"] .pulse-dot{
+  background:#0f766e;
+  box-shadow:0 0 8px #0f766e;
+}
+
+/* Permission Modal in Light Theme */
+body[data-theme="light"] .permission-backdrop{
+  background:rgba(36, 22, 15, 0.55);
+}
+body[data-theme="light"] .permission-sheet{
+  background:#ffffff;
+  border-color:rgba(43, 29, 22, 0.14);
+  box-shadow:0 24px 60px rgba(43, 29, 22, 0.2), 0 0 40px rgba(192, 86, 33, 0.15);
+}
+body[data-theme="light"] .permission-title{
+  color:#24160f;
+}
+body[data-theme="light"] .permission-desc{
+  color:#665446;
+}
+body[data-theme="light"] .perm-item{
+  background:#f7f4ee;
+  border-color:rgba(43, 29, 22, 0.08);
+}
+body[data-theme="light"] .perm-item-text strong{
+  color:#24160f;
+}
+body[data-theme="light"] .perm-item-text span{
+  color:#7c6958;
+}
+
+/* Push notification banner in Light Theme */
+body[data-theme="light"] .floating-push-banner{
+  background:rgba(255, 255, 255, 0.94);
+  border-color:rgba(43, 29, 22, 0.14);
+  box-shadow:0 24px 60px rgba(43, 29, 22, 0.15), 0 0 0 1px rgba(43, 29, 22, 0.08);
+}
+body[data-theme="light"] .banner-app-name{
+  color:#3a251a;
+}
+body[data-theme="light"] .banner-time{
+  color:#7c6958;
+}
+body[data-theme="light"] .banner-title{
+  color:#24160f;
+}
+body[data-theme="light"] .banner-body{
+  color:#5c493c;
+}
+
+* {box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%}
+body{
+  width:100%;
+  min-height:100dvh;
+  background:radial-gradient(110% 70% at 50% 15%, #382c7e, transparent 65%), radial-gradient(100% 60% at 10% 85%, #641544, transparent 65%), #090b13;
+  color:#fff;
+  font-family:"Readex Pro",system-ui,-apple-system,sans-serif;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  padding:max(24px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  transition:background 0.4s ease, color 0.4s ease;
+  position:relative;
+}
+
+body.ring{
+  background: radial-gradient(120% 70% at 50% 30%, #5a0d1e, transparent 70%), #0f1220;
+}
+@keyframes shake{
+  0%,100%{transform:none}
+  25%{transform:translateX(-3px) rotate(-.5deg)}
+  75%{transform:translateX(3px) rotate(.5deg)}
+}
+
+
+  50%{opacity:0.88}
+  100%{opacity:0}
+}
+
+/* Top section removed */
+
+/* Center Main Container */
+.pager-main-center{
+  width:100%;
+  max-width:420px;
+  margin:auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:16px;
+  position:relative;
+  z-index:2;
+}
+
+/* Center Widget Box */
+.widget-box{
+  width:100%;
+  margin:0;
+  padding:26px 22px;
+  border-radius:36px;
+  background:rgba(18, 22, 38, 0.85);
+  border:1.5px solid rgba(255,255,255,.16);
+  -webkit-backdrop-filter:blur(32px);
+  backdrop-filter:blur(32px);
+  box-shadow:0 30px 75px rgba(0,0,0,.6), 0 0 45px rgba(139,123,255,.12);
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  position:relative;
+  transition:border-color 0.3s, box-shadow 0.3s;
+}
+body.ring .widget-box{
+  border-color:rgba(255, 77, 109, 0.7);
+  box-shadow:0 30px 75px rgba(0,0,0,.7), 0 0 50px rgba(255, 77, 109, 0.35);
+}
+
+/* Widget Header with Restaurant Logo & Name */
+.widget-header-brand{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,.1);
+}
+.brand-left-info{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.brand-logo-img{
+  width:42px;
+  height:42px;
+  border-radius:12px;
+  background:#fff;
+  padding:2px;
+  box-shadow:0 4px 15px rgba(0,0,0,.4);
+  border:1.5px solid rgba(255,255,255,.3);
+  object-fit:contain;
+}
+.brand-text-col h3{
+  font-size:16px;
+  font-weight:700;
+  color:#fff;
+  line-height:1.2;
+}
+.brand-text-col span{
+  font-size:11.5px;
+  opacity:.75;
+}
+.live-time-chip{
+  font-size:12px;
+  direction:ltr;
+  background:rgba(255,255,255,.1);
+  padding:4px 10px;
+  border-radius:12px;
+  font-weight:600;
+}
+
+/* Customer & Meal details line */
+.customer-badge-line{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:2px;
+}
+.info-chip{
+  font-size:12px;
+  background:rgba(255,255,255,.09);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:12px;
+  padding:4px 10px;
+  color:#f1f5f9;
+}
+.info-chip strong{
+  color:#fff;
+}
+
+.widget-order-num{
+  font-size:104px;
+  font-weight:700;
+  letter-spacing:-5px;
+  text-align:center;
+  line-height:1;
+  direction:ltr;
+  margin:4px 0 2px;
+  font-variant-numeric:tabular-nums;
+  text-shadow:0 0 35px rgba(255,255,255,.2);
+}
+
+.widget-status-title{
+  text-align:center;
+  font-size:21px;
+  font-weight:700;
+}
+
+.widget-status-sub{
+  text-align:center;
+  font-size:13.5px;
+  opacity:.8;
+  line-height:1.7;
+}
+
+/* 3-Step Indicator */
+.widget-steps{
+  display:flex;
+  gap:8px;
+  padding-top:8px;
+}
+.widget-steps i{
+  flex:1;
+  height:5px;
+  border-radius:3px;
+  background:rgba(255,255,255,.22);
+  transition:background .3s;
+}
+.widget-steps i.on{
+  background:#fff;
+  box-shadow:0 0 8px rgba(255,255,255,.6);
+}
+
+/* Buttons */
+.widget-btn{
+  height:54px;
+  border-radius:18px;
+  background:#fff;
+  color:#0d1120;
+  font-weight:700;
+  font-size:16px;
+  border:0;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  margin-top:6px;
+  box-shadow:0 8px 24px rgba(0,0,0,.3);
+  transition:transform .15s;
+}
+.widget-btn:active{transform:scale(.97)}
+.widget-btn.green{
+  background:#36d9a0;
+  color:#03261a;
+  box-shadow:0 8px 24px rgba(54,217,160,.4);
+  animation:btn-glow 1.4s infinite;
+}
+@keyframes btn-glow{
+  0%,100%{box-shadow:0 0 15px rgba(54,217,160,.5)}
+  50%{box-shadow:0 0 30px rgba(54,217,160,.8)}
+}
+
+/* Bottom hint */
+.bottom-bar-hint{
+  text-align:center;
+  font-size:12px;
+  opacity:.65;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  margin-bottom:6px;
+  position:relative;
+  z-index:2;
+}
+.bottom-bar-hint span{
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:#36d9a0;
+  box-shadow:0 0 8px #36d9a0;
+}
+[hidden]{display:none!important}
+
+/* Native System Floating Push Notification Banner */
+.floating-push-banner {
+  position: fixed;
+  top: calc(14px + env(safe-area-inset-top, 0px));
+  left: 14px;
+  right: 14px;
+  max-width: 420px;
+  margin: 0 auto;
+  background: rgba(20, 23, 38, 0.94);
+  -webkit-backdrop-filter: blur(28px);
+  backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 77, 109, 0.45);
+  border-radius: 24px;
+  padding: 14px 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 28px rgba(255, 77, 109, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 9999;
+  transform: translateY(-160%);
+  transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
+  opacity: 0;
+  pointer-events: none;
+}
+.floating-push-banner.show {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+  animation: banner-pulse 1.8s infinite alternate;
+}
+@keyframes banner-pulse {
+  from { box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 20px rgba(255, 77, 109, 0.3); }
+  to { box-shadow: 0 20px 48px rgba(0, 0, 0, 0.75), 0 0 38px rgba(255, 77, 109, 0.6); }
+}
+.banner-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.banner-app-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.banner-app-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: #fff;
+  padding: 2px;
+}
+.banner-app-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+.banner-time {
+  font-size: 11px;
+  color: #94a3b8;
+  direction: ltr;
+}
+.banner-content-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 0 2px;
+}
+.banner-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.banner-body {
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+.banner-btn-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+.banner-action-btn {
+  flex: 1;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: none;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  background: linear-gradient(135deg, #36d9a0, #10b981);
+  color: #042517;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 4px 14px rgba(54, 217, 160, 0.35);
+  transition: transform 0.15s, opacity 0.15s;
+}
+.banner-action-btn:active {
+  transform: scale(0.97);
+}
+
+
+/* HTTPS Notice for Hardware Torch LED access */
+.https-notice-card {
+  width: 100%;
+  background: rgba(255, 181, 71, 0.12);
+  border: 1px solid rgba(255, 181, 71, 0.4);
+  border-radius: 18px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: #ffb547;
+}
+.https-notice-card a {
+  background: linear-gradient(135deg, #ffb547, #f59e0b);
+  color: #1a0f00;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  font-size: 11.5px;
+}
+
+
+/* Queue Ahead & Estimated Wait Time Styling */
+.queue-container {
+  width: 100%;
+  margin: 14px 0 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.queue-cards-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: 100%;
+}
+.queue-card {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 22px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s, background 0.2s;
+}
+.queue-card:hover {
+  background: rgba(255, 255, 255, 0.11);
+}
+.queue-icon-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(54, 217, 160, 0.15);
+  border: 1px solid rgba(54, 217, 160, 0.35);
+  color: #36d9a0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+.queue-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #94a3b8;
+}
+.queue-val {
+  font-size: 32px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.queue-val.time-val {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #f8fafc;
+}
+.queue-update-pill {
+  width: 100%;
+  background: rgba(54, 217, 160, 0.09);
+  border: 1px solid rgba(54, 217, 160, 0.25);
+  border-radius: 14px;
+  padding: 9px 12px;
+  font-size: 12px;
+  color: #36d9a0;
+  text-align: center;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #36d9a0;
+  box-shadow: 0 0 8px #36d9a0;
+  animation: pulse-ring 1.8s infinite;
+}
+@keyframes pulse-ring {
+  0% { transform: scale(0.9); opacity: 0.6; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.6; }
+}
+
+
+/* Modern Force Permission Modal Popup */
+.permission-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 10, 18, 0.88);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.35s ease, visibility 0.35s;
+}
+.permission-backdrop.hide {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.permission-sheet {
+  width: 100%;
+  max-width: 380px;
+  background: rgba(22, 27, 46, 0.96);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(139, 123, 255, 0.25);
+  border-radius: 32px;
+  padding: 28px 22px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  animation: modal-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes modal-pop {
+  0% { transform: scale(0.9) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+.permission-icon-wrap {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.permission-bell-glow {
+  font-size: 38px;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139, 123, 255, 0.4) 0%, rgba(139, 123, 255, 0.08) 70%);
+  border: 1.5px solid rgba(139, 123, 255, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: bell-pulse 2s infinite ease-in-out;
+}
+@keyframes bell-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(139, 123, 255, 0.4); }
+  50% { transform: scale(1.08); box-shadow: 0 0 35px rgba(139, 123, 255, 0.7); }
+}
+.permission-title {
+  font-size: 21px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-top: -4px;
+}
+.permission-desc {
+  font-size: 13.5px;
+  color: #cbd5e1;
+  line-height: 1.6;
+  margin-top: -6px;
+}
+.permission-features {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 6px 0;
+  text-align: right;
+}
+.perm-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  padding: 10px 14px;
+  border-radius: 16px;
+}
+.perm-item-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.perm-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.perm-item-text strong {
+  font-size: 13px;
+  color: #ffffff;
+  font-weight: 600;
+}
+.perm-item-text span {
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+.permission-accept-btn {
+  width: 100%;
+  height: 54px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #36d9a0, #10b981);
+  color: #03261a;
+  font-size: 15.5px;
+  font-weight: 700;
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 8px 25px rgba(54, 217, 160, 0.45);
+  transition: transform 0.15s, box-shadow 0.2s;
+  margin-top: 4px;
+}
+.permission-accept-btn:active {
+  transform: scale(0.97);
+}
+
+.tap-audio-banner {
+  display: none;
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  right: 18px;
+  z-index: 99999;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: #ffffff;
+  padding: 16px 20px;
+  border-radius: 18px;
+  font-weight: 700;
+  font-size: 15px;
+  text-align: center;
+  box-shadow: 0 12px 30px rgba(220, 38, 38, 0.45);
+  animation: pulseAlarm 1.2s infinite;
+  cursor: pointer;
+}
+.tap-audio-banner.show {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+@keyframes pulseAlarm {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+</style>
+</head>
+<body id="pageBody" data-theme="{{ theme }}">
+
+  <!-- Modern Force Permission Modal Popup -->
+  <div class="permission-backdrop" id="permissionModal">
+    <div class="permission-sheet">
+      <div class="permission-icon-wrap">
+        <div class="permission-bell-glow">🔔</div>
+      </div>
+      <h2 class="permission-title">تفعيل تنبيهات البيجر</h2>
+      <p class="permission-desc">فضلاً اسمح بالصوت والتنبيهات لنتمكن من مناداتك فور أن يجهز طلبك:</p>
+      
+      <div class="permission-features">
+        <div class="perm-item">
+          <div class="perm-item-icon">🔊</div>
+          <div class="perm-item-text">
+            <strong>رنين عالي واهتزاز</strong>
+            <span>تنبيه قوي عند جهوزية طلبك للاستلام</span>
+          </div>
+        </div>
+        
+        <div class="perm-item">
+          <div class="perm-item-icon">📱</div>
+          <div class="perm-item-text">
+            <strong>إشعار شاشة القفل</strong>
+            <span>تنبيه مباشر حتى لو كانت شاشة الجوال مقفلة</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="permission-accept-btn" id="permissionAcceptBtn">
+        السماح بالتنبيهات وتفعيل البيجر 🚀
+      </button>
+
+      <a href="dawrak://pager/{{ order.token }}" class="open-app-pill" style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:10px; padding:13px 16px; background:#24160F; color:#FAF7F2; border-radius:14px; text-decoration:none; font-weight:700; font-size:14px; box-shadow:0 4px 14px rgba(36,22,15,0.18);">
+        <span>📱 فتح في تطبيق البيجر وشاشة القفل</span>
+      </a>
+    </div>
+  </div>
+
+
+  <!-- Native Floating Push Notification Banner -->
+  <div class=floating-push-banner id=pushBanner>
+    <div class=banner-top-row>
+      <div class=banner-app-info>
+        <span class=banner-app-name>🔔 تنبيه الطلب</span>
+      </div>
+      <span class=banner-time>الآن</span>
+    </div>
+    <div class=banner-content-row>
+      <div class=banner-title id=bannerTitle>طلب رقم #{{ order.order_number }} جاهز للاستلام!</div>
+      <div class=banner-body id=bannerBody>
+        تفضل إلى الكاونتر للاستلام الآن.
+      </div>
+    </div>
+    <div class=banner-btn-row>
+      <button class=banner-action-btn id=bannerActionBtn>🏃‍♂️ أنا في طريقي للاستلام</button>
+    </div>
+  </div>
+
+  <!-- Prominent Tap-to-Audio Alert if Autoplay is restricted -->
+  <div id="tapAudioBanner" class="tap-audio-banner">
+    <span>🚨 طلبك جاهز! انقر هنا لتشغيل صوت الرنين 🔊</span>
+  </div>
+
+
+  <!-- Full-Screen High Intensity Strobe Flash Overlay -->
+  
+
+  
+
+  <!-- Centered Screen Wrapper -->
+  <main class="pager-main-center">
+    <!-- The Actual Pager Widget Box -->
+    <div class="widget-box">
+    
+    <!-- Header with Official App Icon & Live Time -->
+    <div class="widget-header-brand" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px;">
+      <img src="/static/img/brand-logo.png?v=dawrak" alt="دَورك" style="width:38px; height:38px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+      <div class="live-time-chip" id="wt">--:--</div>
+    </div>
+
+    <!-- Customer Name & Order details (if entered by cashier) -->
+    <div class="customer-badge-line">
+      {% if order.customer_name %}
+        <div class="info-chip">👤 العميل: <strong>{{ order.customer_name }}</strong></div>
+      {% endif %}
+      {% if order.notes %}
+        <div class="info-chip">📝 <strong>{{ order.notes }}</strong></div>
+      {% endif %}
+    </div>
+
+    <!-- Big Order Number -->
+    <div class="widget-order-num" id="wn">#{{ order.order_number }}</div>
+    <div class="widget-status-title" id="ws">طلبك قيد التحضير</div>
+    <div class="widget-status-sub" id="wu">سنهتز ونرن فور أن يجهز</div>
+
+    <div class="widget-steps" id="stp">
+      <i class="on"></i>
+      <i class="{% if order.status in ['waiting', 'ringing', 'onway', 'done'] %}on{% endif %}"></i>
+      <i class="{% if order.status in ['ringing', 'onway', 'done'] %}on{% endif %}"></i>
+    </div>
+
+    <!-- Queue Ahead & Estimated Wait Time Cards (Matching User Spec) -->
+    <div class="queue-container" id="queueContainer">
+      <div class="queue-cards-row">
+        
+        <!-- Right Card (RTL): People Ahead in Line -->
+        <div class="queue-card">
+          <div class="queue-icon-circle">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
+          <span class="queue-label">الأشخاص قبلك</span>
+          <span class="queue-val" id="queueAheadVal">{{ queue_info.orders_ahead if queue_info else 0 }}</span>
+        </div>
+
+        <!-- Left Card (RTL): Estimated Wait Time based on history -->
+        <div class="queue-card">
+          <div class="queue-icon-circle">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+          <span class="queue-label">الانتظار المتوقع</span>
+          <span class="queue-val time-val" id="queueTimeVal">{{ queue_info.estimated_wait if queue_info else 'حوالي 5 دقائق' }}</span>
+        </div>
+
+      </div>
+
+      <!-- Live Auto-update pill -->
+      <div class="queue-update-pill">
+        <span class="pulse-dot"></span> هذه الصفحة تتحدث تلقائياً عند تغيّر الطابور.
+      </div>
+    </div>
+    
+    
+    
+    
+  </div>
+
+    <!-- Bottom Connection Status -->
+    <div class="bottom-bar-hint">
+    <span></span> متصل لحظياً بالكاشير
+  </div>
+  </main>
+
+  <!-- Single Continuous Audio Stream for Lock Screen & Loud Buzzer -->
+  
+
+  <!-- Continuous Audio Alarm for Android & Background Ringing -->
+  <audio id="ringAlarmAudio" loop preload="auto" src="/static/audio/chime.wav"></audio>
+
+<script>
+(function(){
+var order = {
+  id: {{ order.id }},
+  num: "{{ order.order_number }}",
+  name: "{{ order.customer_name or '' }}",
+  note: "{{ order.notes or '' }}",
+  status: "{{ order.status }}",
+  token: "{{ token }}"
+};
+
+var isArmed = false;
+var ctx = null;
+var beepTimer = null;
+var vibrateInterval = null;
+var torchInterval = null;
+var torchTrack = null;
+var torchState = false;
+var ws = null;
+
+var pageBody = document.getElementById("pageBody");
+var permissionModal = document.getElementById("permissionModal");
+var permissionAcceptBtn = document.getElementById("permissionAcceptBtn");
+var wsEl = document.getElementById("ws");
+var wuEl = document.getElementById("wu");
+var stpChildren = document.getElementById("stp").children;
+var pageLogoImg = document.getElementById("pageLogoImg");
+var pushBanner = document.getElementById("pushBanner");
+var bannerActionBtn = document.getElementById("bannerActionBtn");
+var swReg = null;
+
+var queueAheadVal = document.getElementById("queueAheadVal");
+var queueTimeVal = document.getElementById("queueTimeVal");
+var queueContainer = document.getElementById("queueContainer");
+
+function updateQueueDisplay(qInfo) {
+  if (!qInfo) return;
+  if (queueAheadVal && qInfo.orders_ahead !== undefined) {
+    queueAheadVal.textContent = qInfo.orders_ahead;
+  }
+  if (queueTimeVal && qInfo.estimated_wait) {
+    queueTimeVal.textContent = qInfo.estimated_wait;
+  }
+  if (order.status === 'ringing') {
+    if (queueAheadVal) queueAheadVal.textContent = "0";
+    if (queueTimeVal) queueTimeVal.textContent = "طلبك جاهز! 🎉";
+  } else if (order.status === 'done') {
+    if (queueAheadVal) queueAheadVal.textContent = "0";
+    if (queueTimeVal) queueTimeVal.textContent = "تم الاستلام";
+  }
+}
+
+
+
+// --- Web Push & Service Worker Notification Engine ---
+function urlBase64ToUint8Array(base64String) {
+  var padding = '='.repeat((4 - base64String.length % 4) % 4);
+  var base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  var rawData = window.atob(base64);
+  var outputArray = new Uint8Array(rawData.length);
+  for (var i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+async function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    swReg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    console.log('Service Worker registered successfully');
+    if ('Notification' in window && Notification.permission === 'granted' && swReg.pushManager) {
+      subscribeUserToPush();
+    }
+  } catch(e) {
+    console.log('SW register failed:', e);
+  }
+}
+
+async function requestNotificationPermissionAndSubscribe() {
+  if (!('Notification' in window)) return;
+  try {
+    var perm = await Notification.requestPermission();
+    if (perm === 'granted') {
+      subscribeUserToPush();
+    }
+  } catch(e) {}
+}
+
+async function subscribeUserToPush() {
+  if (!swReg || !swReg.pushManager) return;
+  try {
+    var res = await fetch('/api/push/public_key');
+    if (!res.ok) return;
+    var data = await res.json();
+    var pubKey = data.public_key;
+
+    var sub = await swReg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(pubKey)
+    });
+
+    var subJson = sub.toJSON();
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        token: order.token,
+        endpoint: subJson.endpoint,
+        p256dh: subJson.keys ? subJson.keys.p256dh : '',
+        auth: subJson.keys ? subJson.keys.auth : ''
+      })
+    });
+    console.log('WebPush subscription saved to server successfully');
+  } catch(e) {
+    console.log('Push subscribe error:', e);
+  }
+}
+
+// 2. Synthesizer & Sub-bass chassis vibration (Acoustic Rumble for iPhone & Android)
+function beepSynth(){
+  if(!ctx) return;
+  try {
+    if(ctx.state === "suspended") ctx.resume();
+    
+    // High-frequency dual chime chirps (2400Hz & 850Hz)
+    [2400, 850].forEach(function(f, i){
+      var o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + i * .18;
+      o.type = 'square';
+      o.frequency.value = f;
+      g.gain.setValueAtTime(.0001, t);
+      g.gain.exponentialRampToValueAtTime(.45, t + .02);
+      g.gain.exponentialRampToValueAtTime(.0001, t + .16);
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.start(t);
+      o.stop(t + .18);
+    });
+
+    // 55Hz Sub-Bass Rumble: drives the phone speaker magnets to produce a tactile buzz
+    var hapticOsc = ctx.createOscillator();
+    var hapticGain = ctx.createGain();
+    hapticOsc.type = 'sine';
+    hapticOsc.frequency.value = 55;
+    hapticGain.gain.setValueAtTime(0.001, ctx.currentTime);
+    hapticGain.gain.exponentialRampToValueAtTime(1.0, ctx.currentTime + 0.05);
+    hapticGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+    hapticOsc.connect(hapticGain);
+    hapticGain.connect(ctx.destination);
+    hapticOsc.start(ctx.currentTime);
+    hapticOsc.stop(ctx.currentTime + 0.5);
+  } catch(e){}
+}
+
+// 3. Prominent Tap-to-Audio Alert (if Autoplay was initially blocked by browser)
+function showTapToAudioPrompt(){
+  var el = document.getElementById("tapAudioBanner");
+  if(el) el.classList.add("show");
+}
+function hideTapToAudioPrompt(){
+  var el = document.getElementById("tapAudioBanner");
+  if(el) el.classList.remove("show");
+}
+
+// 4. Android & System Sticky Notification (Foreground / Lock Screen)
+async function showStickyOrderNotification(status){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  try {
+    var isRing = status === 'ringing';
+    var isDone = status === 'done';
+
+    var title = isRing 
+      ? ("طلبك جاهز للاستلام! 🔔") 
+      : (isDone ? ("تم استلام طلبك #" + order.num + " ✓") : ("طلب رقم #" + order.num));
+
+    var body = isRing 
+      ? ("طلب رقم #" + order.num + " • تفضل إلى الكاونتر الآن") 
+      : (isDone ? "شكراً لزيارتك." : "طلبك قيد التحضير...");
+
+    var notifOpts = {
+      body: body,
+      icon: "/static/img/brand-logo.png?v=dawrak",
+      badge: "/static/img/brand-logo.png?v=dawrak",
+      vibrate: isRing ? [600, 150, 600, 150, 900, 200, 600, 150, 900] : undefined,
+      tag: "dawrak-order",
+      renotify: isRing,
+      requireInteraction: true,
+      data: { url: window.location.href, order_id: order.id }
+    };
+
+    if(swReg && swReg.showNotification){
+      await swReg.showNotification(title, notifOpts);
+    } else if(navigator.serviceWorker && navigator.serviceWorker.ready){
+      var reg = await navigator.serviceWorker.ready;
+      await reg.showNotification(title, notifOpts);
+    }
+  } catch(e){}
+}
+
+// 5. Ringing Alarm Starter (Audio, Vibration, Lock Screen Widget)
+function startRingingAlarm(){
+  pageBody.classList.add("ring");
+
+  // Show Floating Push Notification Banner
+  if (pushBanner) pushBanner.classList.add("show");
+
+  // Play continuous audio alarm in loop (works when locked & background on Android)
+  var ringAudio = document.getElementById("ringAlarmAudio");
+  if(ringAudio){
+    ringAudio.currentTime = 0;
+    ringAudio.play().catch(function(e){ console.log("Audio alarm play:", e); });
+  }
+
+  // Show System Sticky Notification
+  showStickyOrderNotification('ringing');
+
+  // Audio prompt status
+  hideTapToAudioPrompt();
+
+  // Synthesizer & speaker haptic vibration loop
+  if(!beepTimer){
+    beepSynth();
+    beepTimer = setInterval(beepSynth, 1200);
+  }
+
+  // Physical Motor Vibration (Android & Chrome) - High Intensity Loop
+  try {
+    clearInterval(vibrateInterval);
+    if(navigator.vibrate){
+      navigator.vibrate([600, 150, 600, 150, 900, 200, 600, 150, 900]);
+      vibrateInterval = setInterval(function(){
+        if(order.status === 'ringing'){
+          navigator.vibrate([600, 150, 600, 150, 900, 200, 600, 150, 900]);
+        }
+      }, 1600);
+    }
+  } catch(e){}
+}
+
+// 6. Ringing Alarm Stopper
+function stopRingingAlarm(){
+  pageBody.classList.remove("ring");
+  if (pushBanner) pushBanner.classList.remove("show");
+  hideTapToAudioPrompt();
+
+  // Stop continuous audio alarm
+  var ringAudio = document.getElementById("ringAlarmAudio");
+  if(ringAudio){
+    ringAudio.pause();
+    ringAudio.currentTime = 0;
+  }
+
+  // Stop synthesizer
+  clearInterval(beepTimer);
+  beepTimer = null;
+
+  // Stop physical vibration
+  clearInterval(vibrateInterval);
+  vibrateInterval = null;
+  try {
+    if(navigator.vibrate) navigator.vibrate(0);
+  } catch(e){}
+}
+
+// 7. iOS & Android Lock Screen Media Session Widget
+// 8. UI Synchronizer
+function updateUI(){
+  var isRinging = order.status === 'ringing';
+  var isDone = order.status === 'done';
+  var isOnway = order.status === 'onway';
+
+  // Immediate alarm trigger without waiting for separate boolean flags
+  if(isRinging){
+    startRingingAlarm();
+  } else {
+    stopRingingAlarm();
+  }
+
+  // If order is done, dismiss permission modal if still open
+  if (isDone && permissionModal) {
+    permissionModal.classList.add("hide");
+  }
+
+  var m = {
+    waiting: ['طلبك قيد التحضير', 'سنهتز ونرن فور أن يجهز'],
+    ringing: ['طلبك جاهز! 🎉', 'تفضل إلى الكاونتر للاستلام'],
+    onway: ['أبلغنا الكاشير', 'الكاشير يعلم أنك قادم'],
+    done: ['تم الاستلام', 'بالعافية! شكراً لزيارتك']
+  }[order.status] || ['قيد الانتظار', ''];
+
+  if (wsEl) wsEl.textContent = m[0];
+  if (wuEl) wuEl.textContent = m[1];
+
+  var lvl = {waiting: 1, ringing: 2, onway: 3, done: 3}[order.status] || 1;
+  if (stpChildren) {
+    for(var i = 0; i < 3; i++){
+      if(stpChildren[i]) stpChildren[i].className = i < lvl ? 'on' : '';
+    }
+  }
+
+  
+  showStickyOrderNotification(order.status);
+}
+
+// 9. Force Permission Modal Accept & Universal Audio Arming
+var hasInteracted = false;
+async function activateArming(){
+  isArmed = true;
+  hasInteracted = true;
+
+  // Hide Permission Modal & Tap Banner smoothly
+  if (permissionModal) permissionModal.classList.add("hide");
+  hideTapToAudioPrompt();
+
+  // A. Unlock Web Audio Context
+  try {
+    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+    if(ctx.state === "suspended") await ctx.resume();
+  } catch(e){}
+
+  // B. Native Live Activity handles lock screen
+
+  // C. Update Lock Screen Notification Widget
+  
+
+  // Preload and prepare alarm audio
+  var ringAudio = document.getElementById("ringAlarmAudio");
+  if(ringAudio){
+    try {
+      ringAudio.load();
+    } catch(e){}
+  }
+
+  // E. Request notification permission & push subscription
+  requestNotificationPermissionAndSubscribe();
+
+  // F. Test short vibration burst
+  try {
+    if(navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  } catch(e){}
+
+  // G. Request Screen WakeLock so phone screen stays active while waiting
+  requestWakeLock();
+
+  updateUI();
+}
+
+// Universal interaction listener: ANY touch, click, tap anywhere arms audio & starts widgets!
+function onUserTap(){
+  if(!isArmed || (ctx && ctx.state === "suspended")){
+    activateArming();
+  }
+}
+['click', 'touchstart', 'touchend', 'pointerdown', 'keydown'].forEach(function(evt){
+  document.addEventListener(evt, onUserTap, { passive: true });
+});
+
+if (permissionAcceptBtn) {
+  permissionAcceptBtn.onclick = function(e){
+    e.stopPropagation();
+    activateArming();
+    if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+      setTimeout(function(){
+        window.location.href = "dawrak://pager/" + order.token;
+      }, 400);
+    }
+  };
+}
+
+var tapAudioBannerEl = document.getElementById("tapAudioBanner");
+if(tapAudioBannerEl){
+  tapAudioBannerEl.onclick = function(e){
+    e.stopPropagation();
+    activateArming();
+  };
+}
+
+// Screen WakeLock helper
+var wakeLockObj = null;
+async function requestWakeLock(){
+  if('wakeLock' in navigator){
+    try {
+      wakeLockObj = await navigator.wakeLock.request('screen');
+    } catch(e){}
+  }
+}
+
+// 10. Customer confirms arrival
+async function confirmArrival(){
+  order.status = "onway";
+  stopRingingAlarm();
+  if (pushBanner) pushBanner.classList.remove("show");
+  updateUI();
+
+  if(ws && ws.readyState === WebSocket.OPEN){
+    try { ws.send(JSON.stringify({action: "onway"})); } catch(e){}
+  }
+  try {
+    await fetch("/api/orders/" + order.id + "/onway", {method: "POST"});
+  } catch(e){}
+}
+
+if (bannerActionBtn) {
+  bannerActionBtn.onclick = confirmArrival;
+}
+
+// 11. Instant Status Fetcher (Background recovery & wakeups - 1s cadence)
+var isFetchingStatus = false;
+async function checkStatusImmediate(){
+  if(isFetchingStatus) return;
+  isFetchingStatus = true;
+  try {
+    var res = await fetch("/api/pager/" + order.token + "/status?t=" + Date.now());
+    if(!res.ok){
+      res = await fetch("/api/orders/" + order.token + "/details?t=" + Date.now());
+    }
+    if(res.ok){
+      var data = await res.json();
+      if(data && data.status && data.status !== order.status){
+        console.log("Real-time status synced:", data.status);
+        order.status = data.status;
+        updateUI();
+      }
+      if(data && (data.orders_ahead !== undefined || data.estimated_wait !== undefined)){
+        updateQueueDisplay({
+          orders_ahead: data.orders_ahead,
+          estimated_wait: data.estimated_wait
+        });
+      }
+    }
+  } catch(e){}
+  finally {
+    isFetchingStatus = false;
+  }
+}
+
+// Guaranteed real-time sync every 1.0 second (solves background mobile sleep & network latency)
+setInterval(checkStatusImmediate, 1000);
+
+// Screen Wakeup Listeners (when user picks up phone, unlocks screen, or switches back to tab)
+['visibilitychange', 'focus', 'pageshow', 'touchstart', 'click'].forEach(function(evt){
+  document.addEventListener(evt, function(){
+    if(!ws || ws.readyState !== WebSocket.OPEN){
+      connectWS();
+    }
+    checkStatusImmediate();
+    requestWakeLock();
+  }, { passive: true });
+});
+
+// Real-time Clock for Widget Header
+function clock(){
+  var d = new Date();
+  var wtEl = document.getElementById("wt");
+  if (wtEl) wtEl.textContent = d.toLocaleTimeString('ar', {hour:'2-digit', minute:'2-digit'});
+}
+clock();
+setInterval(clock, 1000);
+
+function applyTheme(theme){
+  if(!theme) return;
+  document.documentElement.setAttribute('data-theme', theme);
+  document.body.setAttribute('data-theme', theme);
+  var metaTheme = document.querySelector('meta[name="theme-color"]');
+  if(metaTheme){
+    metaTheme.setAttribute('content', theme === 'light' ? '#f7f4ee' : '#0f1220');
+  }
+}
+
+// 12. WebSocket Connection with Keep-Alive & Instant Event Handling
+function connectWS(){
+  var protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+  var wsUrl = protocol + "//" + window.location.host + "/ws/pager/" + order.token;
+
+  try {
+    if(ws){
+      try { ws.close(); } catch(e){}
+    }
+    ws = new WebSocket(wsUrl);
+    ws.onopen = function(){
+      console.log("WebSocket connected to pager stream");
+      checkStatusImmediate();
+    };
+    ws.onmessage = function(event){
+      try {
+        var data = JSON.parse(event.data);
+        if(data.theme){
+          applyTheme(data.theme);
+        }
+        var newStatus = (data.order && data.order.status) || data.status;
+        if(data.event === "order_ringing") newStatus = "ringing";
+        if(data.event === "order_onway") newStatus = "onway";
+        if(data.event === "order_done") newStatus = "done";
+        if(data.event === "order_waiting") newStatus = "waiting";
+
+        if(newStatus && newStatus !== order.status){
+          console.log("Real-time status received via WebSocket:", newStatus);
+          order.status = newStatus;
+          updateUI();
+        }
+        if(data.queue_info){
+          updateQueueDisplay(data.queue_info);
+        }
+      } catch(e){}
+    };
+    ws.onclose = function(){ setTimeout(connectWS, 1500); };
+    ws.onerror = function(){ try { ws.close(); } catch(e){} };
+  } catch(e){
+    setTimeout(connectWS, 2000);
+  }
+}
+
+// Initial theme apply
+applyTheme(document.body.getAttribute('data-theme') || 'dark');
+
+// WebSocket Heartbeat Ping every 5 seconds
+setInterval(function(){
+  if(ws && ws.readyState === WebSocket.OPEN){
+    try { ws.send(JSON.stringify({action: "ping"})); } catch(e){}
+  }
+}, 5000);
+
+registerServiceWorker();
+
+if (bannerActionBtn) {
+  bannerActionBtn.onclick = confirmArrival;
+}
+
+connectWS();
+updateUI();
+})();
+</script>
+</body>
+</html>

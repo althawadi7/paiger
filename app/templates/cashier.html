@@ -204,28 +204,28 @@ html[dir="rtl"] .toast .bar-time { transform-origin: right; }
   <symbol id="i-undo" viewBox="0 0 16 16"><path d="M5 4L2 7l3 3M2.5 7H10a4 4 0 0 1 0 8H7" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-check-big" viewBox="0 0 64 64"><circle cx="32" cy="32" r="29" fill="none" stroke="currentColor" stroke-width="3"/><path d="M20 33l8 8 16-17" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
 </svg>
-<header class="bar">
-  <div class="brand">
+  <header class="bar">
+    <div class="brand">
     <div class="brand-logo" style="background: {{ brand.brand }}; color: {{ brand.brand_ink }}" aria-hidden="true">{% if brand.logo_url %}<img src="{{ brand.logo_url }}" alt="">{% else %}{{ brand.initial }}{% endif %}</div>
     <b>{{ brand.name }}</b>
-  </div>
+      </div>
   <span class="live off" id="live" role="status"><i></i><span>{{ t('cash.offline') }}</span></span>
   <div class="stats" aria-label="{{ t('cash.today') }}">
     <div><b class="num-font" id="stToday">0</b><span>{{ t('cash.stToday') }}</span></div>
     <div><b><span class="num-font" id="stAvg">{{ restaurant.avg_prep_time or 5 }}</span> <small id="stAvgUnit">{{ t('cash.minLong') }}</small></b><span>{{ t('cash.stAvg') }}</span></div>
-  </div>
+      </div>
   <div class="bar-actions">
     <a class="lang-btn" href="/lang/{{ 'en' if lang == 'ar' else 'ar' }}">{{ t('nav.langSwitch') }}</a>
     <button class="icon-btn" id="menuBtn" type="button" aria-label="{{ t('cash.menu') }}" aria-haspopup="true" aria-expanded="false"><svg><use href="#i-menu"/></svg></button>
-  </div>
+    </div>
   <div class="menu" id="menu" hidden role="menu">
     <a href="/dashboard" role="menuitem">{{ t('cash.mDash') }}</a>
     <a href="/r/{{ restaurant.slug }}/print" role="menuitem">{{ t('cash.mStand') }}</a>
     <button type="button" role="menuitem" id="soundBtn">{{ t('cash.mSoundOn') }}</button>
     <hr>
     <a href="/logout" role="menuitem">{{ t('cash.mLogout') }}</a>
-  </div>
-</header>
+    </div>
+  </header>
 <main class="layout">
   <section class="entry" aria-labelledby="entryTitle">
     <h1 id="entryTitle">{{ t('cash.newOrder') }}</h1>
@@ -238,31 +238,31 @@ html[dir="rtl"] .toast .bar-time { transform-origin: right; }
       <button type="button" class="key-soft" data-k="c">{{ t('cash.clear') }}</button>
       <button type="button" data-k="0">0</button>
       <button type="button" class="key-soft" data-k="b" aria-label="{{ t('cash.deleteDigit') }}"><svg><use href="#i-back"/></svg></button>
-    </div>
+        </div>
     <button type="button" class="extra-toggle" id="extraToggle">{{ t('cash.addExtra') }}</button>
     <div class="extra" id="extra" hidden>
       <input id="fName" type="text" autocomplete="off" placeholder="{{ t('cash.name') }}">
       <input id="fNote" type="text" autocomplete="off" placeholder="{{ t('cash.note') }}">
-    </div>
+      </div>
     <button type="button" class="issue" id="issue" disabled><span>{{ t('cash.issue') }}</span><kbd>Enter</kbd></button>
-  </section>
+    </section>
   <section class="board">
     <div class="cols">
       <div class="col col-prep">
         <div class="col-head"><h2>{{ t('cash.colPrep') }}</h2><span class="count num-font" id="cPrep">0</span><span class="sub">{{ t('cash.oldest') }}</span></div>
         <div class="list" id="listPrep"></div>
-      </div>
+        </div>
       <div class="col col-called">
         <div class="col-head"><h2>{{ t('cash.colCalled') }}</h2><span class="count num-font" id="cCalled">0</span></div>
         <div class="list" id="listCalled"></div>
       </div>
-    </div>
+      </div>
     <div class="done">
       <h3>{{ t('cash.pickedUp') }}</h3>
       <div class="chips" id="chips"></div>
-    </div>
-  </section>
-</main>
+      </div>
+    </section>
+  </main>
 <div class="overlay" id="qrOverlay" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="qrNo">
     <div class="sheet-lines"><p>{{ t('cash.sheetEn') }}</p><p>{{ t('cash.sheetAr') }}</p></div>
@@ -273,13 +273,13 @@ html[dir="rtl"] .toast .bar-time { transform-origin: right; }
     <div class="sheet-actions">
       <button type="button" class="btn btn-line" id="qrPrint">{{ t('cash.print') }}</button>
       <button type="button" class="btn btn-ink" id="qrDone">{{ t('cash.done') }}</button>
-    </div>
-  </div>
 </div>
+    </div>
+    </div>
 <div class="pop" id="pop" hidden role="menu">
   <button type="button" data-act="qr"><svg><use href="#i-qr"/></svg><span>{{ t('cash.showQr') }}</span></button>
   <button type="button" data-act="delete" class="danger"><svg><use href="#i-trash"/></svg><span>{{ t('cash.delete') }}</span></button>
-</div>
+      </div>
 <div class="toast" id="toast" hidden role="status"><span id="toastText"></span><button type="button" id="toastUndo">{{ t('cash.undo') }}</button><i class="bar-time"></i></div>
 {% endblock %}
 {% block scripts %}
@@ -318,11 +318,12 @@ window.PAIGER_I18N = {{ {
   "offline": t("cash.offline"),
   "mSoundOn": t("cash.mSoundOn"),
   "mSoundOff": t("cash.mSoundOff"),
-  "more": t("cash.more")
+  "more": t("cash.more"),
+  "tooFast": t("cash.tooFast")
 }|tojson }};
 window.PAIGER_CASHIER = {{ {
   "restaurantId": restaurant.id,
-  "avgPrep": restaurant.avg_prep_time or 5,
+  "avgPrep": restaurant.prep_minutes or 6,
   "tz": tz_offset|default("", true),
   "todayCount": today_count|default(0),
   "calledCount": called_count|default(0),
@@ -376,7 +377,7 @@ window.PAIGER_CASHIER = {{ {
   }
   function norm(raw) {
     if (!raw) return null;
-    return {
+        return {
       id: Number(raw.id),
       number: String(raw.order_number ?? raw.number ?? ""),
       status: raw.status,
@@ -511,7 +512,7 @@ window.PAIGER_CASHIER = {{ {
     render();
   }
   function bounceLogin() {
-    location.href = "/login?next=" + encodeURIComponent(location.pathname + location.search);
+    location.reload();
   }
   async function reload() {
     const res = await fetch("/api/orders", { credentials: "same-origin" });
@@ -539,6 +540,7 @@ window.PAIGER_CASHIER = {{ {
       body: JSON.stringify({ order_number: number, customer_name: name, notes: note, restaurant_id: Number(BOOT.restaurantId) }),
     });
     if (res.status === 401) { bounceLogin(); return; }
+    if (res.status === 429) { toast(t("tooFast")); renderDisplay(); return; }
     if (res.status === 409) { await reload(); value = number; renderDisplay(); return; }
     if (!res.ok) { renderDisplay(); return; }
     const raw = await res.json();
@@ -745,7 +747,7 @@ window.PAIGER_CASHIER = {{ {
         scannedIds.add(Number(msg.order_id));
         const o = orders.find((x) => x.id === Number(msg.order_id));
         if (o) o.scanned = true;
-        render();
+    render();
         if (qrOrder && qrOrder.id === Number(msg.order_id)) qrScanned();
       } else if (msg.event === "order_deleted") {
         const id = Number(msg.order_id);
@@ -753,7 +755,10 @@ window.PAIGER_CASHIER = {{ {
       } else if (msg.event === "customer_onway") upsert(msg.order, true);
       else if (msg.order) upsert(msg.order, false);
     });
-    socket.addEventListener("close", () => { setLive(false); setTimeout(connect, retry); retry = Math.min(retry * 2, 10000); });
+    socket.addEventListener("close", (ev) => {
+      if (ev.code === 4401) { location.reload(); return; }
+      setLive(false); setTimeout(connect, retry); retry = Math.min(retry * 2, 10000);
+    });
   }
 
   $("soundBtn").textContent = t(soundOn ? "mSoundOn" : "mSoundOff");

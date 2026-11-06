@@ -1,966 +1,282 @@
+{% set brand = restaurant_brand({
+  'name': order.restaurant_name or 'Paiger',
+  'brand_color': order.brand_color|default('', true),
+  'logo_url': order.logo_url|default('', true)
+}) %}
+{% set lvl = {'waiting': 1, 'ringing': 2, 'onway': 3, 'done': 3}.get(order.status, 1) %}
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="{{ theme }}">
+<html lang="{{ lang }}" dir="{{ dir }}" data-theme="{{ theme }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0f1220">
-<title>بيجر #{{ order.order_number }}</title>
+<meta name="theme-color" content="#ffffff">
+<title>{{ t('pager.orderNo') }} {{ order.order_number }} · {{ brand.name }}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="icon" href="/static/img/brand-logo.png?v=dawrak">
 <link rel="manifest" href="/manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="بيجر المطعم">
+<meta name="apple-mobile-web-app-title" content="{{ brand.name }}">
 <meta name="apple-itunes-app" content="app-clip-bundle-id=com.dawrak.app.Clip">
 <style>
-:root{
-  --wait:#ffb547;--ring:#ff4d6d;--go:#8b7bff;--done:#36d9a0;
-  --bg-dark-base:#090b13;
-  --widget-dark-bg:rgba(18, 22, 38, 0.85);
-  --widget-dark-border:rgba(255,255,255,.16);
-  --ink:#ffffff;
-  --mute:#94a3b8;
-}
-
-/* Luxury Espresso Light Mode Theme Variables */
-:root[data-theme="light"], body[data-theme="light"]{
-  --wait:#c05621;--ring:#dc2626;--go:#6d28d9;--done:#0f766e;
-  --ink:#24160f;
-  --mute:#7c6958;
-}
-
-body[data-theme="light"]{
-  background:
-    radial-gradient(110% 70% at 50% 12%, rgba(192, 86, 33, 0.14), transparent 65%),
-    radial-gradient(100% 60% at 10% 85%, rgba(140, 50, 20, 0.08), transparent 65%),
-    #f7f4ee;
-  color:#24160f;
-}
-
-body[data-theme="light"].ring{
-  background:
-    radial-gradient(120% 70% at 50% 30%, rgba(220, 38, 38, 0.16), transparent 70%),
-    #faf6f0;
-}
-
-body[data-theme="light"] .widget-box{
-  background:rgba(255, 255, 255, 0.92);
-  border:1.5px solid rgba(43, 29, 22, 0.12);
-  box-shadow:0 25px 65px rgba(43, 29, 22, 0.09), 0 0 40px rgba(192, 86, 33, 0.08);
-  color:#24160f;
-}
-
-body[data-theme="light"].ring .widget-box{
-  border-color:rgba(220, 38, 38, 0.55);
-  box-shadow:0 25px 65px rgba(220, 38, 38, 0.18), 0 0 45px rgba(220, 38, 38, 0.25);
-}
-
-body[data-theme="light"] .widget-header-brand{
-  border-bottom:1px solid rgba(43, 29, 22, 0.08);
-}
-body[data-theme="light"] .brand-title{
-  color:#24160f;
-}
-body[data-theme="light"] .brand-sub{
-  color:#7c6958;
-}
-body[data-theme="light"] .brand-clock{
-  background:rgba(43, 29, 22, 0.06);
-  border-color:rgba(43, 29, 22, 0.1);
-  color:#3a251a;
-}
-body[data-theme="light"] .brand-clock b{
-  color:#24160f;
-}
-
-body[data-theme="light"] .widget-body{
-  background:rgba(247, 244, 238, 0.85);
-  border-color:rgba(43, 29, 22, 0.1);
-}
-body[data-theme="light"] .widget-num{
-  color:#1e130c;
-  text-shadow:0 3px 12px rgba(43, 29, 22, 0.12);
-}
-body[data-theme="light"] .widget-label{
-  color:#7c6958;
-}
-body[data-theme="light"] .widget-name{
-  color:#3a251a;
-  background:rgba(43, 29, 22, 0.05);
-}
-body[data-theme="light"] .widget-status-title{
-  color:#1e130c;
-}
-body[data-theme="light"] .widget-status-sub{
-  color:#665446;
-}
-body[data-theme="light"] .widget-steps i{
-  background:rgba(43, 29, 22, 0.16);
-}
-body[data-theme="light"] .widget-steps i.on{
-  background:#24160f;
-  box-shadow:0 0 8px rgba(36, 22, 15, 0.35);
-}
-
-/* Queue Card in Espresso Light */
-body[data-theme="light"] .queue-card{
-  background:#ffffff;
-  border-color:rgba(43, 29, 22, 0.1);
-  box-shadow:0 12px 32px rgba(43, 29, 22, 0.06);
-}
-body[data-theme="light"] .queue-card:hover{
-  background:#faf7f2;
-}
-body[data-theme="light"] .queue-icon-circle{
-  background:rgba(15, 118, 110, 0.1);
-  border-color:rgba(15, 118, 110, 0.28);
-  color:#0f766e;
-}
-body[data-theme="light"] .queue-label{
-  color:#7c6958;
-}
-body[data-theme="light"] .queue-val{
-  color:#24160f;
-}
-body[data-theme="light"] .queue-val.time-val{
-  color:#24160f;
-}
-body[data-theme="light"] .queue-update-pill{
-  background:rgba(15, 118, 110, 0.08);
-  border-color:rgba(15, 118, 110, 0.22);
-  color:#0f766e;
-}
-body[data-theme="light"] .pulse-dot{
-  background:#0f766e;
-  box-shadow:0 0 8px #0f766e;
-}
-
-/* Permission Modal in Light Theme */
-body[data-theme="light"] .permission-backdrop{
-  background:rgba(36, 22, 15, 0.55);
-}
-body[data-theme="light"] .permission-sheet{
-  background:#ffffff;
-  border-color:rgba(43, 29, 22, 0.14);
-  box-shadow:0 24px 60px rgba(43, 29, 22, 0.2), 0 0 40px rgba(192, 86, 33, 0.15);
-}
-body[data-theme="light"] .permission-title{
-  color:#24160f;
-}
-body[data-theme="light"] .permission-desc{
-  color:#665446;
-}
-body[data-theme="light"] .perm-item{
-  background:#f7f4ee;
-  border-color:rgba(43, 29, 22, 0.08);
-}
-body[data-theme="light"] .perm-item-text strong{
-  color:#24160f;
-}
-body[data-theme="light"] .perm-item-text span{
-  color:#7c6958;
-}
-
-/* Push notification banner in Light Theme */
-body[data-theme="light"] .floating-push-banner{
-  background:rgba(255, 255, 255, 0.94);
-  border-color:rgba(43, 29, 22, 0.14);
-  box-shadow:0 24px 60px rgba(43, 29, 22, 0.15), 0 0 0 1px rgba(43, 29, 22, 0.08);
-}
-body[data-theme="light"] .banner-app-name{
-  color:#3a251a;
-}
-body[data-theme="light"] .banner-time{
-  color:#7c6958;
-}
-body[data-theme="light"] .banner-title{
-  color:#24160f;
-}
-body[data-theme="light"] .banner-body{
-  color:#5c493c;
-}
-
-* {box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html{height:100%}
-body{
-  width:100%;
-  min-height:100dvh;
-  background:radial-gradient(110% 70% at 50% 15%, #382c7e, transparent 65%), radial-gradient(100% 60% at 10% 85%, #641544, transparent 65%), #090b13;
-  color:#fff;
-  font-family:"Readex Pro",system-ui,-apple-system,sans-serif;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  padding:max(24px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-  transition:background 0.4s ease, color 0.4s ease;
-  position:relative;
-}
-
-body.ring{
-  background: radial-gradient(120% 70% at 50% 30%, #5a0d1e, transparent 70%), #0f1220;
-}
-@keyframes shake{
-  0%,100%{transform:none}
-  25%{transform:translateX(-3px) rotate(-.5deg)}
-  75%{transform:translateX(3px) rotate(.5deg)}
-}
-
-
-  50%{opacity:0.88}
-  100%{opacity:0}
-}
-
-/* Top section removed */
-
-/* Center Main Container */
-.pager-main-center{
-  width:100%;
-  max-width:420px;
-  margin:auto;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:16px;
-  position:relative;
-  z-index:2;
-}
-
-/* Center Widget Box */
-.widget-box{
-  width:100%;
-  margin:0;
-  padding:26px 22px;
-  border-radius:36px;
-  background:rgba(18, 22, 38, 0.85);
-  border:1.5px solid rgba(255,255,255,.16);
-  -webkit-backdrop-filter:blur(32px);
-  backdrop-filter:blur(32px);
-  box-shadow:0 30px 75px rgba(0,0,0,.6), 0 0 45px rgba(139,123,255,.12);
-  display:flex;
-  flex-direction:column;
-  gap:14px;
-  position:relative;
-  transition:border-color 0.3s, box-shadow 0.3s;
-}
-body.ring .widget-box{
-  border-color:rgba(255, 77, 109, 0.7);
-  box-shadow:0 30px 75px rgba(0,0,0,.7), 0 0 50px rgba(255, 77, 109, 0.35);
-}
-
-/* Widget Header with Restaurant Logo & Name */
-.widget-header-brand{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding-bottom:8px;
-  border-bottom:1px solid rgba(255,255,255,.1);
-}
-.brand-left-info{
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-.brand-logo-img{
-  width:42px;
-  height:42px;
-  border-radius:12px;
-  background:#fff;
-  padding:2px;
-  box-shadow:0 4px 15px rgba(0,0,0,.4);
-  border:1.5px solid rgba(255,255,255,.3);
-  object-fit:contain;
-}
-.brand-text-col h3{
-  font-size:16px;
-  font-weight:700;
-  color:#fff;
-  line-height:1.2;
-}
-.brand-text-col span{
-  font-size:11.5px;
-  opacity:.75;
-}
-.live-time-chip{
-  font-size:12px;
-  direction:ltr;
-  background:rgba(255,255,255,.1);
-  padding:4px 10px;
-  border-radius:12px;
-  font-weight:600;
-}
-
-/* Customer & Meal details line */
-.customer-badge-line{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  flex-wrap:wrap;
-  margin-top:2px;
-}
-.info-chip{
-  font-size:12px;
-  background:rgba(255,255,255,.09);
-  border:1px solid rgba(255,255,255,.14);
-  border-radius:12px;
-  padding:4px 10px;
-  color:#f1f5f9;
-}
-.info-chip strong{
-  color:#fff;
-}
-
-.widget-order-num{
-  font-size:104px;
-  font-weight:700;
-  letter-spacing:-5px;
-  text-align:center;
-  line-height:1;
-  direction:ltr;
-  margin:4px 0 2px;
-  font-variant-numeric:tabular-nums;
-  text-shadow:0 0 35px rgba(255,255,255,.2);
-}
-
-.widget-status-title{
-  text-align:center;
-  font-size:21px;
-  font-weight:700;
-}
-
-.widget-status-sub{
-  text-align:center;
-  font-size:13.5px;
-  opacity:.8;
-  line-height:1.7;
-}
-
-/* 3-Step Indicator */
-.widget-steps{
-  display:flex;
-  gap:8px;
-  padding-top:8px;
-}
-.widget-steps i{
-  flex:1;
-  height:5px;
-  border-radius:3px;
-  background:rgba(255,255,255,.22);
-  transition:background .3s;
-}
-.widget-steps i.on{
-  background:#fff;
-  box-shadow:0 0 8px rgba(255,255,255,.6);
-}
-
-/* Buttons */
-.widget-btn{
-  height:54px;
-  border-radius:18px;
-  background:#fff;
-  color:#0d1120;
-  font-weight:700;
-  font-size:16px;
-  border:0;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  margin-top:6px;
-  box-shadow:0 8px 24px rgba(0,0,0,.3);
-  transition:transform .15s;
-}
-.widget-btn:active{transform:scale(.97)}
-.widget-btn.green{
-  background:#36d9a0;
-  color:#03261a;
-  box-shadow:0 8px 24px rgba(54,217,160,.4);
-  animation:btn-glow 1.4s infinite;
-}
-@keyframes btn-glow{
-  0%,100%{box-shadow:0 0 15px rgba(54,217,160,.5)}
-  50%{box-shadow:0 0 30px rgba(54,217,160,.8)}
-}
-
-/* Bottom hint */
-.bottom-bar-hint{
-  text-align:center;
-  font-size:12px;
-  opacity:.65;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-  margin-bottom:6px;
-  position:relative;
-  z-index:2;
-}
-.bottom-bar-hint span{
-  width:7px;
-  height:7px;
-  border-radius:50%;
-  background:#36d9a0;
-  box-shadow:0 0 8px #36d9a0;
-}
-[hidden]{display:none!important}
-
-/* Native System Floating Push Notification Banner */
-.floating-push-banner {
-  position: fixed;
-  top: calc(14px + env(safe-area-inset-top, 0px));
-  left: 14px;
-  right: 14px;
-  max-width: 420px;
+:root {
+  --brand: {{ brand.brand }};
+  --brand-ink: {{ brand.brand_ink }};
+  --ink: #111111; --grey: #5f6368; --grey-2: #8e8e93; --line: #e6e6e8;
+  --paper: #ffffff; --paper-2: #f6f6f7;
+  --ready: #22c55e; --ready-deep: #15803d; --ready-soft: #e7f8ee;
+  --warn: #b45309; --warn-soft: #fdf2e3;
+  --display: "Fraunces", Georgia, serif;
+  --sans: "IBM Plex Sans", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", sans-serif;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+html[lang="ar"] { --sans: "IBM Plex Sans Arabic", "IBM Plex Sans", -apple-system, sans-serif; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { background: var(--paper); -webkit-text-size-adjust: 100%; }
+body {
+  min-height: 100svh;
+  font-family: var(--sans);
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+  transition: background .5s var(--ease), color .5s;
+}
+button, input { font: inherit; color: inherit; }
+a { color: inherit; }
+.num { font-family: var(--display); font-variant-numeric: lining-nums tabular-nums; direction: ltr; unicode-bidi: isolate; }
+.page {
+  max-width: 460px;
+  min-height: 100svh;
   margin: 0 auto;
-  background: rgba(20, 23, 38, 0.94);
-  -webkit-backdrop-filter: blur(28px);
-  backdrop-filter: blur(28px);
-  border: 1px solid rgba(255, 77, 109, 0.45);
-  border-radius: 24px;
-  padding: 14px 16px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 28px rgba(255, 77, 109, 0.35);
+  padding: max(18px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  z-index: 9999;
-  transform: translateY(-160%);
-  transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s;
-  opacity: 0;
-  pointer-events: none;
 }
-.floating-push-banner.show {
-  transform: translateY(0);
-  opacity: 1;
-  pointer-events: auto;
-  animation: banner-pulse 1.8s infinite alternate;
+.head, .widget-header-brand { display: flex; align-items: center; gap: 12px; }
+.logo {
+  width: 44px; height: 44px; border-radius: 13px; background: var(--brand); color: var(--brand-ink);
+  display: grid; place-items: center; font-family: var(--display); font-weight: 600; font-size: 20px;
+  flex: none; overflow: hidden;
 }
-@keyframes banner-pulse {
-  from { box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 20px rgba(255, 77, 109, 0.3); }
-  to { box-shadow: 0 20px 48px rgba(0, 0, 0, 0.75), 0 0 38px rgba(255, 77, 109, 0.6); }
+.logo img, #pageLogoImg { width: 100%; height: 100%; object-fit: cover; display: block; }
+.logo span#pageLogoImg { width: auto; height: auto; display: block; }
+.shop { min-width: 0; }
+.shop b, .brand-title { display: block; font-size: 17px; font-weight: 600; line-height: 1.25; color: var(--ink); }
+.shop span, .brand-sub { font-size: 13px; color: var(--grey); }
+.head-end { margin-inline-start: auto; display: flex; align-items: center; gap: 4px; }
+.live-time-chip {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }
-.banner-top-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.lang {
+  height: 38px; padding: 0 12px; border-radius: 999px; font-size: 14px; color: var(--grey);
+  text-decoration: none; display: inline-flex; align-items: center;
 }
-.banner-app-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.lang:hover { background: var(--paper-2); color: var(--ink); }
+.ready-title { display: none; margin-top: 22px; text-align: center; color: #fff; }
+.ready-title h1 { font-family: var(--display); font-weight: 500; font-size: 36px; line-height: 1.05; letter-spacing: -.01em; }
+html[lang="ar"] .ready-title h1 { font-family: var(--sans); font-weight: 600; line-height: 1.3; }
+.ready-title p { margin-top: 6px; font-size: 16px; color: rgba(255,255,255,.85); }
+.ticket, .widget-box {
+  margin-top: 22px; border-radius: 28px; background: var(--paper-2); padding: 26px 22px 22px;
+  text-align: center; position: relative; overflow: hidden; transition: background .5s var(--ease), color .5s;
 }
-.banner-app-icon {
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  background: #fff;
-  padding: 2px;
+.ticket .label, .widget-label { font-size: 14px; color: var(--grey); }
+.widget-order-num {
+  font-family: var(--display); font-weight: 500; font-size: clamp(96px, 34vw, 132px);
+  line-height: .95; letter-spacing: -.02em; margin-top: 6px; direction: ltr; color: var(--ink);
 }
-.banner-app-name {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #e2e8f0;
+.who { margin-top: 6px; font-size: 15px; color: var(--grey); }
+.who strong { color: var(--ink); font-weight: 600; }
+.status {
+  margin-top: 18px; display: inline-flex; align-items: center; gap: 9px; min-height: 40px;
+  padding: 8px 16px; border-radius: 999px; background: #fff; font-size: 16px; font-weight: 600;
+  box-shadow: 0 0 0 1px var(--line);
 }
-.banner-time {
-  font-size: 11px;
-  color: #94a3b8;
-  direction: ltr;
+.status i { width: 9px; height: 9px; border-radius: 50%; background: var(--brand); flex: none; animation: breathe 2s ease-in-out infinite; }
+@keyframes breathe { 50% { opacity: .35; } }
+.widget-status-title { font-size: 16px; font-weight: 600; }
+.widget-status-sub { margin-top: 10px; font-size: 14.5px; color: var(--grey); line-height: 1.45; }
+.widget-steps, .steps { margin-top: 22px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.widget-steps i { height: 5px; border-radius: 5px; background: #dedee2; position: relative; overflow: hidden; display: block; }
+.widget-steps i.on { background: var(--brand); }
+.widget-steps i.on:not(:has(~ i.on))::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.6), transparent);
+  animation: sweep 1.6s linear infinite;
 }
-.banner-content-row {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding: 0 2px;
-}
-.banner-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.banner-body {
-  font-size: 13px;
-  color: #cbd5e1;
-  line-height: 1.4;
-}
-.banner-btn-row {
-  display: flex;
-  gap: 8px;
-  margin-top: 2px;
-}
-.banner-action-btn {
-  flex: 1;
-  padding: 10px 14px;
-  border-radius: 14px;
-  border: none;
-  font-size: 13.5px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  background: linear-gradient(135deg, #36d9a0, #10b981);
-  color: #042517;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  box-shadow: 0 4px 14px rgba(54, 217, 160, 0.35);
-  transition: transform 0.15s, opacity 0.15s;
-}
-.banner-action-btn:active {
-  transform: scale(0.97);
-}
+html[dir="rtl"] .widget-steps i.on:not(:has(~ i.on))::after { animation-direction: reverse; }
+@keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+.step-labels { margin-top: 8px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 12.5px; color: var(--grey-2); }
+.queue-container, .facts { margin-top: 16px; display: block; }
+.queue-cards-row { display: grid; grid-template-columns: 1fr 1fr; border-radius: 20px; box-shadow: 0 0 0 1px var(--line); background: #fff; }
+.queue-card { padding: 14px 16px; text-align: center; background: transparent; border: 0; box-shadow: none; }
+.queue-card + .queue-card { border-inline-start: 1px solid var(--line); }
+.queue-val { display: block; font-size: 26px; font-weight: 500; line-height: 1.1; color: var(--ink); }
+.queue-val.time-val { font-family: var(--sans); font-size: 15px; font-weight: 600; line-height: 1.35; }
+.queue-label { display: block; margin-top: 4px; font-size: 13.5px; color: var(--grey); font-weight: 400; }
+.foot { margin-top: auto; padding-top: 26px; text-align: center; font-size: 12.5px; color: var(--grey-2); }
+.foot a { color: inherit; text-decoration: none; }
 
+body.ring { background: var(--ready-deep); color: #fff; }
+body.ring .shop b, body.ring .brand-title, body.ring .lang, body.ring .live-time-chip { color: #fff; }
+body.ring .shop span, body.ring .brand-sub { color: rgba(255,255,255,.75); }
+body.ring .lang:hover { background: rgba(255,255,255,.12); color: #fff; }
+body.ring .ready-title { display: block; }
+body.ring .ticket, body.ring .widget-box { background: #fff; color: var(--ink); animation: nudge 1.4s var(--ease) infinite; }
+@keyframes nudge { 0%, 100% { transform: none; } 6% { transform: rotate(-1.2deg); } 12% { transform: rotate(1.2deg); } 18% { transform: rotate(-.6deg); } 24% { transform: none; } }
+body.ring .status { background: var(--ready-soft); color: var(--ready-deep); box-shadow: none; }
+body.ring .status i { background: var(--ready); animation-duration: .7s; }
+body.ring .widget-status-title { color: var(--ready-deep); }
+body.ring .widget-steps i { background: #dedee2; }
+body.ring .widget-steps i.on { background: var(--ready-deep); }
+body.ring #queueContainer { display: none; }
+body.ring .page { padding-bottom: 108px; }
+body.ring .foot { color: rgba(255,255,255,.6); }
 
-/* HTTPS Notice for Hardware Torch LED access */
-.https-notice-card {
-  width: 100%;
-  background: rgba(255, 181, 71, 0.12);
-  border: 1px solid rgba(255, 181, 71, 0.4);
-  border-radius: 18px;
-  padding: 10px 14px;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  font-size: 12px;
-  color: #ffb547;
-}
-.https-notice-card a {
-  background: linear-gradient(135deg, #ffb547, #f59e0b);
-  color: #1a0f00;
-  padding: 6px 12px;
-  border-radius: 10px;
-  font-weight: 700;
-  text-decoration: none;
-  white-space: nowrap;
-  font-size: 11.5px;
-}
-
-
-/* Queue Ahead & Estimated Wait Time Styling */
-.queue-container {
-  width: 100%;
-  margin: 14px 0 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.queue-cards-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  width: 100%;
-}
-.queue-card {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 22px;
-  padding: 16px 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: 6px;
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-  transition: transform 0.2s, background 0.2s;
-}
-.queue-card:hover {
-  background: rgba(255, 255, 255, 0.11);
-}
-.queue-icon-circle {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background: rgba(54, 217, 160, 0.15);
-  border: 1px solid rgba(54, 217, 160, 0.35);
-  color: #36d9a0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 2px;
-}
-.queue-label {
-  font-size: 13px;
-  font-weight: 500;
-  color: #94a3b8;
-}
-.queue-val {
-  font-size: 32px;
-  font-weight: 800;
-  color: #ffffff;
-  line-height: 1.1;
-  font-variant-numeric: tabular-nums;
-}
-.queue-val.time-val {
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 1.35;
-  color: #f8fafc;
-}
-.queue-update-pill {
-  width: 100%;
-  background: rgba(54, 217, 160, 0.09);
-  border: 1px solid rgba(54, 217, 160, 0.25);
-  border-radius: 14px;
-  padding: 9px 12px;
-  font-size: 12px;
-  color: #36d9a0;
-  text-align: center;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-.pulse-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #36d9a0;
-  box-shadow: 0 0 8px #36d9a0;
-  animation: pulse-ring 1.8s infinite;
-}
-@keyframes pulse-ring {
-  0% { transform: scale(0.9); opacity: 0.6; }
-  50% { transform: scale(1.3); opacity: 1; }
-  100% { transform: scale(0.9); opacity: 0.6; }
-}
-
-
-/* Modern Force Permission Modal Popup */
 .permission-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(8, 10, 18, 0.88);
-  -webkit-backdrop-filter: blur(24px);
-  backdrop-filter: blur(24px);
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  opacity: 1;
-  visibility: visible;
-  transition: opacity 0.35s ease, visibility 0.35s;
+  position: fixed; inset: 0; z-index: 40; background: rgba(17,17,17,.45);
+  display: flex; align-items: flex-end; justify-content: center;
 }
-.permission-backdrop.hide {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
+.permission-backdrop.hide { opacity: 0; visibility: hidden; pointer-events: none; }
 .permission-sheet {
-  width: 100%;
-  max-width: 380px;
-  background: rgba(22, 27, 46, 0.96);
-  border: 1.5px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 40px rgba(139, 123, 255, 0.25);
-  border-radius: 32px;
-  padding: 28px 22px 24px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  animation: modal-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  width: min(460px, 100%); background: #fff; color: var(--ink);
+  border-radius: 26px 26px 0 0; padding: 22px 20px max(20px, env(safe-area-inset-bottom));
+  text-align: start; border: 0; box-shadow: none;
 }
-@keyframes modal-pop {
-  0% { transform: scale(0.9) translateY(20px); opacity: 0; }
-  100% { transform: scale(1) translateY(0); opacity: 1; }
+.permission-title { font-size: 20px; font-weight: 600; color: var(--ink); }
+.permission-desc { margin-top: 8px; font-size: 15.5px; color: var(--grey); line-height: 1.5; }
+.permission-accept-btn, .banner-action-btn {
+  margin-top: 16px; width: 100%; height: 58px; border-radius: 16px; border: 0; cursor: pointer;
+  background: var(--ink); color: #fff; font-size: 17px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
 }
-.permission-icon-wrap {
-  position: relative;
-  width: 72px;
-  height: 72px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.permission-accept-btn:active, .banner-action-btn:active { transform: scale(.98); }
+.open-app-pill {
+  margin-top: 10px; width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: center;
+  font-size: 14.5px; color: var(--grey); text-decoration: underline; text-underline-offset: 3px;
+  background: transparent; box-shadow: none; padding: 8px;
 }
-.permission-bell-glow {
-  font-size: 38px;
-  width: 68px;
-  height: 68px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(139, 123, 255, 0.4) 0%, rgba(139, 123, 255, 0.08) 70%);
-  border: 1.5px solid rgba(139, 123, 255, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: bell-pulse 2s infinite ease-in-out;
+
+.floating-push-banner {
+  position: fixed; z-index: 30; left: 50%; bottom: max(16px, env(safe-area-inset-bottom));
+  width: min(420px, calc(100% - 32px)); transform: translate(-50%, 160%);
+  opacity: 0; pointer-events: none; background: transparent; border: 0; box-shadow: none; padding: 0;
 }
-@keyframes bell-pulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(139, 123, 255, 0.4); }
-  50% { transform: scale(1.08); box-shadow: 0 0 35px rgba(139, 123, 255, 0.7); }
-}
-.permission-title {
-  font-size: 21px;
-  font-weight: 700;
-  color: #ffffff;
-  margin-top: -4px;
-}
-.permission-desc {
-  font-size: 13.5px;
-  color: #cbd5e1;
-  line-height: 1.6;
-  margin-top: -6px;
-}
-.permission-features {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 6px 0;
-  text-align: right;
-}
-.perm-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  padding: 10px 14px;
-  border-radius: 16px;
-}
-.perm-item-icon {
-  font-size: 20px;
-  flex-shrink: 0;
-}
-.perm-item-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.perm-item-text strong {
-  font-size: 13px;
-  color: #ffffff;
-  font-weight: 600;
-}
-.perm-item-text span {
-  font-size: 11.5px;
-  color: #94a3b8;
-}
-.permission-accept-btn {
-  width: 100%;
-  height: 54px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #36d9a0, #10b981);
-  color: #03261a;
-  font-size: 15.5px;
-  font-weight: 700;
-  font-family: inherit;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  box-shadow: 0 8px 25px rgba(54, 217, 160, 0.45);
-  transition: transform 0.15s, box-shadow 0.2s;
-  margin-top: 4px;
-}
-.permission-accept-btn:active {
-  transform: scale(0.97);
-}
+.floating-push-banner.show { transform: translate(-50%, 0); opacity: 1; pointer-events: auto; }
+.floating-push-banner .banner-top-row, .floating-push-banner .banner-content-row { display: none; }
+body.ring .banner-action-btn { margin-top: 0; height: 62px; background: #fff; color: var(--ready-deep); font-size: 18px; }
 
 .tap-audio-banner {
-  display: none;
-  position: fixed;
-  top: 18px;
-  left: 18px;
-  right: 18px;
-  z-index: 99999;
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
-  color: #ffffff;
-  padding: 16px 20px;
-  border-radius: 18px;
-  font-weight: 700;
-  font-size: 15px;
-  text-align: center;
-  box-shadow: 0 12px 30px rgba(220, 38, 38, 0.45);
-  animation: pulseAlarm 1.2s infinite;
-  cursor: pointer;
+  display: none; position: fixed; top: max(18px, env(safe-area-inset-top)); left: 18px; right: 18px;
+  z-index: 50; background: var(--warn-soft); color: var(--warn); padding: 14px 16px; border-radius: 16px;
+  font-weight: 600; font-size: 15px; text-align: center; cursor: pointer;
 }
-.tap-audio-banner.show {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
+.tap-audio-banner.show { display: flex; align-items: center; justify-content: center; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition-duration: .01ms !important; }
 }
-@keyframes pulseAlarm {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.03); }
-  100% { transform: scale(1); }
-}
-
 </style>
 </head>
-<body id="pageBody" data-theme="{{ theme }}">
+<body id="pageBody" data-theme="{{ theme }}"{% if order.status == 'ringing' %} class="ring"{% endif %}>
 
-  <!-- Modern Force Permission Modal Popup -->
   <div class="permission-backdrop" id="permissionModal">
     <div class="permission-sheet">
-      <div class="permission-icon-wrap">
-        <div class="permission-bell-glow">🔔</div>
-      </div>
-      <h2 class="permission-title">تفعيل تنبيهات البيجر</h2>
-      <p class="permission-desc">فضلاً اسمح بالصوت والتنبيهات لنتمكن من مناداتك فور أن يجهز طلبك:</p>
-      
-      <div class="permission-features">
-        <div class="perm-item">
-          <div class="perm-item-icon">🔊</div>
-          <div class="perm-item-text">
-            <strong>رنين عالي واهتزاز</strong>
-            <span>تنبيه قوي عند جهوزية طلبك للاستلام</span>
-          </div>
-        </div>
-        
-        <div class="perm-item">
-          <div class="perm-item-icon">📱</div>
-          <div class="perm-item-text">
-            <strong>إشعار شاشة القفل</strong>
-            <span>تنبيه مباشر حتى لو كانت شاشة الجوال مقفلة</span>
-          </div>
-        </div>
-      </div>
-
-      <button class="permission-accept-btn" id="permissionAcceptBtn">
-        السماح بالتنبيهات وتفعيل البيجر 🚀
-      </button>
-
-      <a href="dawrak://pager/{{ order.token }}" class="open-app-pill" style="display:flex; align-items:center; justify-content:center; gap:8px; margin-top:10px; padding:13px 16px; background:#24160F; color:#FAF7F2; border-radius:14px; text-decoration:none; font-weight:700; font-size:14px; box-shadow:0 4px 14px rgba(36,22,15,0.18);">
-        <span>📱 فتح في تطبيق البيجر وشاشة القفل</span>
-      </a>
+      <h2 class="permission-title">{{ t('pager.aOffH') }}</h2>
+      <p class="permission-desc">{{ t('pager.aOffP') }}</p>
+      <button class="permission-accept-btn" id="permissionAcceptBtn" type="button">{{ t('pager.enable') }}</button>
+      <a href="dawrak://pager/{{ order.token }}" class="open-app-pill">{{ t('pager.clipH') }}</a>
     </div>
   </div>
 
-
-  <!-- Native Floating Push Notification Banner -->
-  <div class=floating-push-banner id=pushBanner>
-    <div class=banner-top-row>
-      <div class=banner-app-info>
-        <span class=banner-app-name>🔔 تنبيه الطلب</span>
+  <div class="floating-push-banner" id="pushBanner">
+    <div class="banner-top-row">
+      <div class="banner-app-info">
+        <span class="banner-app-name">{{ brand.name }}</span>
       </div>
-      <span class=banner-time>الآن</span>
+      <span class="banner-time">{{ t('pager.sReady') }}</span>
     </div>
-    <div class=banner-content-row>
-      <div class=banner-title id=bannerTitle>طلب رقم #{{ order.order_number }} جاهز للاستلام!</div>
-      <div class=banner-body id=bannerBody>
-        تفضل إلى الكاونتر للاستلام الآن.
-      </div>
+    <div class="banner-content-row">
+      <div class="banner-title" id="bannerTitle">{{ t('pager.readyH') }}</div>
+      <div class="banner-body" id="bannerBody">{{ t('pager.readyP') }}</div>
     </div>
-    <div class=banner-btn-row>
-      <button class=banner-action-btn id=bannerActionBtn>🏃‍♂️ أنا في طريقي للاستلام</button>
+    <div class="banner-btn-row">
+      <button class="banner-action-btn" id="bannerActionBtn" type="button">{{ t('pager.onway') }}</button>
     </div>
   </div>
 
-  <!-- Prominent Tap-to-Audio Alert if Autoplay is restricted -->
-  <div id="tapAudioBanner" class="tap-audio-banner">
-    <span>🚨 طلبك جاهز! انقر هنا لتشغيل صوت الرنين 🔊</span>
-  </div>
+  <div id="tapAudioBanner" class="tap-audio-banner">{{ t('pager.readyH') }}</div>
 
-
-  <!-- Full-Screen High Intensity Strobe Flash Overlay -->
-  
-
-  
-
-  <!-- Centered Screen Wrapper -->
-  <main class="pager-main-center">
-    <!-- The Actual Pager Widget Box -->
-    <div class="widget-box">
-    
-    <!-- Header with Official App Icon & Live Time -->
-    <div class="widget-header-brand" style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px;">
-      <img src="/static/img/brand-logo.png?v=dawrak" alt="دَورك" style="width:38px; height:38px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
-      <div class="live-time-chip" id="wt">--:--</div>
-    </div>
-
-    <!-- Customer Name & Order details (if entered by cashier) -->
-    <div class="customer-badge-line">
-      {% if order.customer_name %}
-        <div class="info-chip">👤 العميل: <strong>{{ order.customer_name }}</strong></div>
-      {% endif %}
-      {% if order.notes %}
-        <div class="info-chip">📝 <strong>{{ order.notes }}</strong></div>
-      {% endif %}
-    </div>
-
-    <!-- Big Order Number -->
-    <div class="widget-order-num" id="wn">#{{ order.order_number }}</div>
-    <div class="widget-status-title" id="ws">طلبك قيد التحضير</div>
-    <div class="widget-status-sub" id="wu">سنهتز ونرن فور أن يجهز</div>
-
-    <div class="widget-steps" id="stp">
-      <i class="on"></i>
-      <i class="{% if order.status in ['waiting', 'ringing', 'onway', 'done'] %}on{% endif %}"></i>
-      <i class="{% if order.status in ['ringing', 'onway', 'done'] %}on{% endif %}"></i>
-    </div>
-
-    <!-- Queue Ahead & Estimated Wait Time Cards (Matching User Spec) -->
-    <div class="queue-container" id="queueContainer">
-      <div class="queue-cards-row">
-        
-        <!-- Right Card (RTL): People Ahead in Line -->
-        <div class="queue-card">
-          <div class="queue-icon-circle">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
-          </div>
-          <span class="queue-label">الأشخاص قبلك</span>
-          <span class="queue-val" id="queueAheadVal">{{ queue_info.orders_ahead if queue_info else 0 }}</span>
-        </div>
-
-        <!-- Left Card (RTL): Estimated Wait Time based on history -->
-        <div class="queue-card">
-          <div class="queue-icon-circle">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-          </div>
-          <span class="queue-label">الانتظار المتوقع</span>
-          <span class="queue-val time-val" id="queueTimeVal">{{ queue_info.estimated_wait if queue_info else 'حوالي 5 دقائق' }}</span>
-        </div>
-
-      </div>
-
-      <!-- Live Auto-update pill -->
-      <div class="queue-update-pill">
-        <span class="pulse-dot"></span> هذه الصفحة تتحدث تلقائياً عند تغيّر الطابور.
-      </div>
-    </div>
-    
-    
-    
-    
-  </div>
-
-    <!-- Bottom Connection Status -->
-    <div class="bottom-bar-hint">
-    <span></span> متصل لحظياً بالكاشير
-  </div>
-  </main>
-
-  <!-- Single Continuous Audio Stream for Lock Screen & Loud Buzzer -->
-  
-
-  <!-- Continuous Audio Alarm for Android & Background Ringing -->
   <audio id="ringAlarmAudio" loop preload="auto" src="/static/audio/chime.wav"></audio>
+
+  <main class="page pager-main-center">
+    <header class="head widget-header-brand">
+      <div class="logo" aria-hidden="true">
+        {% if brand.logo_url %}
+        <img id="pageLogoImg" src="{{ brand.logo_url }}" alt="">
+        {% else %}
+        <span id="pageLogoImg">{{ brand.initial }}</span>
+        {% endif %}
+      </div>
+      <div class="shop brand-text-col">
+        <b class="brand-title">{{ brand.name }}</b>
+        <span class="brand-sub">{{ t('pager.shopSub') }}</span>
+      </div>
+      <div class="head-end">
+        <div class="live-time-chip" id="wt">--:--</div>
+        <a class="lang" href="/lang/{{ 'en' if lang == 'ar' else 'ar' }}" aria-label="{{ t('nav.langLabel') }}">{{ t('nav.langSwitch') }}</a>
+      </div>
+    </header>
+
+    <div class="ready-title">
+      <h1>{{ t('pager.readyH') }}</h1>
+      <p>{{ t('pager.readyP') }}</p>
+    </div>
+
+    <section class="ticket widget-box" aria-live="polite">
+      <p class="label">{{ t('pager.orderNo') }}</p>
+      <div class="widget-order-num num" id="wn">{{ order.order_number }}</div>
+      {% if order.customer_name or order.notes %}
+      <p class="who customer-badge-line">
+        {% if order.customer_name %}<strong>{{ order.customer_name }}</strong>{% endif %}
+        {% if order.notes %} · {{ order.notes }}{% endif %}
+      </p>
+      {% endif %}
+      <div class="status">
+        <i></i>
+        <span class="widget-status-title" id="ws">{% if order.status == 'ringing' %}{{ t('pager.readyH') }}{% elif order.status == 'onway' %}{{ t('pager.onway') }}{% elif order.status == 'done' %}{{ t('pager.sDone') }}{% else %}{{ t('pager.sPrep') }}{% endif %}</span>
+      </div>
+      <p class="widget-status-sub" id="wu">{% if order.status == 'ringing' %}{{ t('pager.readyP') }}{% elif order.status == 'onway' %}{{ t('pager.onwaySent') }}{% elif order.status == 'done' %}{{ t('pager.doneH') }}{% else %}{{ t('pager.aOffP') }}{% endif %}</p>
+      <div class="widget-steps steps" id="stp" aria-hidden="true">
+        <i class="{{ 'on' if lvl >= 1 else '' }}"></i>
+        <i class="{{ 'on' if lvl >= 2 else '' }}"></i>
+        <i class="{{ 'on' if lvl >= 3 else '' }}"></i>
+      </div>
+      <div class="step-labels" aria-hidden="true">
+        <span>{{ t('pager.sPrep') }}</span>
+        <span>{{ t('pager.sReady') }}</span>
+        <span>{{ t('pager.sDone') }}</span>
+      </div>
+    </section>
+
+    <div class="queue-container facts" id="queueContainer">
+      <div class="queue-cards-row">
+        <div class="queue-card">
+          <span class="queue-val num" id="queueAheadVal">{{ queue_info.orders_ahead if queue_info else 0 }}</span>
+          <span class="queue-label">{{ t('pager.ahead') }}</span>
+        </div>
+        <div class="queue-card">
+          <span class="queue-val time-val" id="queueTimeVal">{{ queue_info.estimated_wait if queue_info else '' }}</span>
+          <span class="queue-label">{{ t('pager.eta') }}</span>
+        </div>
+      </div>
+    </div>
+
+    <footer class="foot"><span>{{ t('pager.powered') }}</span> <a href="/">Paiger</a></footer>
+  </main>
 
 <script>
 (function(){

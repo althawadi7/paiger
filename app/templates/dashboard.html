@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+{% block title %}{{ t('dash.overview') if section == 'overview' else t('dash.orders') if section == 'orders' else t('dash.sub') if section == 'subscription' else t('dash.settings') }} · {{ restaurant.name }} · Paiger{% endblock %}
+{% block body_class %}dash{% endblock %}
+{% block head %}<link rel="stylesheet" href="/static/css/dashboard.css">{% endblock %}
+{% block shell_nav %}{% endblock %}
+{% block shell_footer %}{% endblock %}
+{% block content %}
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 20 20"><path d="M3 9l7-5.5L17 9v7.5a1 1 0 0 1-1 1h-3.5v-5h-5v5H4a1 1 0 0 1-1-1z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+  <symbol id="i-list" viewBox="0 0 20 20"><path d="M7 5h10M7 10h10M7 15h10M3.5 5h.01M3.5 10h.01M3.5 15h.01" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-card" viewBox="0 0 20 20"><rect x="2.5" y="4.5" width="15" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 8h15M5.5 12.5h3" stroke="currentColor" stroke-width="1.5"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 20 20"><circle cx="10" cy="10" r="2.6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.7 4.7l1.4 1.4M13.9 13.9l1.4 1.4M4.7 15.3l1.4-1.4M13.9 6.1l1.4-1.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-cashier" viewBox="0 0 20 20"><rect x="3" y="3.5" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 17h6M10 13.5V17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-qr" viewBox="0 0 20 20"><path d="M3 3h5v5H3zM12 3h5v5h-5zM3 12h5v5H3z" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 12h2v2h-2zM15 15h2v2h-2zM12 16h1M16 12h1" stroke="currentColor" stroke-width="1.4"/></symbol>
+  <symbol id="i-link" viewBox="0 0 20 20"><path d="M8.5 11.5a3 3 0 0 0 4.2 0l2.6-2.6a3 3 0 0 0-4.2-4.2l-.9.9M11.5 8.5a3 3 0 0 0-4.2 0L4.7 11.1a3 3 0 0 0 4.2 4.2l.9-.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 20 20"><path d="M3 6h14M3 10h14M3 14h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></symbol>
+  <symbol id="i-dl" viewBox="0 0 20 20"><path d="M10 3v10M6 9l4 4 4-4M4 16h12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+<div class="shell" style="--brand: {{ brand.brand }}; --brand-ink: {{ brand.brand_ink }}">
+  {% include "partials/dash_side.html" %}
+  <main class="main">
+    <div class="topbar">
+      <button class="btn btn-quiet" id="menuBtn" type="button" aria-label="{{ t('nav.menu') }}"><svg><use href="#i-menu"/></svg></button>
+      <b>{{ restaurant.name }}</b>
+    </div>
+    {% if trial.show %}
+    <div class="trial {% if trial.state == 'expired' %}expired{% endif %}">
+      <div class="t-days" aria-hidden="true">{% for n in range(3) %}<i class="{{ 'on' if trial.state == 'trialing' and n < trial.bars else '' }}"></i>{% endfor %}</div>
+      <div class="t-txt">
+        <b>{% if trial.state == 'expired' %}{{ t('dash.expTitle') }}{% elif trial.days == 1 %}{{ t('dash.trial1') }}{% else %}{{ t('dash.trialN').replace('{n}', trial.days|string) }}{% endif %}</b>
+        <span>{% if trial.state == 'expired' %}{{ t('dash.expSub') }}{% else %}{{ t('dash.trialSub').replace('{date}', trial.ends_label) }}{% endif %}</span>
+      </div>
+      <a href="/dashboard/subscription">{{ t('dash.choosePlan') }}</a>
+    </div>
+    {% endif %}
+
+    {% if section == 'overview' %}
+    <section>
+      <div class="ph"><div><h1>{{ greeting }}</h1><p>{{ t('dash.todaySub') }}</p></div></div>
+      <div class="quick">
+        <div class="card"><div class="ic"><svg><use href="#i-cashier"/></svg></div><div><b>{{ t('dash.qCashier') }}</b><span>{{ t('dash.qCashierSub') }}</span></div><a class="btn btn-ink act" href="/r/{{ restaurant.slug }}/cashier">{{ t('dash.open') }}</a></div>
+        <div class="card"><div class="ic"><svg><use href="#i-qr"/></svg></div><div><b>{{ t('dash.qStand') }}</b><span>{{ t('dash.qStandSub') }}</span></div><a class="btn btn-line act" href="/r/{{ restaurant.slug }}/print">{{ t('dash.print') }}</a></div>
+        <div class="card"><div class="ic"><svg><use href="#i-link"/></svg></div><div><b>{{ t('dash.qLink') }}</b><span>{{ customer_host }}</span></div><button class="btn btn-line act" type="button" data-copy="{{ customer_url }}">{{ t('dash.copy') }}</button></div>
+      </div>
+      <div class="stats">
+        <div class="card stat"><p class="k">{{ t('dash.sOrders') }}</p><p class="v num">{{ stats.orders_today }}</p><p class="d {{ 'up' if stats.delta > 0 else '' }}">{{ t('dash.sOrdersD').replace('{n}', stats.delta|string).replace('{day}', stats.weekday) }}</p></div>
+        <div class="card stat"><p class="k">{{ t('dash.sPrep') }}</p><p class="v"><span class="num">{{ '%.1f'|format(stats.avg_prep) if stats.avg_prep is not none else '—' }}</span>{% if stats.avg_prep is not none %}<small>{{ t('dash.min') }}</small>{% endif %}</p><p class="d">{{ t('dash.sPrepD') }}</p></div>
+        <div class="card stat"><p class="k">{{ t('dash.sPick') }}</p><p class="v"><span class="num">{{ '%.1f'|format(stats.avg_pick) if stats.avg_pick is not none else '—' }}</span>{% if stats.avg_pick is not none %}<small>{{ t('dash.min') }}</small>{% endif %}</p><p class="d">{{ t('dash.sPickD') }}</p></div>
+        <div class="card stat"><p class="k">{{ t('dash.sScan') }}</p><p class="v"><span class="num">{{ stats.scanned_pct }}</span><small>%</small></p><p class="d">{{ t('dash.sScanD') }}</p></div>
+      </div>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-h"><h2>{{ t('dash.byHour') }}</h2><span class="muted">{{ t('dash.today') }}</span></div>
+          <div class="chart-wrap" id="chartWrap"><svg class="chart" id="chart" role="img" aria-label="{{ t('dash.byHour') }}"></svg><div class="tip" id="tip" hidden></div></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h2>{{ t('dash.recent') }}</h2><a class="muted" href="/dashboard/orders">{{ t('dash.seeAll') }}</a></div>
+          <ul class="recent">
+            {% for row in stats.latest %}
+            <li><span class="n num">{{ row.number }}</span><span class="m">{{ t('dash.ago').replace('{n}', row.ago|string) }}</span><span class="pill {{ row.pill }}">{{ t('dash.st.' + row.status) }}</span></li>
+            {% else %}<li><span class="m">{{ t('dash.noOrders') }}</span></li>{% endfor %}
+          </ul>
+        </div>
+      </div>
+    </section>
+    {% elif section == 'orders' %}
+    <section>
+      <div class="ph"><div><h1>{{ t('dash.orders') }}</h1><p>{{ t('dash.ordersSub') }}</p></div><a class="btn btn-line" href="/dashboard/orders.csv?range={{ range_key }}&status={{ status_key }}&q={{ query }}"><svg><use href="#i-dl"/></svg><span>{{ t('dash.export') }}</span></a></div>
+      <div class="card">
+        <form class="filters" method="get" action="/dashboard/orders">
+          <div class="seg" role="group">
+            {% for key, label in [('today', 'dash.rToday'), ('7', 'dash.r7'), ('30', 'dash.r30')] %}
+            <a class="btn" href="?range={{ key }}&status={{ status_key }}&q={{ query }}" aria-pressed="{{ 'true' if range_key == key else 'false' }}" style="text-decoration:none">{{ t(label) }}</a>
+            {% endfor %}
+          </div>
+          <select class="select" name="status" aria-label="{{ t('dash.cStatus') }}" onchange="this.form.submit()">
+            <option value="">{{ t('dash.allStatus') }}</option>
+            {% for key in ['waiting', 'ringing', 'onway', 'done'] %}<option value="{{ key }}" {% if status_key == key %}selected{% endif %}>{{ t('dash.st.' + key) }}</option>{% endfor %}
+          </select>
+          <input type="hidden" name="range" value="{{ range_key }}">
+          <div class="search"><input type="search" name="q" value="{{ query }}" placeholder="{{ t('dash.searchPh') }}" aria-label="{{ t('dash.searchPh') }}"></div>
+        </form>
+        <div class="table-scroll">
+          <table class="t">
+            <thead><tr><th>{{ t('dash.cOrder') }}</th><th>{{ t('dash.cTime') }}</th><th>{{ t('dash.cPrep') }}</th><th>{{ t('dash.cPick') }}</th><th>{{ t('dash.cScan') }}</th><th>{{ t('dash.cCalls') }}</th><th>{{ t('dash.cStatus') }}</th></tr></thead>
+            <tbody>
+              {% for row in order_rows %}
+              <tr>
+                <td><span class="n num">{{ row.number }}</span></td>
+                <td class="sub"><span class="num">{{ row.time }}</span></td>
+                <td class="{{ 'late' if row.prep_late else '' }}">{% if row.prep is not none %}<span class="num">{{ '%.1f'|format(row.prep) }}</span> {{ t('dash.min') }}{% else %}—{% endif %}</td>
+                <td>{% if row.pick is not none %}<span class="num">{{ '%.1f'|format(row.pick) }}</span> {{ t('dash.min') }}{% else %}<span class="sub">—</span>{% endif %}</td>
+                <td class="{{ 'yes' if row.scanned else 'no' }}">{{ t('dash.yes') if row.scanned else t('dash.no') }}</td>
+                <td><span class="num">{{ row.calls }}</span></td>
+                <td><span class="pill {{ row.pill }}">{{ t('dash.st.' + row.status) }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <div class="pager">
+          <span>{{ t('dash.showing').replace('{a}', order_rows|length|string).replace('{b}', order_total|string) }}</span>
+          <div>
+            {% if page > 1 %}<a class="btn btn-quiet" href="?range={{ range_key }}&status={{ status_key }}&q={{ query }}&page={{ page - 1 }}">{{ t('dash.prev') }}</a>{% endif %}
+            {% if page < pages %}<a class="btn btn-quiet" href="?range={{ range_key }}&status={{ status_key }}&q={{ query }}&page={{ page + 1 }}">{{ t('dash.next') }}</a>{% endif %}
+          </div>
+        </div>
+      </div>
+    </section>
+    {% elif section == 'subscription' %}
+    <section>
+      <div class="ph"><div><h1>{{ t('dash.sub') }}</h1><p>{{ t('dash.subSub') }}</p></div></div>
+      <div class="card status-card">
+        <div class="grow"><p class="k">{{ t('dash.curPlan') }}</p><p class="v">{{ plan_title }} <span class="tag {{ plan_tag_class }}">{{ plan_tag }}</span></p></div>
+        <div class="facts">
+          {% for fact in plan_facts %}<div><span>{{ fact.label }}</span><b dir="ltr">{{ fact.value }}</b></div>{% endfor %}
+        </div>
+      </div>
+      {% if plan_code == 'points' and sub_state == 'active' %}
+      <div class="card wallet">
+        <div class="bal"><b>0</b><span>{{ t('dash.pointsLeft') }}</span></div>
+        <div><div class="meter"><i style="width:0%"></i></div><div class="meta"><span>{{ t('dash.pointRate').replace('{price}', point_price) }}</span></div></div>
+        <button class="btn btn-ink" type="button" disabled title="{{ t('dash.soon') }}">{{ t('dash.topUp') }}</button>
+      </div>
+      {% endif %}
+      <h2 class="h3">{{ t('dash.pickPlan') if sub_state != 'active' else t('dash.changePlan') }}</h2>
+      <div class="plans">
+        {% for plan in plans %}
+        <div class="plan" aria-checked="{{ 'true' if plan.code == plan_code and sub_state == 'active' else 'false' }}">
+          {% if plan.code == plan_code and sub_state == 'active' %}<span class="cur-tag">{{ t('dash.current') }}</span>{% endif %}
+          <span class="radio"></span>
+          <h4>{{ plan.name_ar if lang == 'ar' else plan.name_en }}</h4>
+          <p class="for">{{ t('dash.for.' + plan.code) }}</p>
+          <p class="price"><span>BHD</span><b>{{ plan.price_label }}</b><span>{{ t('dash.per.' + plan.code) }}</span></p>
+          <p class="save">{% if plan.code == 'yearly' %}{{ t('dash.yearSave') }}{% endif %}</p>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="checkout">
+        <div class="card box">
+          <h3>{{ t('dash.payCard') }}</h3>
+          <div class="card-field"><div class="fake">{{ t('dash.cardNo') }}</div><div class="row"><div class="fake">MM / YY</div><div class="fake">CVV</div></div><small>{{ t('dash.cardNote') }}</small></div>
+        </div>
+        <div class="card box">
+          <h3>{{ t('dash.summary') }}</h3>
+          <div class="sum"><div><span>{{ t('dash.plan') }}</span><span>{{ plan_title }}</span></div><div class="tot"><span>{{ t('dash.due') }}</span><b>BHD {{ selected_price }}</b></div></div>
+          <button class="btn btn-ink pay" type="button" disabled title="{{ t('dash.soon') }}">{{ t('dash.pay') }}</button>
+          <p class="secure">{{ t('dash.secure') }}</p>
+        </div>
+      </div>
+      {% if plan_code == 'points' %}
+      <h2 class="h3">{{ t('dash.packs') }}</h2>
+      <div class="packs">
+        {% for pack in packs %}<div class="pack"><b class="num">{{ pack.points }}</b><span>BHD {{ pack.price_label }}</span></div>{% endfor %}
+      </div>
+      {% endif %}
+      <h2 class="h3">{{ t('dash.invoices') }}</h2>
+      <div class="card"><div class="table-scroll"><table class="t"><thead><tr><th>{{ t('dash.iDate') }}</th><th>{{ t('dash.iDesc') }}</th><th>{{ t('dash.iAmount') }}</th><th>{{ t('dash.iStatus') }}</th></tr></thead><tbody>
+        {% for inv in invoices %}<tr><td>{{ inv.created_at }}</td><td>{{ inv.description }}</td><td class="num">{{ inv.amount_label }}</td><td>{{ inv.status }}</td></tr>{% else %}<tr><td colspan="4" class="sub">{{ t('dash.noInv') }}</td></tr>{% endfor %}
+      </tbody></table></div></div>
+    </section>
+    {% else %}
+    <section>
+      <div class="ph"><div><h1>{{ t('dash.settings') }}</h1><p>{{ t('dash.setSub') }}</p></div></div>
+      <form class="set-grid" id="settingsForm" method="post" action="/dashboard/settings">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <div class="card set">
+          <header><h2>{{ t('dash.sRest') }}</h2><p>{{ t('dash.sRestSub') }}</p></header>
+          <div class="fields">
+            <div class="f"><label for="sName">{{ t('dash.restName') }}</label><input class="in" id="sName" name="name" value="{{ form.name }}" required></div>
+            <div class="f-row">
+              <div class="f"><label for="sPhone">{{ t('dash.phone') }}</label><input class="in" id="sPhone" name="phone" value="{{ form.phone }}" dir="ltr" inputmode="numeric" required placeholder="+973 00000000">{% if errors.phone %}<p class="help" style="color:var(--error)">{{ t(errors.phone) }}</p>{% endif %}</div>
+              <div class="f"><label for="sPrep">{{ t('dash.prepTime') }}</label><select class="in" id="sPrep" name="prep_minutes">{% for n in prep_choices %}<option value="{{ n }}" {% if form.prep_minutes == n %}selected{% endif %}>{{ n }}</option>{% endfor %}</select><p class="help">{{ t('dash.prepHelp') }}</p></div>
+            </div>
+          </div>
+        </div>
+        <div class="card set">
+          <header><h2>{{ t('dash.sBrand') }}</h2><p>{{ t('dash.sBrandSub') }}</p></header>
+          <div class="fields">
+            <div class="brand-row">
+              <div class="big-logo" id="bigLogo">{% if brand.logo_url %}<img src="{{ brand.logo_url }}" alt="">{% else %}{{ brand.initial }}{% endif %}</div>
+              <div style="display:grid;gap:8px">
+                <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="btn btn-line" for="logoIn">{{ t('dash.upload') if not brand.logo_url else t('dash.replace') }}</label>{% if brand.logo_url %}<button class="btn btn-quiet" type="button" id="logoDel">{{ t('dash.remove') }}</button>{% endif %}</div>
+                <span style="font-size:13px;color:var(--grey)">{{ t('dash.uploadHint') }}</span>
+                <input type="file" id="logoIn" accept="image/png,image/jpeg,image/webp" hidden>
+              </div>
+            </div>
+            <div class="f"><label>{{ t('dash.color') }}</label>
+              <div class="swatches" id="swatches">
+                {% for color in swatches %}<button type="button" class="swatch" style="--c:{{ color }}" data-c="{{ color }}" aria-checked="{{ 'true' if form.brand_color|lower == color else 'false' }}" aria-label="{{ color }}"></button>{% endfor %}
+              </div>
+              <input type="hidden" name="brand_color" id="brandColor" value="{{ form.brand_color }}">
+            </div>
+          </div>
+        </div>
+        <div class="card set">
+          <header><h2>{{ t('dash.sLinks') }}</h2><p>{{ t('dash.sLinksSub') }}</p></header>
+          <div class="fields">
+            <div class="f"><label>{{ t('dash.qLink') }}</label><div class="linkbox"><span>{{ customer_host }}</span><button class="btn" type="button" data-copy="{{ customer_url }}">{{ t('dash.copy') }}</button></div><p class="help">{{ restaurant.slug }}</p></div>
+            <div><a class="btn btn-line" href="/r/{{ restaurant.slug }}/print"><svg><use href="#i-qr"/></svg><span>{{ t('dash.qStand') }}</span></a></div>
+          </div>
+        </div>
+        <div class="card set">
+          <header><h2>{{ t('dash.sAcc') }}</h2><p>{{ t('dash.sAccSub') }}</p></header>
+          <div class="fields">
+            <div class="f"><label for="sEmail">{{ t('dash.email') }}</label><input class="in" id="sEmail" name="email" type="email" dir="ltr" value="{{ form.email }}" required>{% if errors.email %}<p class="help" style="color:var(--error)">{{ t(errors.email) }}</p>{% endif %}</div>
+            <div class="f-row">
+              <div class="f"><label for="sPass">{{ t('dash.newPass') }}</label><input class="in" id="sPass" name="password" type="password" autocomplete="new-password"></div>
+              <div class="f"><label for="sPass2">{{ t('dash.confirmPass') }}</label><input class="in" id="sPass2" name="password2" type="password" autocomplete="new-password"></div>
+            </div>
+            {% if errors.password %}<p class="help" style="color:var(--error)">{{ t(errors.password) }}</p>{% endif %}
+            <p class="help">{{ t('dash.passHelp') }}</p>
+          </div>
+        </div>
+        <div class="save-bar" id="saveBar" hidden>
+          <span>{{ t('dash.unsaved') }}</span>
+          <button class="btn btn-line" type="button" id="discard">{{ t('dash.discard') }}</button>
+          <button class="btn btn-white" type="submit">{{ t('dash.save') }}</button>
+        </div>
+      </form>
+      <div class="set-grid" style="margin-top:12px">
+        <div class="card set">
+          <header><h2>{{ t('dash.sPin') }}</h2><p>{{ t('dash.sPinSub') }}</p></header>
+          <div class="fields">
+            <div class="pinrow" id="pinView" {% if errors.pin %}hidden{% endif %}>
+              <div class="pinval"><span class="num" id="pinShown">••••••</span><button class="btn btn-quiet" type="button" id="pinEye">{{ t('dash.show') }}</button></div>
+              <button class="btn btn-line" type="button" id="pinChange">{{ t('dash.changePin') }}</button>
+            </div>
+            <form class="pinedit" id="pinEdit" method="post" action="/dashboard/settings/pin" {% if not errors.pin %}hidden{% endif %}>
+              <input type="hidden" name="csrf" value="{{ csrf }}">
+              <div class="f"><label for="pinIn">{{ t('dash.newPin') }}</label>
+                <div style="display:flex;gap:8px"><input class="in num" id="pinIn" name="pin" inputmode="numeric" maxlength="6" autocomplete="off" dir="ltr" pattern="[0-9]{6}" style="letter-spacing:.3em;font-size:20px"><button class="btn btn-line" type="button" id="pinGen">{{ t('dash.generate') }}</button></div>
+                {% if errors.pin %}<p class="help" style="color:var(--error)">{{ t(errors.pin) }}</p>{% else %}<p class="help">{{ t('dash.pinHelp') }}</p>{% endif %}
+              </div>
+              <p class="pinwarn">{{ t('dash.pinWarn') }}</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-ink" type="submit">{{ t('dash.savePin') }}</button><button class="btn btn-quiet" type="button" id="pinCancel">{{ t('dash.cancel') }}</button></div>
+            </form>
+            <div class="devices">
+              <p class="dev-h"><span>{{ t('dash.devices') }}</span> <span class="num">{{ devices|length }}</span></p>
+              <ul>
+                {% for dev in devices %}<li><b>{{ dev.label }}</b><span>{{ dev.when }}</span></li>{% else %}<li><span>{{ t('dash.noDevices') }}</span></li>{% endfor %}
+              </ul>
+              <form method="post" action="/dashboard/settings/devices/sign-out"><input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn btn-danger" type="submit">{{ t('dash.signOutAll') }}</button></form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    {% endif %}
+  </main>
+</div>
+<div class="toast" id="toast" {% if not notice %}hidden{% endif %} role="status">{{ notice }}</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var side = document.getElementById("side");
+  var menu = document.getElementById("menuBtn");
+  if (menu && side) menu.addEventListener("click", function () { side.classList.toggle("open"); });
+  var toast0 = document.getElementById("toast");
+  if (toast0 && !toast0.hidden) setTimeout(function () { toast0.hidden = true; }, 2800);
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-copy]");
+    if (!b) return;
+    var done = {{ t('dash.copied')|tojson }};
+    navigator.clipboard.writeText(b.getAttribute("data-copy")).then(function () {
+      var toast = document.getElementById("toast");
+      toast.textContent = done; toast.hidden = false;
+      setTimeout(function () { toast.hidden = true; }, 2200);
+    }).catch(function () {});
+  });
+  var chart = document.getElementById("chart");
+  if (chart) {
+    var hours = {{ stats.hours|tojson if stats else '[]' }};
+    var nowH = {{ stats.hour_now if stats else 0 }};
+    var tipLabel = {{ t('dash.tip')|tojson }};
+    function draw() {
+      var w = chart.clientWidth || 600, h = 220, padL = 28, padB = 24, padT = 8;
+      var max = Math.max.apply(null, hours.concat([4]));
+      var n = 24, slot = (w - padL) / n, bw = Math.min(18, slot * 0.62);
+      var s = "", rtl = document.documentElement.dir === "rtl";
+      [0, Math.ceil(max / 2), max].forEach(function (v) {
+        var y = padT + (h - padB - padT) * (1 - (max ? v / max : 0));
+        s += '<line class="gl" x1="' + padL + '" x2="' + w + '" y1="' + y + '" y2="' + y + '"/><text class="ax" x="' + (padL - 8) + '" y="' + (y + 4) + '" text-anchor="end">' + v + '</text>';
+      });
+      hours.forEach(function (v, i) {
+        var idx = rtl ? n - 1 - i : i;
+        var x = padL + idx * slot + (slot - bw) / 2;
+        var bh = max ? (h - padB - padT) * (v / max) : 0;
+        var y = h - padB - bh, r = Math.min(4, bh / 2 || 0);
+        var future = i > nowH;
+        var path = 'M' + x + ',' + (h - padB) + ' V' + (y + r) + ' Q' + x + ',' + y + ' ' + (x + r) + ',' + y + ' H' + (x + bw - r) + ' Q' + (x + bw) + ',' + y + ' ' + (x + bw) + ',' + (y + r) + ' V' + (h - padB) + ' Z';
+        s += '<g data-h="' + i + ':00" data-v="' + v + '"><rect class="hit" x="' + (padL + idx * slot) + '" y="' + padT + '" width="' + slot + '" height="' + (h - padT - padB) + '"/><path class="bar' + (future ? ' dim' : '') + '" d="' + path + '"/></g>';
+        if (i % 3 === 0) s += '<text class="ax" x="' + (x + bw / 2) + '" y="' + (h - 6) + '" text-anchor="middle">' + i + '</text>';
+      });
+      chart.setAttribute("viewBox", "0 0 " + w + " " + h);
+      chart.innerHTML = s;
+    }
+    draw();
+    addEventListener("resize", draw);
+    chart.addEventListener("mousemove", function (e) {
+      var g = e.target.closest ? e.target.closest("g[data-h]") : null;
+      var tip = document.getElementById("tip");
+      if (!g) { tip.hidden = true; return; }
+      var bar = g.querySelector(".bar").getBoundingClientRect();
+      var wr = document.getElementById("chartWrap").getBoundingClientRect();
+      tip.textContent = tipLabel.replace("{h}", g.getAttribute("data-h")).replace("{n}", g.getAttribute("data-v"));
+      tip.hidden = false;
+      tip.style.left = (bar.left - wr.left + bar.width / 2) + "px";
+      tip.style.top = (bar.top - wr.top) + "px";
+    });
+    chart.addEventListener("mouseleave", function () { document.getElementById("tip").hidden = true; });
+  }
+  var form = document.getElementById("settingsForm");
+  if (form) {
+    var snap = new FormData(form);
+    function dirty() {
+      var now = new FormData(form), changed = false;
+      snap.forEach(function (v, k) { if (k !== "csrf" && now.get(k) !== v) changed = true; });
+      document.getElementById("saveBar").hidden = !changed;
+    }
+    form.addEventListener("input", dirty);
+    form.addEventListener("change", dirty);
+    document.getElementById("discard").addEventListener("click", function () { form.reset(); document.getElementById("saveBar").hidden = true; });
+    document.querySelectorAll(".swatch").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        document.querySelectorAll(".swatch").forEach(function (x) { x.setAttribute("aria-checked", "false"); });
+        btn.setAttribute("aria-checked", "true");
+        document.getElementById("brandColor").value = btn.getAttribute("data-c");
+        dirty();
+      });
+    });
+    var logo = document.getElementById("logoIn");
+    if (logo) logo.addEventListener("change", function () {
+      if (!logo.files[0]) return;
+      var body = new FormData(); body.append("file", logo.files[0]);
+      fetch("/api/merchant/logo", { method: "POST", body: body, credentials: "same-origin" }).then(function (r) { if (r.ok) location.reload(); });
+    });
+    var del = document.getElementById("logoDel");
+    if (del) del.addEventListener("click", function () {
+      fetch("/api/merchant/logo", { method: "DELETE", credentials: "same-origin" }).then(function (r) { if (r.ok) location.reload(); });
+    });
+  }
+  var pin = {{ pin|tojson if pin is not none else '""' }};
+  var eye = document.getElementById("pinEye");
+  if (eye) {
+    var shown = false;
+    eye.addEventListener("click", function () {
+      shown = !shown;
+      document.getElementById("pinShown").textContent = shown ? pin : "••••••";
+      eye.textContent = shown ? {{ t('dash.hide')|tojson }} : {{ t('dash.show')|tojson }};
+    });
+    document.getElementById("pinChange").addEventListener("click", function () {
+      document.getElementById("pinView").hidden = true;
+      document.getElementById("pinEdit").hidden = false;
+    });
+    document.getElementById("pinCancel").addEventListener("click", function () {
+      document.getElementById("pinEdit").hidden = true;
+      document.getElementById("pinView").hidden = false;
+    });
+    document.getElementById("pinGen").addEventListener("click", function () {
+      fetch("/dashboard/settings/pin/generate", { headers: { "Accept": "application/json" }, credentials: "same-origin" })
+        .then(function (r) { return r.json(); })
+        .then(function (data) { document.getElementById("pinIn").value = data.pin; });
+    });
+  }
+  var toast = document.getElementById("toast");
+  if (toast && toast.textContent.trim()) { toast.hidden = false; setTimeout(function () { toast.hidden = true; }, 2400); }
+})();
+</script>
+{% endblock %}

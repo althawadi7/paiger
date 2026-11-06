@@ -1,7 +1,10 @@
 import io
 import os
 import re
+import csv
 import json
+import hmac
+import hashlib
 import logging
 import secrets
 import socket
@@ -27,6 +30,8 @@ from . import push_service
 from . import auth
 from . import i18n
 from . import mailer
+from . import cashier_gate
+from . import owner_board
 
 logger = logging.getLogger("pager")
 
@@ -98,6 +103,51 @@ async def language_middleware(request: Request, call_next):
     return response
 
 
+@app.middleware("http")
+async def refresh_cashier_devices(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/static"):
+        return response
+    for name, value in request.cookies.items():
+        if not name.startswith(cashier_gate.COOKIE_PREFIX):
+            continue
+        try:
+            restaurant_id = int(name[len(cashier_gate.COOKIE_PREFIX):])
+        except ValueError:
+            continue
+        if cashier_gate.valid_device(restaurant_id, value):
+            _stamp_cashier_cookie(response, request, restaurant_id, value)
+    return response
+
+
+def _cookie_secure() -> bool:
+    value = (os.getenv("COOKIE_SECURE", "true") or "true").strip().lower()
+    return value not in {"0", "false", "no", "off"}
+
+
+def _stamp_cashier_cookie(response, request: Request, restaurant_id: int, token: str) -> None:
+    # Path is / so /api/orders and /ws/cashier receive it. The cookie name
+    # carries the restaurant id, so a device paired to A cannot open B.
+    response.set_cookie(
+        key=cashier_gate.cookie_name(restaurant_id),
+        value=token,
+        httponly=True,
+        max_age=60 * 60 * 24 * 30,
+        samesite="lax",
+        secure=_cookie_secure(),
+        path="/",
+    )
+
+
+def _client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for") or ""
+    if forwarded:
+        return forwarded.split(",")[0].strip()[:64]
+    if request.client and request.client.host:
+        return request.client.host[:64]
+    return ""
+
+
 def _format_money(value: str) -> str:
     amount = Decimal(value)
     if amount == amount.to_integral_value():
@@ -106,39 +156,50 @@ def _format_money(value: str) -> str:
 
 
 def _landing_plans() -> List[Dict[str, Any]]:
-    # Placeholder until the plans table exists (batch 4). Same figures as design/landing.html.
-    return [
-        {
+    catalog = {
+        "monthly": {
             "code": "monthly",
             "name_key": "price.m",
             "for_key": "price.mFor",
-            "amount": _format_money("15"),
             "per_key": "price.perMonth",
             "features": ["price.unl", "price.f1", "price.f2", "price.f3"],
             "featured": False,
+            "fils_key": "price_fils",
         },
-        {
+        "yearly": {
             "code": "yearly",
             "name_key": "price.y",
             "for_key": "price.yFor",
-            "amount": _format_money("150"),
             "per_key": "price.perYear",
             "save_key": "price.ySave",
             "tag_key": "price.best",
             "features": ["price.unl", "price.allM", "price.f4"],
             "featured": True,
+            "fils_key": "price_fils",
         },
-        {
+        "points": {
             "code": "points",
             "name_key": "price.p",
             "for_key": "price.pFor",
-            "amount": _format_money("0.100"),
             "per_key": "price.perOrder",
             "save_key": "price.pNote",
             "features": ["price.p1", "price.p2", "price.allM"],
             "featured": False,
+            "fils_key": "point_price_fils",
         },
-    ]
+    }
+    stored = {}
+    try:
+        stored = {row["code"]: row for row in owner_board.plans()}
+    except Exception:
+        stored = {}
+    plans = []
+    for code, item in catalog.items():
+        row = stored.get(code) or {}
+        fils = row.get(item.pop("fils_key"))
+        item["amount"] = _format_money(owner_board.fils_label(fils) if fils is not None else {"monthly": "15", "yearly": "150", "points": "0.100"}[code])
+        plans.append(item)
+    return plans
 
 def get_local_ip() -> str:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -313,6 +374,7 @@ class UpdateCustomPageDto(BaseModel):
 @app.on_event("startup")
 def startup_event():
     db.init_db()
+    cashier_gate.ensure_pins()
 
 # ─────────────────────────────────────────────────────────────
 # APPLE APP CLIP & SYSTEM FILES
@@ -722,7 +784,7 @@ def _start_session(response: RedirectResponse, rest: Dict[str, Any]) -> None:
         httponly=True,
         max_age=86400 * 30,
         samesite="lax",
-        secure=True,
+        secure=_cookie_secure(),
     )
 
 
@@ -826,30 +888,426 @@ async def restaurant_logout():
     redirect.delete_cookie(auth.RESTAURANT_COOKIE)
     return redirect
 
+_PILL = {"waiting": "", "ringing": "ring", "onway": "way", "done": "done"}
+_SWATCHES = ["#111111", "#7a4b2a", "#b91c1c", "#c2410c", "#166534", "#1d4ed8", "#6d28d9"]
+_WEEKDAYS_AR = ["الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد"]
+_NOTICES = {"saved": "dash.saved", "pin": "dash.pinSaved", "devices": "dash.devOut"}
+
+
+def _dash_csrf(restaurant_id: int) -> str:
+    return hmac.new(auth.SECRET_KEY.encode("utf-8"), f"dash:{int(restaurant_id)}".encode("utf-8"), hashlib.sha256).hexdigest()
+
+
+def _csrf_ok(restaurant_id: int, token: str) -> bool:
+    expected = _dash_csrf(restaurant_id)
+    offered = token or ""
+    return len(expected) == len(offered) and hmac.compare_digest(expected, offered)
+
+
+def _owner_restaurant(request: Request):
+    user = auth.get_current_restaurant(request)
+    if not user or not user.get("sub"):
+        return None
+    return db.get_restaurant_by_id(int(user["sub"]))
+
+
+def _bahrain_phone(value: str) -> Optional[str]:
+    digits = re.sub(r"\D", "", value or "")
+    if digits.startswith("973") and len(digits) == 11:
+        digits = digits[3:]
+    if len(digits) == 8:
+        return "+973" + digits
+    return None
+
+
+def _email_taken(email: str, restaurant_id: int) -> bool:
+    conn = db.get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id FROM restaurants WHERE email=%s AND id<>%s LIMIT 1",
+                (email.strip().lower(), restaurant_id),
+            )
+            return cur.fetchone() is not None
+    finally:
+        conn.close()
+
+
+def _weekday_name() -> str:
+    now = owner_board.bahrain_now()
+    if i18n.current_lang() == "ar":
+        return _WEEKDAYS_AR[now.weekday()]
+    return now.strftime("%A")
+
+
+def _greeting() -> str:
+    hour = owner_board.bahrain_now().hour
+    if hour < 12:
+        key = "dash.helloMorning"
+    elif hour < 17:
+        key = "dash.helloAfternoon"
+    else:
+        key = "dash.helloEvening"
+    return i18n.t(key)
+
+
+def _trial_view(rest: Dict[str, Any]) -> Dict[str, Any]:
+    state = db.access_state(rest)
+    ends = owner_board._as_bahrain(rest.get("trial_ends_at"))
+    seconds = (ends - owner_board.bahrain_now()).total_seconds() if ends else 0
+    days = max(0, int((seconds + 86399) // 86400)) if seconds > 0 else 0
+    return {
+        "show": state in ("trialing", "expired"),
+        "state": state,
+        "days": days,
+        "bars": min(3, days) if state == "trialing" else 0,
+        "ends_label": ends.strftime("%d %b %Y") if ends else "",
+    }
+
+
+def _customer_link(request: Request, slug: str):
+    url = f"{get_public_base_url(request).rstrip('/')}/r/{slug}"
+    return url, url.split("://", 1)[-1]
+
+
+def _form_from(rest: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "name": rest.get("name") or "",
+        "phone": rest.get("phone") or "",
+        "prep_minutes": int(rest.get("prep_minutes") or 6),
+        "brand_color": (rest.get("brand_color") or "#111111").lower(),
+        "email": rest.get("email") or "",
+    }
+
+
+def _device_when(value) -> str:
+    moment = owner_board._as_bahrain(value)
+    if not moment:
+        return i18n.t("dash.devNow")
+    minutes = int((owner_board.bahrain_now() - moment).total_seconds() // 60)
+    if minutes < 1:
+        return i18n.t("dash.devNow")
+    if minutes < 60:
+        return i18n.t("dash.devMin").replace("{n}", str(minutes))
+    hours = minutes // 60
+    if hours < 48:
+        return i18n.t("dash.devHour").replace("{n}", str(hours))
+    return i18n.t("dash.devDay").replace("{n}", str(hours // 24))
+
+
+def _device_rows(restaurant_id: int) -> List[Dict[str, str]]:
+    rows = []
+    for row in cashier_gate.list_devices(restaurant_id):
+        rows.append({
+            "label": cashier_gate.describe_agent(row.get("user_agent") or ""),
+            "when": _device_when(row.get("last_used_at")),
+        })
+    return rows
+
+
+def _present_order(row: Dict[str, Any], prep_limit: int) -> Dict[str, Any]:
+    created = owner_board._as_bahrain(row.get("created_at"))
+    prep = owner_board._minutes(row.get("created_at"), row.get("called_at"))
+    pick = owner_board._minutes(row.get("called_at"), row.get("completed_at"))
+    return {
+        "number": row.get("order_number"),
+        "time": created.strftime("%H:%M") if created else "",
+        "date": created.strftime("%Y-%m-%d") if created else "",
+        "prep": prep,
+        "prep_late": prep is not None and prep > prep_limit,
+        "pick": pick,
+        "scanned": bool(row.get("scanned_at")),
+        "calls": int(row.get("call_count") or 0),
+        "status": row.get("status") or "",
+        "pill": _PILL.get(row.get("status") or "", ""),
+        "ago": int((owner_board.bahrain_now() - created).total_seconds() // 60) if created else 0,
+    }
+
+
+def _subscription_view(rest: Dict[str, Any]) -> Dict[str, Any]:
+    state = db.access_state(rest)
+    code = (rest.get("plan_code") or "monthly").strip()
+    if code not in ("monthly", "yearly", "points"):
+        code = "monthly"
+    catalog = owner_board.plans()
+    by_code = {row["code"]: row for row in catalog}
+    for plan in catalog:
+        fils = plan.get("point_price_fils") if plan["code"] == "points" else plan.get("price_fils")
+        plan["price_label"] = owner_board.fils_label(fils)
+    current = by_code.get(code) or {}
+    name_key = "name_ar" if i18n.current_lang() == "ar" else "name_en"
+    if state == "trialing":
+        title, tag, tag_class = i18n.t("dash.freeTrial"), i18n.t("dash.trialTag"), "tag-trial"
+    elif state == "expired":
+        title, tag, tag_class = i18n.t("dash.freeTrial"), i18n.t("dash.expiredTag"), "tag-trial"
+    else:
+        title, tag, tag_class = current.get(name_key) or code, i18n.t("dash.activeTag"), "active"
+    ends = owner_board._as_bahrain(rest.get("trial_ends_at"))
+    ends_label = ends.strftime("%d %b %Y") if ends else "—"
+    facts = []
+    if state in ("trialing", "expired"):
+        facts.append({"label": i18n.t("dash.trialEnds"), "value": ends_label})
+    elif code == "points":
+        facts.append({"label": i18n.t("dash.amount"), "value": "BHD " + owner_board.fils_label(current.get("point_price_fils"))})
+    else:
+        facts.append({"label": i18n.t("dash.amount"), "value": "BHD " + owner_board.fils_label(current.get("price_fils"))})
+        facts.append({"label": i18n.t("dash.nextCharge"), "value": "—"})
+    if state == "active" and code == "points":
+        selected = owner_board.fils_label(current.get("point_price_fils"))
+    elif state == "active":
+        selected = owner_board.fils_label(current.get("price_fils"))
+    else:
+        selected = owner_board.fils_label((by_code.get("monthly") or {}).get("price_fils"))
+    packs = owner_board.point_packs()
+    for pack in packs:
+        pack["price_label"] = owner_board.fils_label(pack.get("price_fils"))
+    invoices = []
+    for inv in owner_board.invoices(int(rest["id"])):
+        created = owner_board._as_bahrain(inv.get("created_at"))
+        invoices.append({
+            "created_at": created.strftime("%d %b %Y") if created else "",
+            "description": inv.get("description") or "",
+            "amount_label": owner_board.fils_label(inv.get("amount_fils")),
+            "status": inv.get("status") or "",
+        })
+    return {
+        "plans": catalog,
+        "packs": packs,
+        "invoices": invoices,
+        "plan_title": title,
+        "plan_tag": tag,
+        "plan_tag_class": tag_class,
+        "plan_facts": facts,
+        "plan_code": code,
+        "sub_state": state,
+        "point_price": owner_board.fils_label((by_code.get("points") or {}).get("point_price_fils")),
+        "selected_price": selected,
+    }
+
+
+def _overview_stats(rest: Dict[str, Any]) -> Dict[str, Any]:
+    stats = owner_board.overview(int(rest["id"]))
+    for row in stats["latest"]:
+        row["pill"] = _PILL.get(row.get("status") or "", "")
+    stats["weekday"] = _weekday_name()
+    return stats
+
+
+def _render_dashboard(request: Request, rest: Dict[str, Any], section: str, **extra):
+    link, host = _customer_link(request, rest["slug"])
+    notice_code = request.query_params.get("notice") or ""
+    ctx = {
+        "request": request,
+        "section": section,
+        "restaurant": rest,
+        "brand": restaurant_brand(rest),
+        "trial": _trial_view(rest),
+        "greeting": _greeting(),
+        "customer_url": link,
+        "customer_host": host,
+        "notice": i18n.t(_NOTICES[notice_code]) if notice_code in _NOTICES else "",
+        "stats": _overview_stats(rest) if section == "overview" else None,
+        "errors": {},
+        "csrf": _dash_csrf(int(rest["id"])),
+        "form": _form_from(rest),
+        "swatches": _SWATCHES,
+        "pin": cashier_gate.current_pin(int(rest["id"])) if section == "settings" else None,
+        "devices": _device_rows(int(rest["id"])) if section == "settings" else [],
+        "range_key": "today",
+        "status_key": "",
+        "query": "",
+        "order_rows": [],
+        "order_total": 0,
+        "page": 1,
+        "pages": 1,
+    }
+    ctx.update(_subscription_view(rest))
+    ctx.update(extra)
+    minutes = int((ctx.get("form") or {}).get("prep_minutes") or 6)
+    choices = [3, 5, 6, 8, 10, 15]
+    if minutes not in choices:
+        choices = sorted(set(choices + [minutes]))
+    ctx["prep_choices"] = choices
+    return templates.TemplateResponse("dashboard.html", ctx)
+
+
+def _order_filters(request: Request):
+    range_key = request.query_params.get("range") or "today"
+    if range_key not in ("today", "7", "30"):
+        range_key = "today"
+    status_key = request.query_params.get("status") or ""
+    if status_key not in ("waiting", "ringing", "onway", "done"):
+        status_key = ""
+    query = (request.query_params.get("q") or "").strip()[:20]
+    try:
+        page = max(1, int(request.query_params.get("page") or "1"))
+    except ValueError:
+        page = 1
+    return range_key, status_key, query, page
+
+
 @app.get("/dashboard", response_class=HTMLResponse)
 @app.get("/merchant", response_class=HTMLResponse)
 async def restaurant_dashboard(request: Request):
-    user = auth.get_current_restaurant(request)
-    if not user:
-        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-
-    rest_id = int(user["sub"])
-    rest = db.get_restaurant_by_id(rest_id)
+    rest = _owner_restaurant(request)
     if not rest:
-        return RedirectResponse(url="/logout", status_code=status.HTTP_302_FOUND)
+        return _login_redirect(request)
+    return _render_dashboard(request, rest, "overview")
 
-    stats = db.get_restaurant_stats(rest_id)
-    orders = db.get_restaurant_orders(rest_id, limit=150)
 
-    return templates.TemplateResponse(
-        "restaurant_dashboard.html",
-        {
-            "request": request,
-            "restaurant": rest,
-            "stats": stats,
-            "orders": orders
-        }
+@app.get("/dashboard/orders", response_class=HTMLResponse)
+async def dashboard_orders(request: Request):
+    rest = _owner_restaurant(request)
+    if not rest:
+        return _login_redirect(request)
+    range_key, status_key, query, page = _order_filters(request)
+    found = owner_board.list_orders(int(rest["id"]), range_key, status_key, query, page)
+    limit = int(rest.get("prep_minutes") or 6)
+    return _render_dashboard(
+        request, rest, "orders",
+        range_key=range_key, status_key=status_key, query=query,
+        order_rows=[_present_order(row, limit) for row in found["rows"]],
+        order_total=found["total"], page=found["page"], pages=found["pages"],
     )
+
+
+@app.get("/dashboard/orders.csv")
+async def dashboard_orders_csv(request: Request):
+    rest = _owner_restaurant(request)
+    if not rest:
+        return _login_redirect(request)
+    range_key, status_key, query, _page = _order_filters(request)
+    found = owner_board.list_orders(int(rest["id"]), range_key, status_key, query, 1)
+    limit = int(rest.get("prep_minutes") or 6)
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow([
+        i18n.t("dash.cOrder"), i18n.t("dash.cTime"), i18n.t("dash.cPrep"),
+        i18n.t("dash.cPick"), i18n.t("dash.cScan"), i18n.t("dash.cCalls"), i18n.t("dash.cStatus"),
+    ])
+    for raw in found["all_rows"]:
+        row = _present_order(raw, limit)
+        writer.writerow([
+            row["number"], f"{row['date']} {row['time']}".strip(),
+            "" if row["prep"] is None else f"{row['prep']:.1f}",
+            "" if row["pick"] is None else f"{row['pick']:.1f}",
+            i18n.t("dash.yes") if row["scanned"] else i18n.t("dash.no"),
+            row["calls"], i18n.t("dash.st." + row["status"]) if row["status"] else "",
+        ])
+    filename = f"orders-{rest['slug']}-{range_key}.csv"
+    return Response(
+        "\ufeff" + buf.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.get("/dashboard/subscription", response_class=HTMLResponse)
+async def dashboard_subscription(request: Request):
+    rest = _owner_restaurant(request)
+    if not rest:
+        return _login_redirect(request)
+    return _render_dashboard(request, rest, "subscription")
+
+
+@app.get("/dashboard/settings", response_class=HTMLResponse)
+async def dashboard_settings(request: Request):
+    rest = _owner_restaurant(request)
+    if not rest:
+        return _login_redirect(request)
+    return _render_dashboard(request, rest, "settings")
+
+
+@app.post("/dashboard/settings")
+async def dashboard_settings_save(
+    request: Request,
+    csrf: str = Form(""),
+    name: str = Form(""),
+    phone: str = Form(""),
+    prep_minutes: str = Form("6"),
+    brand_color: str = Form("#111111"),
+    email: str = Form(""),
+    password: str = Form(""),
+    password2: str = Form(""),
+):
+    rest = _owner_restaurant(request)
+    if not rest:
+        return _login_redirect(request)
+    if not _csrf_ok(int(rest["id"]), csrf):
+        return RedirectResponse(url="/dashboard/settings", status_code=status.HTTP_303_SEE_OTHER)
+    errors = {}
+    clean_phone = _bahrain_phone(phone)
+    if not clean_phone:
+        errors["phone"] = "dash.ePhone"
+    clean_email = (email or "").strip().lower()
+    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", clean_email) or _email_taken(clean_email, int(rest["id"])):
+        errors["email"] = "dash.eEmail"
+    new_hash = None
+    if password or password2:
+        if password != password2 or not password.strip():
+            errors["password"] = "dash.ePass"
+        else:
+            new_hash = auth.hash_password(password)
+    try:
+        minutes = int(prep_minutes)
+    except ValueError:
+        minutes = 6
+    if minutes < 1 or minutes > 180:
+        minutes = int(rest.get("prep_minutes") or 6)
+    color = (brand_color or "").strip().lower()
+    if not re.fullmatch(r"#[0-9a-f]{6}", color):
+        color = (rest.get("brand_color") or "#111111").lower()
+    clean_name = (name or "").strip()
+    if not clean_name:
+        clean_name = rest.get("name") or ""
+    form = {
+        "name": clean_name,
+        "phone": phone.strip(),
+        "prep_minutes": minutes,
+        "brand_color": color,
+        "email": email.strip(),
+    }
+    if errors:
+        return _render_dashboard(request, rest, "settings", errors=errors, form=form)
+    owner_board.save_profile(int(rest["id"]), clean_name, clean_email, clean_phone, color, minutes, new_hash)
+    return RedirectResponse(url="/dashboard/settings?notice=saved", status_code=status.HTTP_303_SEE_OTHER)
+
+
+@app.post("/dashboard/settings/pin")
+async def dashboard_pin_save(request: Request, csrf: str = Form(""), pin: str = Form("")):
+    rest = _owner_restaurant(request)
+    if not rest:
+        return _login_redirect(request)
+    if not _csrf_ok(int(rest["id"]), csrf):
+        return RedirectResponse(url="/dashboard/settings", status_code=status.HTTP_303_SEE_OTHER)
+    offered = (pin or "").strip()
+    if not re.fullmatch(r"\d{6}", offered):
+        error = "dash.pinShort"
+    elif cashier_gate.pin_is_weak(offered):
+        error = "dash.pinWeak"
+    else:
+        cashier_gate.save_pin(int(rest["id"]), offered)
+        return RedirectResponse(url="/dashboard/settings?notice=pin", status_code=status.HTTP_303_SEE_OTHER)
+    return _render_dashboard(request, rest, "settings", errors={"pin": error})
+
+
+@app.get("/dashboard/settings/pin/generate")
+async def dashboard_pin_generate(request: Request):
+    rest = _owner_restaurant(request)
+    if not rest:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return {"pin": cashier_gate.generate_pin()}
+
+
+@app.post("/dashboard/settings/devices/sign-out")
+async def dashboard_sign_out_devices(request: Request, csrf: str = Form("")):
+    rest = _owner_restaurant(request)
+    if not rest:
+        return _login_redirect(request)
+    if not _csrf_ok(int(rest["id"]), csrf):
+        return RedirectResponse(url="/dashboard/settings", status_code=status.HTTP_303_SEE_OTHER)
+    cashier_gate.revoke_devices(int(rest["id"]))
+    return RedirectResponse(url="/dashboard/settings?notice=devices", status_code=status.HTTP_303_SEE_OTHER)
 
 @app.post("/api/merchant/settings")
 async def api_merchant_save_settings(req: MerchantSettingsDto, request: Request):
@@ -980,15 +1438,46 @@ async def restaurant_dedicated_cashier(request: Request, slug: str):
     rest = db.get_restaurant_by_slug(slug)
     if not rest:
         raise HTTPException(status_code=404, detail="Restaurant not found")
-    if not _can_open_restaurant(request, rest["id"]):
-        return _login_redirect(request)
+    if _can_open_restaurant(request, rest["id"]) or cashier_gate.device_from_cookies(request.cookies, rest["id"]):
+        local_ip = get_local_ip()
+        base_url = get_public_base_url(request)
+        port = request.url.port or (443 if request.url.scheme == "https" else 80)
+        theme = db.get_setting("theme", "light")
+        return templates.TemplateResponse("cashier.html", _cashier_context(request, rest, local_ip, port, base_url, theme))
+    key = cashier_gate.device_key(_client_ip(request), request.headers.get("user-agent", ""))
+    gate = cashier_gate.pin_status(int(rest["id"]), key)
+    return templates.TemplateResponse(
+        "cashier_pin.html",
+        {
+            "request": request,
+            "restaurant": rest,
+            "brand": restaurant_brand(rest),
+            "login_next": quote(f"/r/{rest['slug']}/cashier", safe="/"),
+            "locked_until": gate.get("locked_until"),
+        },
+    )
 
-    local_ip = get_local_ip()
-    base_url = get_public_base_url(request)
-    port = request.url.port or (443 if request.url.scheme == "https" else 80)
-    theme = db.get_setting("theme", "light")
 
-    return templates.TemplateResponse("cashier.html", _cashier_context(request, rest, local_ip, port, base_url, theme))
+@app.post("/r/{slug}/cashier/pin")
+async def restaurant_cashier_pin(request: Request, slug: str):
+    rest = db.get_restaurant_by_slug(slug)
+    if not rest:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    offered = str((body or {}).get("pin") or "")
+    if _can_open_restaurant(request, rest["id"]):
+        return {"ok": True, "remaining": 5, "locked_until": None}
+    key = cashier_gate.device_key(_client_ip(request), request.headers.get("user-agent", ""))
+    result = cashier_gate.check_pin(int(rest["id"]), key, offered, request.headers.get("user-agent", ""), _client_ip(request))
+    if not result.get("ok"):
+        return JSONResponse(result, status_code=401)
+    token = cashier_gate.issue_device(int(rest["id"]), request.headers.get("user-agent", ""), _client_ip(request))
+    response = JSONResponse(result)
+    _stamp_cashier_cookie(response, request, int(rest["id"]), token)
+    return response
 
 @app.get("/r/{slug}/print", response_class=HTMLResponse)
 async def restaurant_qr_print_sheet(request: Request, slug: str):
@@ -1396,13 +1885,16 @@ async def _note_customer_view(source, order: Optional[Dict[str, Any]]) -> Option
 
 
 def _order_actor(request: Request) -> Dict[str, Any]:
-    """Restaurant id comes from the restaurant JWT. Super-admin has no tenant id."""
+    """Restaurant id comes from the owner session or a paired cashier device."""
     restaurant = auth.get_current_restaurant(request)
     if restaurant and restaurant.get("sub"):
-        return {"role": "restaurant", "restaurant_id": int(restaurant["sub"])}
+        return {"role": "restaurant", "restaurant_id": int(restaurant["sub"]), "device_id": None}
     admin = auth.get_current_super_admin(request)
     if admin:
-        return {"role": "super_admin", "restaurant_id": None}
+        return {"role": "super_admin", "restaurant_id": None, "device_id": None}
+    device = cashier_gate.device_from_cookies(request.cookies)
+    if device:
+        return {"role": "device", "restaurant_id": int(device["restaurant_id"]), "device_id": int(device["id"])}
     raise HTTPException(status_code=401, detail="Unauthorized")
 
 
@@ -1410,7 +1902,7 @@ def _order_for_actor(order_id: int, actor: Dict[str, Any]) -> Dict[str, Any]:
     order = db.get_order_by_id(order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    if actor["role"] == "restaurant" and int(order.get("restaurant_id") or 0) != actor["restaurant_id"]:
+    if actor["role"] in ("restaurant", "device") and int(order.get("restaurant_id") or 0) != actor["restaurant_id"]:
         raise HTTPException(status_code=404, detail="Order not found")
     return order
 
@@ -1473,6 +1965,9 @@ async def list_orders(request: Request, restaurant_id: Optional[int] = None):
         return db.get_all_orders(limit=150, restaurant_id=int(restaurant["sub"]))
     if auth.get_current_super_admin(request):
         return db.get_all_orders(limit=150)
+    device = cashier_gate.device_from_cookies(request.cookies)
+    if device:
+        return db.get_all_orders(limit=150, restaurant_id=int(device["restaurant_id"]))
     if restaurant_id:
         return db.get_all_orders(limit=150, restaurant_id=int(restaurant_id))
     raise HTTPException(status_code=401, detail="Unauthorized")
@@ -1481,7 +1976,14 @@ async def list_orders(request: Request, restaurant_id: Optional[int] = None):
 @app.post("/api/orders")
 async def create_new_order(order_data: CreateOrderRequest, request: Request):
     actor = _order_actor(request)
-    restaurant_id = _restaurant_id_for_create(actor, order_data.restaurant_id)
+    if actor["role"] == "device":
+        if cashier_gate.recent_device_orders(actor["device_id"]) >= 30:
+            raise HTTPException(status_code=429, detail="Too many orders. Wait a moment and try again.")
+        restaurant_id = actor["restaurant_id"]
+    elif actor["role"] == "restaurant":
+        restaurant_id = actor["restaurant_id"]
+    else:
+        restaurant_id = _restaurant_id_for_create(actor, order_data.restaurant_id)
     if db.find_active_order_number(restaurant_id, order_data.order_number):
         raise HTTPException(status_code=409, detail="An active order with this number already exists")
     order = db.create_order(
@@ -1491,7 +1993,8 @@ async def create_new_order(order_data: CreateOrderRequest, request: Request):
         notes=order_data.notes,
         restaurant_name=order_data.restaurant_name or "",
         brand_color=order_data.brand_color or "",
-        brand_icon=order_data.brand_icon or ""
+        brand_icon=order_data.brand_icon or "",
+        cashier_device_id=actor.get("device_id"),
     )
     await manager.notify_cashiers({"event": "order_created", "order": order})
     return order
@@ -1697,8 +2200,12 @@ async def websocket_cashier(websocket: WebSocket):
     elif auth.get_current_super_admin(source):
         scope_id = None
     else:
-        await websocket.close(code=1008)
-        return
+        device = cashier_gate.device_from_cookies(websocket.cookies)
+        if not device:
+            await websocket.accept()
+            await websocket.close(code=4401)
+            return
+        scope_id = int(device["restaurant_id"])
     await manager.connect_cashier(websocket, scope_id)
     try:
         while True:

@@ -1,0 +1,20 @@
+<aside class="side" id="side">
+  <div class="rest">
+    <div class="rlogo">
+      {% if brand.logo_url %}<img src="{{ brand.logo_url }}" alt="">{% else %}{{ brand.initial }}{% endif %}
+    </div>
+    <div><b>{{ restaurant.name }}</b><span>{{ t('dash.owner') }}</span></div>
+  </div>
+  <nav class="nav" aria-label="{{ t('dash.nav') }}">
+    <a href="/dashboard" {% if section == 'overview' %}aria-current="page"{% endif %}><svg><use href="#i-home"/></svg><span>{{ t('dash.overview') }}</span></a>
+    <a href="/dashboard/orders" {% if section == 'orders' %}aria-current="page"{% endif %}><svg><use href="#i-list"/></svg><span>{{ t('dash.orders') }}</span></a>
+    <a href="/dashboard/subscription" {% if section == 'subscription' %}aria-current="page"{% endif %}><svg><use href="#i-card"/></svg><span>{{ t('dash.sub') }}</span>{% if trial.show %}<span class="badge">{{ t('dash.badgeTrial') if trial.state == 'trialing' else t('dash.badgeExpired') }}</span>{% endif %}</a>
+    <a href="/dashboard/settings" {% if section == 'settings' %}aria-current="page"{% endif %}><svg><use href="#i-gear"/></svg><span>{{ t('dash.settings') }}</span></a>
+  </nav>
+  <a class="cashier-btn" href="/r/{{ restaurant.slug }}/cashier"><svg><use href="#i-cashier"/></svg><span>{{ t('dash.openCashier') }}</span></a>
+  <div class="side-foot">
+    <a href="/lang/{{ 'en' if lang == 'ar' else 'ar' }}">{{ t('nav.langSwitch') }}</a>
+    <a href="/p/contact-support">{{ t('dash.help') }}</a>
+    <a href="/logout">{{ t('dash.logout') }}</a>
+  </div>
+</aside>

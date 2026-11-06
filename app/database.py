@@ -58,6 +58,7 @@ def _serialize_row(row: Optional[Dict[str, Any]], include_secrets: bool = False)
             d[k] = int(v) if v % 1 == 0 else float(v)
     if not include_secrets:
         d.pop("password_hash", None)
+        d.pop("cashier_pin_enc", None)
     if "scanned_at" in d:
         d["scanned"] = bool(d.get("scanned_at"))
     return d
@@ -196,10 +197,115 @@ def init_db():
     ensure_column("restaurants", "subscription_status", "VARCHAR(20) NULL")
     ensure_column("restaurants", "trial_ends_at", "DATETIME NULL")
     ensure_column("restaurants", "onboarded_at", "DATETIME NULL")
+    ensure_column("restaurants", "prep_minutes", "INT NOT NULL DEFAULT 6")
+    ensure_column("restaurants", "cashier_pin_enc", "TEXT NULL")
+    ensure_column("restaurants", "cashier_pin_version", "INT NOT NULL DEFAULT 1")
+    ensure_column("restaurants", "cashier_pin_updated_at", "DATETIME NULL")
+    ensure_column("orders", "cashier_device_id", "INT NULL")
+    _ensure_owner_tables()
     _backfill_legacy_subscriptions()
 
 
 _IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def _ensure_owner_tables() -> None:
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS plans (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    code VARCHAR(40) NOT NULL,
+                    type VARCHAR(20) NOT NULL,
+                    name_en VARCHAR(120) NOT NULL,
+                    name_ar VARCHAR(120) NOT NULL,
+                    price_fils INT NOT NULL,
+                    point_price_fils INT NULL,
+                    active TINYINT(1) NOT NULL DEFAULT 1,
+                    sort INT NOT NULL DEFAULT 0,
+                    UNIQUE KEY uq_plan_code (code)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS point_packs (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    points INT NOT NULL,
+                    price_fils INT NOT NULL,
+                    active TINYINT(1) NOT NULL DEFAULT 1,
+                    sort INT NOT NULL DEFAULT 0
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS invoices (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    restaurant_id INT NOT NULL,
+                    description VARCHAR(255) NOT NULL,
+                    amount_fils INT NOT NULL,
+                    status VARCHAR(20) NOT NULL DEFAULT 'open',
+                    provider_ref VARCHAR(120) NULL,
+                    pdf_path VARCHAR(255) NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_inv_rest (restaurant_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS cashier_devices (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    restaurant_id INT NOT NULL,
+                    token_hash CHAR(64) NOT NULL,
+                    pin_version INT NOT NULL,
+                    user_agent VARCHAR(255) DEFAULT '',
+                    ip VARCHAR(64) DEFAULT '',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    last_used_at DATETIME NULL,
+                    revoked_at DATETIME NULL,
+                    UNIQUE KEY uq_device_hash (token_hash),
+                    INDEX idx_device_rest (restaurant_id)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS cashier_pin_attempts (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    restaurant_id INT NOT NULL,
+                    device_key CHAR(64) NOT NULL,
+                    failed_count INT NOT NULL DEFAULT 0,
+                    locked_until DATETIME NULL,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE KEY uq_pin_attempt (restaurant_id, device_key)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS cashier_pin_fail_log (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    restaurant_id INT NOT NULL,
+                    device_key CHAR(64) NOT NULL,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    INDEX idx_fail_rest (restaurant_id, created_at)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            """)
+            cur.execute("SELECT COUNT(*) AS n FROM plans")
+            if int((cur.fetchone() or {}).get("n") or 0) == 0:
+                cur.executemany(
+                    """
+                    INSERT INTO plans (code, type, name_en, name_ar, price_fils, point_price_fils, active, sort)
+                    VALUES (%s, %s, %s, %s, %s, %s, 1, %s)
+                    """,
+                    [
+                        ("monthly", "monthly", "Monthly", "شهري", 15000, None, 1),
+                        ("yearly", "yearly", "Yearly", "سنوي", 150000, None, 2),
+                        ("points", "points", "Pay per order", "الدفع لكل طلب", 0, 100, 3),
+                    ],
+                )
+            cur.execute("SELECT COUNT(*) AS n FROM point_packs")
+            if int((cur.fetchone() or {}).get("n") or 0) == 0:
+                cur.executemany(
+                    "INSERT INTO point_packs (points, price_fils, active, sort) VALUES (%s, %s, 1, %s)",
+                    [(500, 50000, 1), (1000, 100000, 2), (2500, 250000, 3)],
+                )
+            conn.commit()
+    finally:
+        conn.close()
 
 
 def _backfill_legacy_subscriptions() -> None:
@@ -759,7 +865,8 @@ def create_order(
     notes: str = "",
     restaurant_name: str = "",
     brand_color: str = "",
-    brand_icon: str = ""
+    brand_icon: str = "",
+    cashier_device_id: Optional[int] = None,
 ) -> Optional[Dict[str, Any]]:
     token = uuid.uuid4().hex[:10]
     
@@ -779,10 +886,10 @@ def create_order(
         with conn.cursor() as cur:
             cur.execute(
                 """
-                INSERT INTO orders (restaurant_id, order_number, customer_name, notes, token, status, restaurant_name, brand_color, brand_icon)
-                VALUES (%s, %s, %s, %s, %s, 'waiting', %s, %s, %s)
+                INSERT INTO orders (restaurant_id, order_number, customer_name, notes, token, status, restaurant_name, brand_color, brand_icon, cashier_device_id)
+                VALUES (%s, %s, %s, %s, %s, 'waiting', %s, %s, %s, %s)
                 """,
-                (restaurant_id, order_number, customer_name, notes, token, final_restaurant, final_color, final_icon)
+                (restaurant_id, order_number, customer_name, notes, token, final_restaurant, final_color, final_icon, cashier_device_id)
             )
             order_id = cur.lastrowid
             conn.commit()
