@@ -193,6 +193,7 @@
       {% endif %}
 
       <form method="POST" action="/login">
+        <input type="hidden" name="next" value="{{ next|default('') }}">
         <div class="form-group">
           <label class="form-label">البريد الإلكتروني أو معرّف المطعم (Slug)</label>
           <div class="input-wrap">

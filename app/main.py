@@ -3,6 +3,7 @@ import os
 import json
 import socket
 import asyncio
+from urllib.parse import quote
 from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request, Form, Depends, status
 from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse, FileResponse, JSONResponse, Response
@@ -517,34 +518,39 @@ async def api_admin_toggle_page_footer(page_id: int, request: Request):
 
 @app.get("/login", response_class=HTMLResponse)
 @app.get("/restaurant/login", response_class=HTMLResponse)
-async def restaurant_login_page(request: Request):
+async def restaurant_login_page(request: Request, next: Optional[str] = None):
+    safe_next = _safe_next(next)
     user = auth.get_current_restaurant(request)
     if user:
-        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+        return RedirectResponse(url=_next_for_restaurant(user, safe_next), status_code=status.HTTP_302_FOUND)
     footer_pages = db.get_all_custom_pages(published_only=True, footer_only=True)
-    return templates.TemplateResponse("restaurant_login.html", {"request": request, "error": None, "footer_pages": footer_pages})
+    return templates.TemplateResponse("restaurant_login.html", {
+        "request": request, "error": None, "footer_pages": footer_pages, "next": safe_next or ""
+    })
 
 @app.post("/login", response_class=HTMLResponse)
 @app.post("/restaurant/login", response_class=HTMLResponse)
 async def restaurant_login_submit(
     request: Request,
     identifier: str = Form(...),
-    password: str = Form(...)
+    password: str = Form(...),
+    next: Optional[str] = Form(None)
 ):
+    safe_next = _safe_next(next)
     ident = identifier.strip().lower()
     # Check by email or slug
     rest = db.get_restaurant_by_email(ident) or db.get_restaurant_by_slug(ident)
     if not rest or not auth.verify_password(password, rest["password_hash"]):
         return templates.TemplateResponse(
             "restaurant_login.html",
-            {"request": request, "error": "بيانات الدخول غير صحيحة، يرجى التحقق من البريد أو اسم المستخدم وكلمة المرور", "identifier": identifier},
+            {"request": request, "error": "بيانات الدخول غير صحيحة، يرجى التحقق من البريد أو اسم المستخدم وكلمة المرور", "identifier": identifier, "next": safe_next or ""},
             status_code=400
         )
 
     if rest.get("is_active") == 0:
         return templates.TemplateResponse(
             "restaurant_login.html",
-            {"request": request, "error": "حساب هذا المطعم معطل حالياً من قبل الإدارة العامة", "identifier": identifier},
+            {"request": request, "error": "حساب هذا المطعم معطل حالياً من قبل الإدارة العامة", "identifier": identifier, "next": safe_next or ""},
             status_code=403
         )
 
@@ -555,7 +561,7 @@ async def restaurant_login_submit(
         "role": "restaurant"
     })
 
-    redirect = RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+    redirect = RedirectResponse(url=_next_for_restaurant(rest, safe_next), status_code=status.HTTP_302_FOUND)
     redirect.set_cookie(
         key=auth.RESTAURANT_COOKIE,
         value=token,
@@ -655,6 +661,8 @@ async def restaurant_dedicated_cashier(request: Request, slug: str):
     rest = db.get_restaurant_by_slug(slug)
     if not rest:
         raise HTTPException(status_code=404, detail="Restaurant not found")
+    if not _can_open_restaurant(request, rest["id"]):
+        return _login_redirect(request)
 
     local_ip = get_local_ip()
     base_url = get_public_base_url(request)
@@ -678,6 +686,8 @@ async def restaurant_qr_print_sheet(request: Request, slug: str):
     rest = db.get_restaurant_by_slug(slug)
     if not rest:
         raise HTTPException(status_code=404, detail="Restaurant not found")
+    if not _can_open_restaurant(request, rest["id"]):
+        return _login_redirect(request)
 
     return templates.TemplateResponse(
         "qr_print.html",
@@ -694,7 +704,9 @@ async def default_cashier_redirect(request: Request):
     if rest_user and "slug" in rest_user:
         return RedirectResponse(url=f"/r/{rest_user['slug']}/cashier", status_code=status.HTTP_302_FOUND)
 
-    # Otherwise load primary restaurant 1
+    if not auth.get_current_super_admin(request):
+        return _login_redirect(request)
+
     rest = db.get_restaurant_by_id(1) or {
         "id": 1,
         "name": "بيجر الطلبات - الفرع الرئيسي",
@@ -905,6 +917,40 @@ def _order_for_actor(order_id: int, actor: Dict[str, Any]) -> Dict[str, Any]:
     if actor["role"] == "restaurant" and int(order.get("restaurant_id") or 0) != actor["restaurant_id"]:
         raise HTTPException(status_code=404, detail="Order not found")
     return order
+
+
+def _safe_next(value: Optional[str]) -> Optional[str]:
+    if not value or not value.startswith("/") or value.startswith("//") or "\\" in value:
+        return None
+    return value
+
+
+def _next_for_restaurant(user: Dict[str, Any], target: Optional[str]) -> str:
+    if not target:
+        return "/dashboard"
+    slug = user.get("slug") or ""
+    allowed = (
+        target == "/cashier"
+        or target.startswith("/dashboard")
+        or target.startswith("/merchant")
+        or (slug and (target == f"/r/{slug}/cashier" or target.startswith(f"/r/{slug}/cashier?")
+                     or target == f"/r/{slug}/print" or target.startswith(f"/r/{slug}/print?")))
+    )
+    return target if allowed else "/dashboard"
+
+
+def _login_redirect(request: Request) -> RedirectResponse:
+    target = request.url.path
+    if request.url.query:
+        target = f"{target}?{request.url.query}"
+    return RedirectResponse(url=f"/login?next={quote(target, safe='/')}", status_code=status.HTTP_302_FOUND)
+
+
+def _can_open_restaurant(request: Request, restaurant_id: int) -> bool:
+    restaurant = auth.get_current_restaurant(request)
+    if restaurant and str(restaurant.get("sub")) == str(restaurant_id):
+        return True
+    return auth.get_current_super_admin(request) is not None
 
 
 def _restaurant_id_for_create(actor: Dict[str, Any], requested_id: Optional[int]) -> int:
