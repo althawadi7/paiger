@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Print QR stand · Giorgio · Paiger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* PAIGER · /r/{slug}/print  Counter QR stand. Screen = options + live preview; print = the sheet only. */
+:root { --ink:#111111; --grey:#5f6368; --grey-2:#8e8e93; --line:#e6e6e8; --paper-2:#f6f6f7; --paper-3:#ececee; --brand:#111111; --brand-ink:#ffffff;
+  --sans:"IBM Plex Sans","IBM Plex Sans Arabic",-apple-system,"Segoe UI",sans-serif; --ar:"IBM Plex Sans Arabic","IBM Plex Sans",sans-serif; }
+html[lang="ar"] { --sans:"IBM Plex Sans Arabic","IBM Plex Sans",-apple-system,sans-serif; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:var(--sans); color:var(--ink); background:var(--paper-2); -webkit-font-smoothing:antialiased; }
+button { font:inherit; color:inherit; background:none; border:0; cursor:pointer; }
+:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+[hidden] { display:none !important; }
+
+/* ---------- screen shell ---------- */
+.shell { min-height:100svh; display:grid; grid-template-columns:340px minmax(0,1fr); }
+.panel { background:#fff; border-inline-end:1px solid var(--line); padding:22px 22px 28px; display:flex; flex-direction:column; gap:22px; }
+.back { display:inline-flex; align-items:center; gap:8px; font-size:14px; color:var(--grey); text-decoration:none; }
+.back:hover { color:var(--ink); }
+.panel h1 { font-family:"Fraunces",serif; font-weight:500; font-size:28px; line-height:1.15; }
+html[lang="ar"] .panel h1 { font-family:var(--sans); font-weight:600; }
+.panel p.sub { color:var(--grey); font-size:14.5px; margin-top:6px; line-height:1.5; }
+.grp h2 { font-size:13px; font-weight:600; color:var(--grey); margin-bottom:8px; }
+.opts { display:grid; gap:6px; }
+.opt { display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:12px; box-shadow:0 0 0 1px var(--line) inset; text-align:start; }
+.opt:hover { box-shadow:0 0 0 1.5px #b9b9be inset; }
+.opt[aria-checked="true"] { box-shadow:0 0 0 2px var(--ink) inset; }
+.opt .ico { width:30px; height:34px; flex:none; display:grid; place-items:center; }
+.opt .ico i { display:block; border:1.5px solid currentColor; border-radius:2px; }
+.opt b { display:block; font-weight:600; font-size:14.5px; }
+.opt span { font-size:12.5px; color:var(--grey); }
+.seg { display:grid; grid-template-columns:repeat(3,1fr); background:var(--paper-2); border-radius:12px; padding:3px; }
+.seg button { height:38px; border-radius:9px; font-size:13.5px; font-weight:500; color:var(--grey); }
+.seg button[aria-pressed="true"] { background:#fff; color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,.08); }
+.sw { display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:14.5px; }
+.switch { direction:ltr; position:relative; width:42px; height:24px; border-radius:999px; background:var(--paper-3); flex:none; }
+.switch::after { content:""; position:absolute; top:3px; inset-inline-start:3px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:inset-inline-start .18s; }
+.switch[aria-checked="true"] { background:var(--ink); } .switch[aria-checked="true"]::after { inset-inline-start:21px; }
+.print { margin-top:auto; height:54px; border-radius:14px; background:var(--ink); color:#fff; font-weight:600; font-size:16px; display:flex; align-items:center; justify-content:center; gap:10px; }
+.print:hover { background:#2b2b2e; }
+.print svg { width:18px; height:18px; }
+.tip { font-size:12.5px; color:var(--grey); line-height:1.5; }
+.lang { align-self:flex-start; font-size:13.5px; color:var(--grey); padding:6px 0; }
+
+.stage { display:grid; place-items:center; padding:36px; overflow:hidden; }
+.paperwrap { transform-origin:center center; }
+.paper { background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.06), 0 30px 70px -30px rgba(0,0,0,.35); }
+
+/* ---------- the sheet (mm based, prints 1:1) ---------- */
+.sheet { width:var(--w); height:var(--h); position:relative; overflow:hidden; color:var(--ink); font-family:"IBM Plex Sans",sans-serif; }
+.card { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; text-align:center; padding:var(--pad); }
+.band { position:absolute; inset:0 0 auto 0; height:var(--band); background:var(--brand); }
+.brand { position:relative; display:flex; flex-direction:column; align-items:center; gap:calc(var(--u)*2.2); margin-top:calc(var(--band) - var(--logo)/2 - var(--pad)); }
+.logo { width:var(--logo); height:var(--logo); border-radius:calc(var(--logo)*.24); background:var(--brand); color:var(--brand-ink); display:grid; place-items:center; font-family:"Fraunces",serif; font-weight:600; font-size:calc(var(--logo)*.48); box-shadow:0 0 0 calc(var(--u)*1.4) #fff; overflow:hidden; }
+.logo img { width:100%; height:100%; object-fit:cover; }
+/* uploaded logo: shown as-is on a white plate, never cropped or tinted */
+.logo.has-img { background:#fff; padding:calc(var(--logo)*.1); } .logo.has-img img { object-fit:contain; }
+.name { font-family:"Fraunces",serif; font-weight:600; font-size:calc(var(--u)*8); letter-spacing:-.01em; line-height:1.1; }
+.qrbox { margin-top:auto; padding:calc(var(--u)*3.4); border-radius:calc(var(--u)*4); box-shadow:0 0 0 calc(var(--u)*.6) var(--line); background:#fff; }
+.qr { display:block; width:var(--qr); height:var(--qr); color:#000; }
+.copy { margin-top:auto; display:grid; gap:calc(var(--u)*2.4); width:100%; }
+.l-en, .l-ar { display:grid; gap:calc(var(--u)*.8); }
+.l-en b { font-size:calc(var(--u)*6.2); font-weight:600; letter-spacing:-.01em; line-height:1.15; }
+.l-ar b { font-family:var(--ar); font-size:calc(var(--u)*6); font-weight:600; line-height:1.3; }
+.l-en span, .l-ar span { font-size:calc(var(--u)*3.5); color:var(--grey); }
+.l-ar span { font-family:var(--ar); }
+.rule { width:calc(var(--u)*12); height:calc(var(--u)*.5); background:var(--line); margin:0 auto; }
+.foot { margin-top:auto; display:flex; align-items:center; justify-content:space-between; width:100%; font-size:calc(var(--u)*2.8); color:var(--grey-2); }
+.foot .url { direction:ltr; font-weight:500; color:var(--grey); }
+.foot b { font-family:"Fraunces",serif; font-weight:600; color:var(--grey); font-size:calc(var(--u)*3.2); }
+
+/* table tent: two identical halves, top one upside down, fold line in the middle */
+.sheet.tent .card { height:50%; inset:auto 0 0 0; }
+.sheet.tent .card.flip { inset:0 0 auto 0; transform:rotate(180deg); }
+.sheet.tent .fold { position:absolute; left:0; right:0; top:50%; border-top:0.3mm dashed #c7c7cc; }
+.sheet.tent .fold span { position:absolute; inset-inline-start:6mm; top:-2.2mm; background:#fff; padding:0 2mm; font-size:2.6mm; color:var(--grey-2); }
+.sheet.tent .band { display:none; }
+.sheet.tent .brand { margin-top:0; flex-direction:row; gap:calc(var(--u)*3); }
+.sheet.tent .logo { box-shadow:none; }
+.sheet.tent .card { flex-direction:row; text-align:start; gap:calc(var(--u)*7); align-items:center; }
+.sheet.tent .left { flex:1; display:flex; flex-direction:column; gap:calc(var(--u)*6); height:100%; justify-content:center; }
+.sheet.tent .copy { margin-top:0; }
+.sheet.tent .rule { margin:0; }
+.sheet.tent .qrbox { margin:0; }
+.sheet.tent .foot { margin-top:0; }
+
+@media (max-width:900px) { .shell { grid-template-columns:1fr; } .stage { padding:20px 10px 40px; } }
+@media print {
+  html, body { background:#fff; }
+  .panel { display:none; }
+  .shell { display:block; }
+  .stage { padding:0; display:block; }
+  .paperwrap { transform:none !important; }
+  .paper { box-shadow:none; }
+  * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+}
+</style>
+<style id="pageRule">@page { size: A4 portrait; margin: 0; }</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <a class="back" href="/dashboard" data-t="back">&larr; Dashboard</a>
+      <button class="lang" id="langBtn" type="button">العربية</button>
+    </div>
+    <div><h1 data-t="title">Counter QR stand</h1><p class="sub" data-t="sub">Print it, put it next to the till. Customers scan it to follow their order.</p></div>
+
+    <div class="grp"><h2 data-t="size">Size</h2>
+      <div class="opts" role="radiogroup" id="sizes">
+        <button class="opt" role="radio" data-f="a4" aria-checked="true"><span class="ico"><i style="width:18px;height:25px"></i></span><div><b data-t="fA4">A4 stand</b><span data-t="fA4s">For an acrylic stand or the wall</span></div></button>
+        <button class="opt" role="radio" data-f="a5" aria-checked="false"><span class="ico"><i style="width:13px;height:18px"></i></span><div><b data-t="fA5">A5 stand</b><span data-t="fA5s">Small stand on the counter</span></div></button>
+        <button class="opt" role="radio" data-f="tent" aria-checked="false"><span class="ico"><i style="width:25px;height:18px;border-style:solid dashed"></i></span><div><b data-t="fTent">Table tent</b><span data-t="fTents">A4, fold in the middle, readable from both sides</span></div></button>
+        <button class="opt" role="radio" data-f="sticker" aria-checked="false"><span class="ico"><i style="width:16px;height:16px"></i></span><div><b data-t="fSt">Sticker 10 × 10 cm</b><span data-t="fSts">For the till, window or tables</span></div></button>
+      </div>
+    </div>
+
+    <div class="grp"><h2 data-t="text">Text on the stand</h2>
+      <div class="seg" id="langs"><button data-l="both" aria-pressed="true" data-t="lBoth">EN + AR</button><button data-l="en" aria-pressed="false">English</button><button data-l="ar" aria-pressed="false">العربية</button></div>
+    </div>
+
+    <div class="sw"><span data-t="useBrand">Use my brand colour</span><button class="switch" role="switch" id="brandSw" aria-checked="true" aria-label="Brand colour"></button></div>
+
+    <button class="print" type="button" id="printBtn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M5 7V3h10v4M5 14H3V8h14v6h-2M6 11h8v6H6z"/></svg><span data-t="print">Print</span></button>
+    <p class="tip" data-t="tip">In the print window choose "Actual size" (100%) and turn off headers and footers. The QR code always opens your restaurant, even if you change your logo or colour later.</p>
+  </aside>
+
+  <main class="stage" id="stage">
+    <div class="paperwrap" id="wrap"><div class="paper"><div class="sheet" id="sheet"></div></div></div>
+  </main>
+</div>
+
+<template id="cardTpl">
+  <div class="card">
+    <div class="band"></div>
+    <div class="brand"><div class="logo">G</div><div class="name">Giorgio</div></div>
+    <div class="qrbox"><svg class="qr" aria-label="QR code" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 29 29" shape-rendering="crispEdges"><path d="M0,0h1v1h-1zM1,0h1v1h-1zM2,0h1v1h-1zM3,0h1v1h-1zM4,0h1v1h-1zM5,0h1v1h-1zM6,0h1v1h-1zM8,0h1v1h-1zM9,0h1v1h-1zM10,0h1v1h-1zM11,0h1v1h-1zM17,0h1v1h-1zM18,0h1v1h-1zM22,0h1v1h-1zM23,0h1v1h-1zM24,0h1v1h-1zM25,0h1v1h-1zM26,0h1v1h-1zM27,0h1v1h-1zM28,0h1v1h-1zM0,1h1v1h-1zM6,1h1v1h-1zM10,1h1v1h-1zM16,1h1v1h-1zM17,1h1v1h-1zM19,1h1v1h-1zM22,1h1v1h-1zM28,1h1v1h-1zM0,2h1v1h-1zM2,2h1v1h-1zM3,2h1v1h-1zM4,2h1v1h-1zM6,2h1v1h-1zM9,2h1v1h-1zM12,2h1v1h-1zM13,2h1v1h-1zM15,2h1v1h-1zM16,2h1v1h-1zM17,2h1v1h-1zM18,2h1v1h-1zM19,2h1v1h-1zM22,2h1v1h-1zM24,2h1v1h-1zM25,2h1v1h-1zM26,2h1v1h-1zM28,2h1v1h-1zM0,3h1v1h-1zM2,3h1v1h-1zM3,3h1v1h-1zM4,3h1v1h-1zM6,3h1v1h-1zM8,3h1v1h-1zM9,3h1v1h-1zM10,3h1v1h-1zM11,3h1v1h-1zM14,3h1v1h-1zM15,3h1v1h-1zM16,3h1v1h-1zM18,3h1v1h-1zM22,3h1v1h-1zM24,3h1v1h-1zM25,3h1v1h-1zM26,3h1v1h-1zM28,3h1v1h-1zM0,4h1v1h-1zM2,4h1v1h-1zM3,4h1v1h-1zM4,4h1v1h-1zM6,4h1v1h-1zM8,4h1v1h-1zM9,4h1v1h-1zM10,4h1v1h-1zM11,4h1v1h-1zM13,4h1v1h-1zM14,4h1v1h-1zM16,4h1v1h-1zM17,4h1v1h-1zM18,4h1v1h-1zM22,4h1v1h-1zM24,4h1v1h-1zM25,4h1v1h-1zM26,4h1v1h-1zM28,4h1v1h-1zM0,5h1v1h-1zM6,5h1v1h-1zM8,5h1v1h-1zM10,5h1v1h-1zM11,5h1v1h-1zM12,5h1v1h-1zM13,5h1v1h-1zM14,5h1v1h-1zM15,5h1v1h-1zM19,5h1v1h-1zM20,5h1v1h-1zM22,5h1v1h-1zM28,5h1v1h-1zM0,6h1v1h-1zM1,6h1v1h-1zM2,6h1v1h-1zM3,6h1v1h-1zM4,6h1v1h-1zM5,6h1v1h-1zM6,6h1v1h-1zM8,6h1v1h-1zM10,6h1v1h-1zM12,6h1v1h-1zM14,6h1v1h-1zM16,6h1v1h-1zM18,6h1v1h-1zM20,6h1v1h-1zM22,6h1v1h-1zM23,6h1v1h-1zM24,6h1v1h-1zM25,6h1v1h-1zM26,6h1v1h-1zM27,6h1v1h-1zM28,6h1v1h-1zM8,7h1v1h-1zM11,7h1v1h-1zM12,7h1v1h-1zM14,7h1v1h-1zM17,7h1v1h-1zM18,7h1v1h-1zM19,7h1v1h-1zM20,7h1v1h-1zM0,8h1v1h-1zM4,8h1v1h-1zM6,8h1v1h-1zM7,8h1v1h-1zM8,8h1v1h-1zM9,8h1v1h-1zM13,8h1v1h-1zM14,8h1v1h-1zM15,8h1v1h-1zM17,8h1v1h-1zM18,8h1v1h-1zM20,8h1v1h-1zM21,8h1v1h-1zM22,8h1v1h-1zM23,8h1v1h-1zM24,8h1v1h-1zM25,8h1v1h-1zM28,8h1v1h-1zM0,9h1v1h-1zM1,9h1v1h-1zM5,9h1v1h-1zM9,9h1v1h-1zM12,9h1v1h-1zM17,9h1v1h-1zM18,9h1v1h-1zM20,9h1v1h-1zM21,9h1v1h-1zM22,9h1v1h-1zM23,9h1v1h-1zM24,9h1v1h-1zM25,9h1v1h-1zM26,9h1v1h-1zM27,9h1v1h-1zM28,9h1v1h-1zM0,10h1v1h-1zM1,10h1v1h-1zM3,10h1v1h-1zM4,10h1v1h-1zM6,10h1v1h-1zM7,10h1v1h-1zM8,10h1v1h-1zM11,10h1v1h-1zM13,10h1v1h-1zM14,10h1v1h-1zM15,10h1v1h-1zM18,10h1v1h-1zM21,10h1v1h-1zM22,10h1v1h-1zM28,10h1v1h-1zM1,11h1v1h-1zM4,11h1v1h-1zM5,11h1v1h-1zM7,11h1v1h-1zM8,11h1v1h-1zM9,11h1v1h-1zM10,11h1v1h-1zM11,11h1v1h-1zM13,11h1v1h-1zM17,11h1v1h-1zM18,11h1v1h-1zM21,11h1v1h-1zM25,11h1v1h-1zM27,11h1v1h-1zM28,11h1v1h-1zM0,12h1v1h-1zM1,12h1v1h-1zM3,12h1v1h-1zM5,12h1v1h-1zM6,12h1v1h-1zM9,12h1v1h-1zM10,12h1v1h-1zM11,12h1v1h-1zM13,12h1v1h-1zM15,12h1v1h-1zM17,12h1v1h-1zM19,12h1v1h-1zM27,12h1v1h-1zM0,13h1v1h-1zM2,13h1v1h-1zM4,13h1v1h-1zM7,13h1v1h-1zM11,13h1v1h-1zM12,13h1v1h-1zM13,13h1v1h-1zM14,13h1v1h-1zM15,13h1v1h-1zM16,13h1v1h-1zM22,13h1v1h-1zM23,13h1v1h-1zM24,13h1v1h-1zM25,13h1v1h-1zM26,13h1v1h-1zM27,13h1v1h-1zM28,13h1v1h-1zM1,14h1v1h-1zM2,14h1v1h-1zM3,14h1v1h-1zM5,14h1v1h-1zM6,14h1v1h-1zM8,14h1v1h-1zM10,14h1v1h-1zM12,14h1v1h-1zM15,14h1v1h-1zM24,14h1v1h-1zM25,14h1v1h-1zM26,14h1v1h-1zM28,14h1v1h-1zM0,15h1v1h-1zM2,15h1v1h-1zM4,15h1v1h-1zM5,15h1v1h-1zM7,15h1v1h-1zM9,15h1v1h-1zM11,15h1v1h-1zM14,15h1v1h-1zM15,15h1v1h-1zM16,15h1v1h-1zM17,15h1v1h-1zM21,15h1v1h-1zM27,15h1v1h-1zM28,15h1v1h-1zM1,16h1v1h-1zM4,16h1v1h-1zM5,16h1v1h-1zM6,16h1v1h-1zM9,16h1v1h-1zM11,16h1v1h-1zM13,16h1v1h-1zM14,16h1v1h-1zM15,16h1v1h-1zM17,16h1v1h-1zM18,16h1v1h-1zM19,16h1v1h-1zM21,16h1v1h-1zM27,16h1v1h-1zM0,17h1v1h-1zM2,17h1v1h-1zM3,17h1v1h-1zM11,17h1v1h-1zM15,17h1v1h-1zM16,17h1v1h-1zM17,17h1v1h-1zM18,17h1v1h-1zM21,17h1v1h-1zM22,17h1v1h-1zM23,17h1v1h-1zM24,17h1v1h-1zM25,17h1v1h-1zM27,17h1v1h-1zM28,17h1v1h-1zM4,18h1v1h-1zM6,18h1v1h-1zM7,18h1v1h-1zM10,18h1v1h-1zM11,18h1v1h-1zM12,18h1v1h-1zM13,18h1v1h-1zM14,18h1v1h-1zM15,18h1v1h-1zM18,18h1v1h-1zM20,18h1v1h-1zM21,18h1v1h-1zM22,18h1v1h-1zM26,18h1v1h-1zM28,18h1v1h-1zM3,19h1v1h-1zM4,19h1v1h-1zM7,19h1v1h-1zM8,19h1v1h-1zM10,19h1v1h-1zM11,19h1v1h-1zM13,19h1v1h-1zM17,19h1v1h-1zM18,19h1v1h-1zM21,19h1v1h-1zM23,19h1v1h-1zM27,19h1v1h-1zM28,19h1v1h-1zM0,20h1v1h-1zM1,20h1v1h-1zM2,20h1v1h-1zM4,20h1v1h-1zM5,20h1v1h-1zM6,20h1v1h-1zM7,20h1v1h-1zM9,20h1v1h-1zM11,20h1v1h-1zM12,20h1v1h-1zM13,20h1v1h-1zM17,20h1v1h-1zM19,20h1v1h-1zM20,20h1v1h-1zM21,20h1v1h-1zM22,20h1v1h-1zM23,20h1v1h-1zM24,20h1v1h-1zM25,20h1v1h-1zM28,20h1v1h-1zM8,21h1v1h-1zM9,21h1v1h-1zM10,21h1v1h-1zM11,21h1v1h-1zM13,21h1v1h-1zM14,21h1v1h-1zM15,21h1v1h-1zM16,21h1v1h-1zM18,21h1v1h-1zM19,21h1v1h-1zM20,21h1v1h-1zM24,21h1v1h-1zM28,21h1v1h-1zM0,22h1v1h-1zM1,22h1v1h-1zM2,22h1v1h-1zM3,22h1v1h-1zM4,22h1v1h-1zM5,22h1v1h-1zM6,22h1v1h-1zM8,22h1v1h-1zM9,22h1v1h-1zM10,22h1v1h-1zM11,22h1v1h-1zM15,22h1v1h-1zM16,22h1v1h-1zM18,22h1v1h-1zM19,22h1v1h-1zM20,22h1v1h-1zM22,22h1v1h-1zM24,22h1v1h-1zM25,22h1v1h-1zM26,22h1v1h-1zM28,22h1v1h-1zM0,23h1v1h-1zM6,23h1v1h-1zM12,23h1v1h-1zM14,23h1v1h-1zM16,23h1v1h-1zM17,23h1v1h-1zM18,23h1v1h-1zM19,23h1v1h-1zM20,23h1v1h-1zM24,23h1v1h-1zM27,23h1v1h-1zM0,24h1v1h-1zM2,24h1v1h-1zM3,24h1v1h-1zM4,24h1v1h-1zM6,24h1v1h-1zM8,24h1v1h-1zM9,24h1v1h-1zM11,24h1v1h-1zM12,24h1v1h-1zM13,24h1v1h-1zM14,24h1v1h-1zM16,24h1v1h-1zM17,24h1v1h-1zM19,24h1v1h-1zM20,24h1v1h-1zM21,24h1v1h-1zM22,24h1v1h-1zM23,24h1v1h-1zM24,24h1v1h-1zM25,24h1v1h-1zM0,25h1v1h-1zM2,25h1v1h-1zM3,25h1v1h-1zM4,25h1v1h-1zM6,25h1v1h-1zM10,25h1v1h-1zM13,25h1v1h-1zM15,25h1v1h-1zM16,25h1v1h-1zM17,25h1v1h-1zM18,25h1v1h-1zM19,25h1v1h-1zM20,25h1v1h-1zM21,25h1v1h-1zM28,25h1v1h-1zM0,26h1v1h-1zM2,26h1v1h-1zM3,26h1v1h-1zM4,26h1v1h-1zM6,26h1v1h-1zM9,26h1v1h-1zM10,26h1v1h-1zM11,26h1v1h-1zM13,26h1v1h-1zM14,26h1v1h-1zM15,26h1v1h-1zM17,26h1v1h-1zM20,26h1v1h-1zM21,26h1v1h-1zM25,26h1v1h-1zM26,26h1v1h-1zM27,26h1v1h-1zM28,26h1v1h-1zM0,27h1v1h-1zM6,27h1v1h-1zM11,27h1v1h-1zM17,27h1v1h-1zM18,27h1v1h-1zM20,27h1v1h-1zM21,27h1v1h-1zM22,27h1v1h-1zM23,27h1v1h-1zM25,27h1v1h-1zM27,27h1v1h-1zM28,27h1v1h-1zM0,28h1v1h-1zM1,28h1v1h-1zM2,28h1v1h-1zM3,28h1v1h-1zM4,28h1v1h-1zM5,28h1v1h-1zM6,28h1v1h-1zM8,28h1v1h-1zM9,28h1v1h-1zM12,28h1v1h-1zM13,28h1v1h-1zM14,28h1v1h-1zM15,28h1v1h-1zM17,28h1v1h-1zM20,28h1v1h-1zM21,28h1v1h-1zM24,28h1v1h-1zM27,28h1v1h-1z" fill="currentColor"/></svg></div>
+    <div class="copy">
+      <div class="l-en"><b>Scan to follow your order</b><span>We’ll alert your phone when it’s ready. No app needed.</span></div>
+      <div class="rule"></div>
+      <div class="l-ar" dir="rtl"><b>امسح الرمز لمتابعة طلبك</b><span>سننبّه هاتفك فور جاهزية طلبك، دون الحاجة إلى تطبيق.</span></div>
+    </div>
+    <div class="foot"><span class="url">pager.rahapp.com/r/giorgio</span><b>Paiger</b></div>
+  </div>
+</template>
+
+<script>
+(() => {
+  "use strict";
+  const T = {
+    en: { back:"← Dashboard", title:"Counter QR stand", sub:"Print it, put it next to the till. Customers scan it to follow their order.", size:"Size",
+      fA4:"A4 stand", fA4s:"For an acrylic stand or the wall", fA5:"A5 stand", fA5s:"Small stand on the counter", fTent:"Table tent", fTents:"A4, fold in the middle, readable from both sides",
+      fSt:"Sticker 10 × 10 cm", fSts:"For the till, window or tables", text:"Text on the stand", lBoth:"EN + AR", useBrand:"Use my brand colour", print:"Print",
+      tip:"In the print window choose “Actual size” (100%) and turn off headers and footers. The QR code always opens your restaurant, even if you change your logo or colour later.", fold:"Fold here" },
+    ar: { back:"→ لوحة التحكم", title:"رمز QR للكاونتر", sub:"اطبعه وضعه بجانب الكاشير. يمسحه العملاء لمتابعة طلباتهم.", size:"المقاس",
+      fA4:"حامل A4", fA4s:"لحامل أكريليك أو للحائط", fA5:"حامل A5", fA5s:"حامل صغير على الكاونتر", fTent:"بطاقة طاولة", fTents:"A4 تُطوى من المنتصف، وتُقرأ من الجهتين",
+      fSt:"ملصق 10 × 10 سم", fSts:"للكاشير أو الواجهة أو الطاولات", text:"لغة النص", lBoth:"EN + AR", useBrand:"استخدام لون علامتي", print:"طباعة",
+      tip:"في نافذة الطباعة اختر «الحجم الفعلي» (100%) وألغِ الترويسة والتذييل. الرمز يفتح مطعمك دائماً حتى لو غيّرت الشعار أو اللون لاحقاً.", fold:"اطوِ هنا" },
+  };
+  // mm sizes: width, height, unit (scales all text), qr, logo, band, padding
+  const F = {
+    a4:      { w:210, h:297, u:1.45, qr:118, logo:32, band:50, pad:16, page:"A4 portrait" },
+    a5:      { w:148, h:210, u:1.02, qr:82,  logo:23, band:35, pad:11, page:"A5 portrait" },
+    tent:    { w:210, h:297, u:1.0,  qr:78,  logo:18, band:0,  pad:14, page:"A4 portrait" },
+    sticker: { w:100, h:100, u:.6,   qr:44,  logo:12, band:18, pad:6,   page:"100mm 100mm" },
+  };
+  let lang = "en", fmt = "a4", text = "both", brand = true;
+  try { lang = localStorage.getItem("paiger.lang") || "en"; } catch (_) {}
+  const $ = (id) => document.getElementById(id), t = (k) => T[lang][k];
+  const BRAND = "#7a4b2a"; // production: restaurant brand colour
+
+  function card(extra) {
+    const n = $("cardTpl").content.firstElementChild.cloneNode(true);
+    if (extra) n.classList.add(extra);
+    n.querySelector(".l-en").hidden = text === "ar"; n.querySelector(".l-ar").hidden = text === "en";
+    n.querySelector(".rule").hidden = text !== "both";
+    if (fmt === "sticker") { n.querySelector(".l-en span").hidden = true; n.querySelector(".l-ar span").hidden = true; }
+    if (fmt === "tent") { // horizontal half: text left, QR right
+      const left = document.createElement("div"); left.className = "left";
+      left.append(n.querySelector(".brand"), n.querySelector(".copy"), n.querySelector(".foot"));
+      n.prepend(left);
+    }
+    return n;
+  }
+  function render() {
+    const f = F[fmt], s = $("sheet"), mm = (v) => v + "mm";
+    s.className = "sheet" + (fmt === "tent" ? " tent" : "");
+    s.style.cssText = `--w:${mm(f.w)};--h:${mm(f.h)};--u:${mm(f.u)};--qr:${mm(f.qr)};--logo:${mm(f.logo)};--band:${mm(f.band)};--pad:${mm(f.pad)}`;
+    document.documentElement.style.setProperty("--brand", brand ? BRAND : "#111111");
+    s.innerHTML = "";
+    if (fmt === "tent") { s.append(card("flip"), card()); s.insertAdjacentHTML("beforeend", `<div class="fold"><span>${t("fold")}</span></div>`); }
+    else s.append(card());
+    $("pageRule").textContent = `@page { size: ${f.page}; margin: 0; }`;
+    fit();
+  }
+  function fit() {
+    const st = $("stage"), w = $("wrap"), p = w.firstElementChild;
+    w.style.transform = "none";
+    const sw = st.clientWidth - 48, sh = Math.max(window.innerHeight - 72, 360);
+    const k = Math.min(1, sw / p.offsetWidth, sh / p.offsetHeight);
+    w.style.transform = `scale(${k})`;
+    w.style.margin = `${-(p.offsetHeight * (1 - k)) / 2}px ${-(p.offsetWidth * (1 - k)) / 2}px`;
+  }
+  function apply() {
+    document.documentElement.lang = lang; document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    document.querySelectorAll("[data-t]").forEach((n) => (n.textContent = t(n.dataset.t)));
+    $("langBtn").textContent = lang === "ar" ? "English" : "العربية";
+    render();
+  }
+  $("sizes").addEventListener("click", (e) => { const b = e.target.closest(".opt"); if (!b) return; fmt = b.dataset.f; $("sizes").querySelectorAll(".opt").forEach((x) => x.setAttribute("aria-checked", x === b)); render(); });
+  $("langs").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; text = b.dataset.l; $("langs").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b)); render(); });
+  $("brandSw").onclick = () => { brand = !brand; $("brandSw").setAttribute("aria-checked", brand); render(); };
+  $("langBtn").onclick = () => { lang = lang === "ar" ? "en" : "ar"; try { localStorage.setItem("paiger.lang", lang); } catch (_) {} apply(); };
+  $("printBtn").onclick = () => window.print();
+  addEventListener("resize", fit);
+  if (document.fonts) document.fonts.ready.then(fit);
+  apply();
+})();
+</script>
+</body>
+</html>

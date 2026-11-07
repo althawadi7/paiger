@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Giorgio · Follow your order</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* PAIGER · /r/{slug}  Customer scanned the counter stand: enter the order number. One field, one button. */
+:root { --ink:#111111; --grey:#5f6368; --line:#e6e6e8; --paper-2:#f6f6f7; --error:#b42318; --brand:#111111; --brand-ink:#fff;
+  --sans:"IBM Plex Sans","IBM Plex Sans Arabic",-apple-system,sans-serif; --ease:cubic-bezier(.2,.7,.2,1); }
+html[lang="ar"] { --sans:"IBM Plex Sans Arabic","IBM Plex Sans",-apple-system,sans-serif; }
+* { box-sizing:border-box; margin:0; padding:0; }
+html, body { height:100%; }
+body { font-family:var(--sans); color:var(--ink); background:#fff; -webkit-font-smoothing:antialiased; }
+button, input { font:inherit; color:inherit; }
+button { background:none; border:0; cursor:pointer; }
+[hidden] { display:none !important; }
+
+.page { min-height:100svh; display:grid; grid-template-rows:auto 1fr auto; padding:max(14px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom)); max-width:480px; margin:0 auto; }
+.top { display:flex; justify-content:flex-end; }
+.lang { font-size:14px; color:var(--grey); padding:8px 4px; }
+
+form { align-self:center; text-align:center; }
+/* logo: uploaded image shown as-is (no tile, no background); no logo = initial in a brand tile */
+.logo { height:64px; margin:0 auto 14px; display:flex; justify-content:center; }
+.logo img { height:100%; width:auto; max-width:220px; object-fit:contain; }
+.logo .initial { width:64px; height:64px; border-radius:18px; background:var(--brand); color:var(--brand-ink); display:grid; place-items:center; font-family:"Fraunces",serif; font-weight:600; font-size:28px; }
+.name { font-size:20px; font-weight:600; }
+.lbl { margin-top:40px; font-size:15px; color:var(--grey); display:block; }
+
+.num { margin-top:12px; width:100%; height:112px; border:0; border-radius:22px; background:var(--paper-2); text-align:center; font-family:"Fraunces",serif; font-weight:500; font-size:64px; letter-spacing:.04em; outline:none; direction:ltr; caret-color:var(--ink); transition:box-shadow .15s, background .15s; }
+.num::placeholder { color:#c7c7cc; }
+.num:focus { background:#fff; box-shadow:0 0 0 2px var(--ink) inset; }
+.num.bad { box-shadow:0 0 0 2px var(--error) inset; background:#fff; }
+.shake { animation:shake .4s var(--ease); }
+@keyframes shake { 20%, 60% { transform:translateX(-8px); } 40%, 80% { transform:translateX(8px); } }
+.err { margin-top:12px; min-height:22px; font-size:14.5px; color:var(--error); font-weight:500; }
+
+.go { width:100%; height:60px; border-radius:18px; background:var(--ink); color:#fff; font-size:17px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:10px; transition:opacity .15s, transform .1s; }
+.go:active { transform:scale(.985); }
+.go[disabled] { opacity:.3; cursor:default; }
+.spin { width:18px; height:18px; border-radius:50%; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; animation:r .7s linear infinite; }
+@keyframes r { to { transform:rotate(360deg); } }
+
+.proto { position:fixed; top:60px; inset-inline-start:10px; display:flex; flex-direction:column; gap:3px; padding:5px; border-radius:12px; background:rgba(255,255,255,.96); box-shadow:0 0 0 1px var(--line),0 10px 30px -10px rgba(0,0,0,.25); font:11px var(--sans); }
+.proto button { padding:5px 8px; border-radius:7px; text-align:start; }
+.proto button.on { background:var(--ink); color:#fff; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation:none !important; transition-duration:.01ms !important; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="top"><button class="lang" id="langBtn" type="button">العربية</button></header>
+
+  <form id="f" novalidate>
+    <div class="logo" id="logo"><span class="initial">G</span></div>
+    <p class="name">giorgio</p>
+    <label class="lbl" for="num" id="lbl">Enter your order number</label>
+    <input class="num" id="num" inputmode="numeric" pattern="[0-9]*" autocomplete="off" maxlength="6" placeholder="00" autofocus>
+    <p class="err" id="err" role="alert"></p>
+  </form>
+
+  <footer><button class="go" id="go" form="f" type="submit" disabled>Follow my order</button></footer>
+</div>
+
+<div class="proto">
+  <button type="button" class="on" data-s="initial">No logo</button>
+  <button type="button" data-s="logo">Uploaded logo</button>
+  <button type="button" data-s="err">Not found</button>
+</div>
+
+<script>
+(() => {
+  "use strict";
+  const T = {
+    en: { lbl:"Enter your order number", go:"Follow my order", err:"No active order with this number. Check the number on your receipt.", lang:"العربية" },
+    ar: { lbl:"أدخل رقم طلبك", go:"متابعة طلبي", err:"لا يوجد طلب نشط بهذا الرقم. تأكّد من الرقم في الإيصال.", lang:"English" },
+  };
+  let lang = "en", errOn = false;
+  const $ = (id) => document.getElementById(id), t = (k) => T[lang][k];
+  const AR = { "٠":"0","١":"1","٢":"2","٣":"3","٤":"4","٥":"5","٦":"6","٧":"7","٨":"8","٩":"9" };
+  function apply() {
+    document.documentElement.lang = lang; document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    $("lbl").textContent = t("lbl"); $("go").textContent = t("go"); $("langBtn").textContent = t("lang");
+    $("err").textContent = errOn ? t("err") : "";
+  }
+  $("langBtn").onclick = () => { lang = lang === "ar" ? "en" : "ar"; apply(); };
+  $("num").addEventListener("input", (e) => {
+    e.target.value = e.target.value.replace(/[٠-٩]/g, (d) => AR[d]).replace(/\D/g, "").slice(0, 6);
+    $("go").disabled = !e.target.value; errOn = false; $("num").classList.remove("bad"); $("err").textContent = "";
+  });
+  $("f").addEventListener("submit", (e) => {
+    e.preventDefault(); if (!$("num").value) return;
+    const b = $("go"); b.disabled = true; b.innerHTML = '<span class="spin"></span>';
+    setTimeout(() => { // PROTOTYPE: production calls the existing lookup and redirects to /pager/{token}
+      b.textContent = t("go"); b.disabled = false; showErr();
+    }, 700);
+  });
+  function showErr() {
+    errOn = true; const n = $("num"); n.classList.add("bad"); n.classList.remove("shake"); void n.offsetWidth; n.classList.add("shake");
+    $("err").textContent = t("err"); n.select();
+  }
+  document.querySelector(".proto").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    document.querySelectorAll(".proto button").forEach((x) => x.classList.toggle("on", x === b));
+    if (b.dataset.s === "logo") $("logo").innerHTML = `<img alt="giorgio" src="data:image/svg+xml,${encodeURIComponent('<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 120 64\'><text x=\'60\' y=\'48\' text-anchor=\'middle\' font-family=\'Georgia,serif\' font-size=\'44\' font-style=\'italic\' fill=\'#111\'>Giorgio</text></svg>')}">`;
+    if (b.dataset.s === "initial") $("logo").innerHTML = '<span class="initial">G</span>';
+    if (b.dataset.s === "err") { $("num").value = "55"; $("go").disabled = false; showErr(); }
+  });
+  apply();
+})();
+</script>
+</body>
+</html>

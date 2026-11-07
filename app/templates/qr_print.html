@@ -1,154 +1,263 @@
-<!DOCTYPE html>
 {% if restaurant_brand is defined %}
   {% set brand = restaurant_brand(restaurant) %}
 {% else %}
   {% set brand = {"name": restaurant.name, "logo_url": (restaurant.logo_url or "")|trim or none, "initial": (restaurant.name or "P")[:1], "brand": restaurant.brand_color or "#111111", "brand_ink": "#ffffff"} %}
 {% endif %}
-<html lang="ar" dir="rtl">
+<!doctype html>
+<html lang="{{ lang }}" dir="{{ dir }}">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ستاند كاونتر البيجر الذكي | {{ restaurant.name }}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700;800&family=Sora:wght@600;700&display=swap" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: #f0ebe1;
-      font-family: "Readex Pro", system-ui, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .print-actions {
-      margin-bottom: 24px;
-      display: flex;
-      gap: 12px;
-    }
-    .btn-print {
-      background: #23150d;
-      color: #fff;
-      padding: 12px 28px;
-      border-radius: 12px;
-      font-weight: 700;
-      font-size: 15px;
-      font-family: inherit;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-    }
-    .btn-print:hover {
-      background: #3e2415;
-    }
-    .stand-card {
-      width: 420px;
-      background: #ffffff;
-      border-radius: 28px;
-      padding: 40px 32px;
-      text-align: center;
-      box-shadow: 0 20px 60px rgba(45, 30, 20, 0.12);
-      border: 2px solid rgba(58, 38, 28, 0.08);
-      position: relative;
-    }
-    .stand-logo {
-      width: 64px; height: 64px; margin: 0 auto 14px; border-radius: 18px;
-      display: grid; place-items: center; overflow: hidden;
-      font-family: "Sora", Georgia, serif; font-weight: 700; font-size: 28px;
-      background: {{ brand.brand }}; color: {{ brand.brand_ink }};
-    }
-    .stand-logo img { width: 100%; height: 100%; object-fit: cover; }
-    .stand-badge {
-      display: inline-block;
-      padding: 6px 16px;
-      border-radius: 999px;
-      background: rgba(192, 86, 33, 0.12);
-      color: {{ restaurant.brand_color|default('#C05621') }};
-      font-weight: 700;
-      font-size: 13px;
-      margin-bottom: 16px;
-    }
-    .restaurant-title {
-      font-size: 26px;
-      font-weight: 800;
-      color: #23150d;
-      margin-bottom: 6px;
-    }
-    .stand-subtitle {
-      font-size: 13.5px;
-      color: #7c6958;
-      margin-bottom: 24px;
-    }
-    .qr-frame {
-      display: inline-flex;
-      padding: 16px;
-      background: #fff;
-      border: 3px solid #23150d;
-      border-radius: 24px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.06);
-      margin-bottom: 24px;
-    }
-    .qr-frame img {
-      width: 230px;
-      height: 230px;
-      display: block;
-    }
-    .instructions-ar {
-      font-size: 16px;
-      font-weight: 700;
-      color: #23150d;
-      margin-bottom: 4px;
-    }
-    .instructions-en {
-      font-size: 13px;
-      color: #7c6958;
-      font-family: "Sora", sans-serif;
-    }
-    .stand-footer {
-      margin-top: 24px;
-      padding-top: 18px;
-      border-top: 1px dashed rgba(58, 38, 28, 0.15);
-      font-size: 11.5px;
-      color: #a39282;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    @media print {
-      body { background: #fff; padding: 0; }
-      .print-actions { display: none; }
-      .stand-card { box-shadow: none; border: 2px solid #000; width: 100%; max-width: 480px; margin: 0 auto; page-break-inside: avoid; }
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>{{ t('print.title') }} · {{ brand.name }} · Paiger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root { --ink:#111111; --grey:#5f6368; --grey-2:#8e8e93; --line:#e6e6e8; --paper-2:#f6f6f7; --paper-3:#ececee; --brand: {{ brand.brand }}; --brand-ink: {{ brand.brand_ink }};
+  --sans:"IBM Plex Sans","IBM Plex Sans Arabic",-apple-system,"Segoe UI",sans-serif; --ar:"IBM Plex Sans Arabic","IBM Plex Sans",sans-serif; }
+html[lang="ar"] { --sans:"IBM Plex Sans Arabic","IBM Plex Sans",-apple-system,sans-serif; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:var(--sans); color:var(--ink); background:var(--paper-2); -webkit-font-smoothing:antialiased; }
+button { font:inherit; color:inherit; background:none; border:0; cursor:pointer; }
+a { color:inherit; }
+:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+[hidden] { display:none !important; }
+
+.shell { min-height:100svh; display:grid; grid-template-columns:340px minmax(0,1fr); }
+.panel { background:#fff; border-inline-end:1px solid var(--line); padding:22px 22px 28px; display:flex; flex-direction:column; gap:22px; }
+.back { display:inline-flex; align-items:center; gap:8px; font-size:14px; color:var(--grey); text-decoration:none; }
+.back:hover { color:var(--ink); }
+.panel h1 { font-family:"Fraunces",serif; font-weight:500; font-size:28px; line-height:1.15; }
+html[lang="ar"] .panel h1 { font-family:var(--sans); font-weight:600; }
+.panel p.sub { color:var(--grey); font-size:14.5px; margin-top:6px; line-height:1.5; }
+.grp h2 { font-size:13px; font-weight:600; color:var(--grey); margin-bottom:8px; }
+.opts { display:grid; gap:6px; }
+.opt { display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:12px; box-shadow:0 0 0 1px var(--line) inset; text-align:start; }
+.opt:hover { box-shadow:0 0 0 1.5px #b9b9be inset; }
+.opt[aria-checked="true"] { box-shadow:0 0 0 2px var(--ink) inset; }
+.opt .ico { width:30px; height:34px; flex:none; display:grid; place-items:center; }
+.opt .ico i { display:block; border:1.5px solid currentColor; border-radius:2px; }
+.opt b { display:block; font-weight:600; font-size:14.5px; }
+.opt span { font-size:12.5px; color:var(--grey); }
+.seg { display:grid; grid-template-columns:repeat(3,1fr); background:var(--paper-2); border-radius:12px; padding:3px; }
+.seg button { height:38px; border-radius:9px; font-size:13.5px; font-weight:500; color:var(--grey); }
+.seg button[aria-pressed="true"] { background:#fff; color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,.08); }
+.sw { display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:14.5px; }
+.switch { direction:ltr; position:relative; width:42px; height:24px; border-radius:999px; background:var(--paper-3); flex:none; }
+.switch::after { content:""; position:absolute; top:3px; inset-inline-start:3px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:inset-inline-start .18s; }
+.switch[aria-checked="true"] { background:var(--ink); } .switch[aria-checked="true"]::after { inset-inline-start:21px; }
+.print { margin-top:auto; height:54px; border-radius:14px; background:var(--ink); color:#fff; font-weight:600; font-size:16px; display:flex; align-items:center; justify-content:center; gap:10px; }
+.print:hover { background:#2b2b2e; }
+.print svg { width:18px; height:18px; }
+.tip { font-size:12.5px; color:var(--grey); line-height:1.5; }
+.lang { align-self:flex-start; font-size:13.5px; color:var(--grey); padding:6px 0; text-decoration:none; }
+
+.stage { display:grid; place-items:center; padding:36px; overflow:hidden; }
+.paperwrap { transform-origin:center center; }
+.paper { background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.06), 0 30px 70px -30px rgba(0,0,0,.35); }
+
+.sheet { width:var(--w); height:var(--h); position:relative; overflow:hidden; color:var(--ink); font-family:"IBM Plex Sans",sans-serif; }
+.card { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; text-align:center; padding:var(--pad); }
+.band { position:absolute; inset:0 0 auto 0; height:var(--band); background:var(--brand); }
+.brand { position:relative; display:flex; flex-direction:column; align-items:center; gap:calc(var(--u)*2.2); margin-top:calc(var(--band) - var(--logo)/2 - var(--pad)); }
+.brand.has-logo { margin-top:calc(max(0mm, var(--band) - var(--pad)) + var(--u)*4); }
+.card.has-logo { justify-content:flex-start; gap:var(--gap); padding-top:calc(var(--band) + var(--gap)); }
+.card.has-logo .brand { margin-top:0; gap:var(--gap); flex:none; }
+.card.has-logo .logo-box { height:var(--logo); flex:none; }
+.card.has-logo .name { height:var(--name); max-width:100%; font-size:calc(var(--name) * .72); line-height:var(--name); flex:none; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.card.has-logo .qrbox { margin-top:0; flex:none; padding:var(--qpad); }
+.card.has-logo .qr { width:var(--qr); height:var(--qr); }
+.card.has-logo .copy { margin-top:0; flex:none; gap:calc(var(--u) * 1.5); }
+.card.has-logo .l-en b { font-size:calc(var(--u) * 5.2); line-height:1.1; }
+.card.has-logo .l-ar b { font-size:calc(var(--u) * 5); line-height:1.2; }
+.logo { width:var(--logo); height:var(--logo); border-radius:calc(var(--logo)*.24); background:var(--brand); color:var(--brand-ink); display:grid; place-items:center; font-family:"Fraunces",serif; font-weight:600; font-size:calc(var(--logo)*.48); box-shadow:0 0 0 calc(var(--u)*1.4) #fff; overflow:hidden; }
+.logo-box { height:var(--logo); max-width:calc(var(--logo) * 3.2); margin:0 auto; display:flex; align-items:center; justify-content:center; overflow:hidden; background:none; flex:none; min-width:0; position:static; }
+.logo-box img { max-height:100%; max-width:min(100%, calc(var(--logo) * 3.2)); width:auto; height:auto; object-fit:contain; display:block; background:none; position:static; transform:none; }
+.name { font-family:"Fraunces",serif; font-weight:600; font-size:calc(var(--u)*8); letter-spacing:-.01em; line-height:1.1; }
+.qrbox { position:relative; z-index:1; margin-top:auto; padding:calc(var(--u)*3.4); border-radius:calc(var(--u)*4); box-shadow:0 0 0 calc(var(--u)*.6) var(--line); background:#fff; flex:none; }
+.qr { display:block; width:var(--qr); height:var(--qr); color:#000; }
+.copy { margin-top:auto; display:grid; gap:calc(var(--u)*2.4); width:100%; }
+.l-en, .l-ar { display:grid; }
+.l-en b { font-size:calc(var(--u)*6.2); font-weight:600; letter-spacing:-.01em; line-height:1.15; }
+.l-ar b { font-family:var(--ar); font-size:calc(var(--u)*6); font-weight:600; line-height:1.3; }
+.rule { width:calc(var(--u)*12); height:calc(var(--u)*.5); background:var(--line); margin:0 auto; }
+
+.sheet.tent .card { height:50%; inset:auto 0 0 0; }
+.sheet.tent .card.flip { inset:0 0 auto 0; transform:rotate(180deg); }
+.sheet.tent .fold { position:absolute; left:0; right:0; top:50%; border-top:0.3mm dashed #c7c7cc; }
+.sheet.tent .fold span { position:absolute; inset-inline-start:6mm; top:-2.2mm; background:#fff; padding:0 2mm; font-size:2.6mm; color:var(--grey-2); }
+.sheet.tent .band { display:none; }
+.sheet.tent .brand, .sheet.tent .brand.has-logo { margin-top:0; flex-direction:row; align-items:center; gap:var(--gap, calc(var(--u)*3)); }
+.sheet.tent .logo-box { margin:0; }
+.sheet.tent .card.has-logo { padding:var(--pad); flex-direction:row; align-items:center; gap:var(--gap); }
+.sheet.tent .card.has-logo .left { gap:var(--gap); justify-content:center; height:auto; }
+.sheet.tent .logo { box-shadow:none; }
+.sheet.tent .card { flex-direction:row; text-align:start; gap:calc(var(--u)*7); align-items:center; }
+.sheet.tent .left { flex:1; display:flex; flex-direction:column; gap:calc(var(--u)*6); height:100%; justify-content:center; }
+.sheet.tent .copy { margin-top:0; }
+.sheet.tent .rule { margin:0; }
+.sheet.tent .qrbox { margin:0; }
+
+@media (max-width:900px) { .shell { grid-template-columns:1fr; } .stage { padding:20px 10px 40px; } }
+@media print {
+  html, body { background:#fff; }
+  .panel { display:none; }
+  .shell { display:block; }
+  .stage { padding:0; display:block; }
+  .paperwrap { transform:none !important; margin:0 !important; }
+  .sheet { overflow:visible; }
+  .paper { box-shadow:none; }
+  * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+}
+</style>
+<style id="pageRule">@page { size: A4 portrait; margin: 0; }</style>
 </head>
 <body>
+<div class="shell">
+  <aside class="panel">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <a class="back" href="/dashboard">{{ t('print.back') }}</a>
+      <a class="lang" href="/lang/{{ 'en' if lang == 'ar' else 'ar' }}">{{ t('nav.langSwitch') }}</a>
+    </div>
+    <div><h1>{{ t('print.title') }}</h1><p class="sub">{{ t('print.sub') }}</p></div>
 
-  <div class="print-actions">
-    <button onclick="window.print()" class="btn-print"> طباعة الستاند الآن (Print Stand)</button>
-    <button onclick="window.close()" class="btn-print" style="background: #fff; color: #23150d; border: 1px solid #d0c8be;">إغلاق</button>
-  </div>
-
-  <div class="stand-card">
-    <div class="stand-logo" aria-hidden="true">{% if brand.logo_url %}<img src="{{ brand.logo_url }}" alt="">{% else %}{{ brand.initial }}{% endif %}</div>
-    <div class="stand-badge"> نظام البيجر الفوري الذكي</div>
-    <h1 class="restaurant-title">{{ brand.name }}</h1>
-    <p class="stand-subtitle">تابع دورك واستلم طلبك طازجاً فور جهوزيته</p>
-
-    <div class="qr-frame">
-      <img src="/api/qr/stand?host=https://pager.rahapp.com/r/{{ restaurant.slug }}" alt="QR Code" id="standQrImg">
+    <div class="grp"><h2>{{ t('print.size') }}</h2>
+      <div class="opts" role="radiogroup" id="sizes">
+        <button class="opt" role="radio" data-f="a4" aria-checked="true" type="button"><span class="ico"><i style="width:18px;height:25px"></i></span><div><b>{{ t('print.fA4') }}</b><span>{{ t('print.fA4s') }}</span></div></button>
+        <button class="opt" role="radio" data-f="a5" aria-checked="false" type="button"><span class="ico"><i style="width:13px;height:18px"></i></span><div><b>{{ t('print.fA5') }}</b><span>{{ t('print.fA5s') }}</span></div></button>
+        <button class="opt" role="radio" data-f="tent" aria-checked="false" type="button"><span class="ico"><i style="width:25px;height:18px;border-style:solid dashed"></i></span><div><b>{{ t('print.fTent') }}</b><span>{{ t('print.fTents') }}</span></div></button>
+        <button class="opt" role="radio" data-f="sticker" aria-checked="false" type="button"><span class="ico"><i style="width:16px;height:16px"></i></span><div><b>{{ t('print.fSt') }}</b><span>{{ t('print.fSts') }}</span></div></button>
+      </div>
     </div>
 
-    <div class="instructions-ar">وجّه كاميرا هاتفك نحو الكود لمتابعة طلبك </div>
-    <div class="instructions-en">Scan with phone camera to track your order</div>
+    <div class="grp"><h2>{{ t('print.text') }}</h2>
+      <div class="seg" id="langs"><button data-l="both" aria-pressed="true" type="button">{{ t('print.lBoth') }}</button><button data-l="en" aria-pressed="false" type="button">English</button><button data-l="ar" aria-pressed="false" type="button">العربية</button></div>
+    </div>
 
-    <div class="stand-footer">
-      <span>مدعوم بواسطة Paiger</span>
-      <span>pager.rahapp.com</span>
+    <div class="sw"><span>{{ t('print.useBrand') }}</span><button class="switch" role="switch" id="brandSw" aria-checked="true" type="button" aria-label="{{ t('print.useBrand') }}"></button></div>
+
+    <button class="print" type="button" id="printBtn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M5 7V3h10v4M5 14H3V8h14v6h-2M6 11h8v6H6z"/></svg><span>{{ t('print.print') }}</span></button>
+    <p class="tip">{{ t('print.tip') }}</p>
+  </aside>
+
+  <main class="stage" id="stage">
+    <div class="paperwrap" id="wrap"><div class="paper"><div class="sheet" id="sheet"></div></div></div>
+  </main>
+</div>
+
+<template id="cardTpl">
+  <div class="card{% if brand.logo_url %} has-logo{% endif %}">
+    <div class="band"></div>
+    <div class="brand{% if brand.logo_url %} has-logo{% endif %}">{% if brand.logo_url %}<div class="logo-box"><img src="{{ brand.logo_url }}" alt=""></div>{% else %}<div class="logo">{{ brand.initial }}</div>{% endif %}<div class="name">{{ brand.name }}</div></div>
+    <div class="qrbox">{% if qr_svg is defined %}{{ qr_svg }}{% else %}<img class="qr" alt="QR code" src="/api/qr/stand?host=https://pager.rahapp.com/r/{{ restaurant.slug }}">{% endif %}</div>
+    <div class="copy">
+      <div class="l-en"><b>Scan to follow your order</b></div>
+      <div class="rule"></div>
+      <div class="l-ar" dir="rtl"><b>امسح الرمز لمتابعة طلبك</b></div>
     </div>
   </div>
+</template>
 
+<script>
+(() => {
+  "use strict";
+  const F = {
+    a4:      { w:210, h:297, u:1.45, qr:120, logo:32, band:50, pad:16, page:"A4 portrait" },
+    a5:      { w:148, h:210, u:1.02, qr:82,  logo:23, band:35, pad:11, page:"A5 portrait" },
+    tent:    { w:210, h:297, u:1.0,  qr:78,  logo:18, band:0,  pad:14, page:"A4 portrait" },
+    sticker: { w:100, h:100, u:.6,   qr:44,  logo:12, band:18, pad:6,   page:"100mm 100mm" },
+  };
+  const FOLD = {{ t('print.fold')|tojson }};
+  const BRAND_ON = {{ brand.brand|tojson }};
+  const INK_ON = {{ brand.brand_ink|tojson }};
+  let fmt = "a4", text = "both", brandOn = true;
+  const $ = (id) => document.getElementById(id);
+  const HAS_LOGO = !!document.getElementById("cardTpl").content.querySelector(".logo-box");
+  const MIN_QR = { a4: 60, a5: 45, tent: 40, sticker: 40 };
+  function logoFit(f, key) {
+    const k = f.u / 1.45;
+    const gapMin = 6 * k;
+    const band = key === "tent" ? 0 : 14 * k;
+    const logo = 26 * k;
+    const name = 11 * k;
+    const qpad = 5 * k;
+    const pad = key === "tent" ? f.pad : Math.max(f.pad, 16 * k);
+    const copy = (text === "both" ? 15.3 : 6.2) * f.u;
+    const pageH = key === "tent" ? f.h / 2 : f.h;
+    const cap = 120 * k;
+    const round = (n) => Math.round(n * 10) / 10;
+    let qr;
+    let gap = gapMin;
+    if (key === "tent") {
+      const qrRoom = pageH - 2 * pad - 2 * qpad;
+      qr = Math.min(cap, qrRoom);
+      const spare = pageH - (pad + Math.max(logo, name) + copy + pad) - gapMin;
+      gap = Math.min(16 * k, gapMin + Math.max(0, spare));
+    } else {
+      const gaps = 4;
+      const fixed = band + pad + logo + name + copy + 2 * qpad;
+      const room = pageH - fixed - gaps * gapMin;
+      qr = Math.min(cap, room);
+      const spare = pageH - fixed - qr - gaps * gapMin - 2;
+      gap = gapMin + Math.max(0, spare) / gaps;
+    }
+    qr = Math.max(MIN_QR[key], qr);
+    return { gap: round(gap), gapMin: round(gapMin), band: round(band), logo: round(logo), name: round(name), qpad: round(qpad), pad: round(pad), qr: round(qr) };
+  }
+
+  function card(extra) {
+    const n = $("cardTpl").content.firstElementChild.cloneNode(true);
+    if (extra) n.classList.add(extra);
+    n.querySelector(".l-en").hidden = text === "ar";
+    n.querySelector(".l-ar").hidden = text === "en";
+    n.querySelector(".rule").hidden = text !== "both";
+    if (fmt === "tent") {
+      const left = document.createElement("div"); left.className = "left";
+      left.append(n.querySelector(".brand"), n.querySelector(".copy"));
+      n.prepend(left);
+    }
+    return n;
+  }
+  function render() {
+    const base = F[fmt], s = $("sheet"), mm = (v) => v + "mm";
+    const fitLogo = HAS_LOGO ? logoFit(base, fmt) : null;
+    const f = fitLogo ? Object.assign({}, base, fitLogo) : base;
+    s.className = "sheet" + (fmt === "tent" ? " tent" : "");
+    s.dataset.minGap = fitLogo ? String(fitLogo.gapMin) : "2";
+    s.style.cssText = `--w:${mm(f.w)};--h:${mm(f.h)};--u:${mm(f.u)};--qr:${mm(f.qr)};--logo:${mm(f.logo)};--band:${mm(f.band)};--pad:${mm(f.pad)};--gap:${mm(fitLogo ? fitLogo.gap : f.u * 3)};--name:${mm(fitLogo ? fitLogo.name : f.u * 8)};--qpad:${mm(fitLogo ? fitLogo.qpad : f.u * 3.4)};`;
+    document.documentElement.style.setProperty("--brand", brandOn ? BRAND_ON : "#111111");
+    document.documentElement.style.setProperty("--brand-ink", brandOn ? INK_ON : "#ffffff");
+    s.innerHTML = "";
+    if (fmt === "tent") {
+      s.append(card("flip"), card());
+      const fold = document.createElement("div");
+      fold.className = "fold";
+      const label = document.createElement("span");
+      label.textContent = FOLD;
+      fold.append(label);
+      s.append(fold);
+    }
+    else s.append(card());
+    $("pageRule").textContent = `@page { size: ${f.page}; margin: 0; }`;
+    fit();
+  }
+  function fit() {
+    const st = $("stage"), w = $("wrap"), p = w.firstElementChild;
+    w.style.transform = "none";
+    const sw = st.clientWidth - 48, sh = Math.max(window.innerHeight - 72, 360);
+    const k = Math.min(1, sw / p.offsetWidth, sh / p.offsetHeight);
+    w.style.transform = `scale(${k})`;
+    w.style.margin = `${-(p.offsetHeight * (1 - k)) / 2}px ${-(p.offsetWidth * (1 - k)) / 2}px`;
+  }
+  $("sizes").addEventListener("click", (e) => { const b = e.target.closest(".opt"); if (!b) return; fmt = b.dataset.f; $("sizes").querySelectorAll(".opt").forEach((x) => x.setAttribute("aria-checked", x === b)); render(); });
+  $("langs").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; text = b.dataset.l; $("langs").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b)); render(); });
+  $("brandSw").onclick = () => { brandOn = !brandOn; $("brandSw").setAttribute("aria-checked", brandOn); render(); };
+  $("printBtn").onclick = () => window.print();
+  addEventListener("resize", fit);
+  if (document.fonts) document.fonts.ready.then(fit);
+  render();
+})();
+</script>
 </body>
 </html>
-
