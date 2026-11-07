@@ -1843,9 +1843,9 @@ async def get_order_details(token: str, request: Request):
 @app.post("/api/orders/{token}/onway")
 async def mobile_onway_order(token: str, request: Request):
     order = db.get_order_by_token(token)
-    # Numeric ids share this shape. A real order token always wins and stays public.
+    # Numeric ids share this shape. Accept both token and numeric order ID publicly.
     if not order and token.isdigit():
-        return await onway_order(int(token), request)
+        order = db.get_order_by_id(int(token))
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     updated = db.update_order_status(order["id"], "onway")
@@ -1853,8 +1853,10 @@ async def mobile_onway_order(token: str, request: Request):
         "event": "customer_onway",
         "order": updated
     })
-    await manager.notify_pager(token, {
+    real_token = order.get("token") or token
+    await manager.notify_pager(real_token, {
         "event": "order_onway",
+        "status": "onway",
         "order": updated
     })
     return updated
@@ -2077,9 +2079,18 @@ async def ring_order(order_id: int, request: Request):
 
 @app.post("/api/orders/{order_id}/onway")
 async def onway_order(order_id: int, request: Request):
-    actor = _order_actor(request)
-    order = _order_for_actor(order_id, actor)
-    _reject_if_paused(int(order.get("restaurant_id") or 0))
+    try:
+        actor = _order_actor(request)
+        order = _order_for_actor(order_id, actor)
+        _reject_if_paused(int(order.get("restaurant_id") or 0))
+    except HTTPException as auth_err:
+        if auth_err.status_code == 401:
+            order = db.get_order_by_id(order_id)
+            if not order:
+                raise HTTPException(status_code=404, detail="Order not found")
+        else:
+            raise auth_err
+
     order = db.update_order_status(order_id, "onway")
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
