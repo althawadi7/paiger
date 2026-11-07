@@ -57,7 +57,7 @@
 <meta name="theme-color" content="#ffffff">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="بيجر المطعم">
-<meta name="apple-itunes-app" content="app-id=6829547522, app-clip-bundle-id=com.dawrak.app.Clip, app-clip-display=card">
+<meta name="apple-itunes-app" content="app-clip-bundle-id=com.dawrak.app.Clip, app-id=6829547522">
 <title>{{ order.order_number }} · {{ brand.name }}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -551,8 +551,16 @@ async function activateArming(){
   updateUI();
 }
 
-// First tap only resumes audio. Permission, vibration and the dawrak hand-off stay on the button.
+// Auto-redirect to Dawrak native app/clip for iOS devices smoothly without manual button
+if (/iPhone|iPad|iPod/.test(navigator.userAgent) && !window.navigator.standalone) {
+  setTimeout(function(){
+    window.location.href = "dawrak://pager/" + order.token;
+  }, 300);
+}
+
+// Universal interaction listener: ANY touch, click, tap anywhere arms audio & starts widgets
 function onUserTap(){
+  if (!isArmed) activateArming();
   try {
     ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
     if (ctx.state === "suspended") ctx.resume();
