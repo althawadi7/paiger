@@ -2012,7 +2012,8 @@ async def list_orders(request: Request, restaurant_id: Optional[int] = None):
     if device:
         return db.get_all_orders(limit=150, restaurant_id=int(device["restaurant_id"]))
     if restaurant_id:
-        return db.get_all_orders(limit=150, restaurant_id=int(restaurant_id))
+        # Public / legacy App Clip fallback: NEVER return completed 'done' orders
+        return db.get_all_orders(limit=150, restaurant_id=int(restaurant_id), active_only=True)
     raise HTTPException(status_code=401, detail="Unauthorized")
 
 

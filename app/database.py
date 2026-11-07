@@ -1337,17 +1337,18 @@ def get_recent_public_orders(restaurant_id: int, since: datetime) -> List[Dict[s
         conn.close()
 
 
-def get_all_orders(limit: int = 150, restaurant_id: Optional[int] = None) -> List[Dict[str, Any]]:
+def get_all_orders(limit: int = 150, restaurant_id: Optional[int] = None, active_only: bool = False) -> List[Dict[str, Any]]:
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
+            status_filter = " AND o.status IN ('waiting', 'ringing', 'onway') " if active_only else ""
             if restaurant_id:
                 cur.execute(
-                    """
+                    f"""
                     SELECT o.*, r.name as restaurant_display_name, r.slug as restaurant_slug, r.brand_color as restaurant_color
                     FROM orders o
                     LEFT JOIN restaurants r ON o.restaurant_id = r.id
-                    WHERE o.restaurant_id = %s
+                    WHERE o.restaurant_id = %s {status_filter}
                     ORDER BY 
                         CASE o.status
                             WHEN 'ringing' THEN 1
@@ -1356,6 +1357,8 @@ def get_all_orders(limit: int = 150, restaurant_id: Optional[int] = None) -> Lis
                             WHEN 'done' THEN 4
                             ELSE 5
                         END,
+                        (o.scanned_at IS NOT NULL) DESC,
+                        o.scanned_at DESC,
                         o.id DESC
                     LIMIT %s
                     """,
@@ -1363,10 +1366,11 @@ def get_all_orders(limit: int = 150, restaurant_id: Optional[int] = None) -> Lis
                 )
             else:
                 cur.execute(
-                    """
+                    f"""
                     SELECT o.*, r.name as restaurant_display_name, r.slug as restaurant_slug, r.brand_color as restaurant_color
                     FROM orders o
                     LEFT JOIN restaurants r ON o.restaurant_id = r.id
+                    WHERE 1=1 {status_filter}
                     ORDER BY 
                         CASE o.status
                             WHEN 'ringing' THEN 1
@@ -1375,6 +1379,8 @@ def get_all_orders(limit: int = 150, restaurant_id: Optional[int] = None) -> Lis
                             WHEN 'done' THEN 4
                             ELSE 5
                         END,
+                        (o.scanned_at IS NOT NULL) DESC,
+                        o.scanned_at DESC,
                         o.id DESC
                     LIMIT %s
                     """,
