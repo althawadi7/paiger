@@ -203,6 +203,7 @@ def init_db():
     ensure_column("restaurants", "cashier_pin_version", "INT NOT NULL DEFAULT 1")
     ensure_column("restaurants", "cashier_pin_updated_at", "DATETIME NULL")
     ensure_column("orders", "cashier_device_id", "INT NULL")
+    ensure_column("orders", "lang", "VARCHAR(8) NULL")
     _ensure_owner_tables()
     _backfill_legacy_subscriptions()
     ensure_table(
@@ -1604,6 +1605,18 @@ def delete_push_subscription(endpoint: str):
             conn.commit()
     finally:
         conn.close()
+
+def set_order_lang(order_id: int, lang: str) -> None:
+    if lang not in ("en", "ar"):
+        return
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE orders SET lang = %s WHERE id = %s", (lang, order_id))
+            conn.commit()
+    finally:
+        conn.close()
+
 
 def save_live_activity_token(order_token: str, push_token: str, device_type: str = "ios_live_activity"):
     conn = get_db_connection()

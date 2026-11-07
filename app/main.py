@@ -348,6 +348,7 @@ class LiveActivityTokenRequest(BaseModel):
     push_token: Optional[str] = None
     pushToken: Optional[str] = None
     device_type: Optional[str] = "ios_live_activity"
+    lang: Optional[str] = None
 
 class CreateRestaurantDto(BaseModel):
     name: str
@@ -1809,6 +1810,39 @@ async def pager_page(request: Request, token: str):
         }
     )
 
+def _brand_hex(value: Optional[str]) -> str:
+    raw = str(value or "").strip()
+    if re.fullmatch(r"#[0-9a-fA-F]{3}", raw):
+        raw = "#" + "".join(ch * 2 for ch in raw[1:])
+    if re.fullmatch(r"#[0-9a-fA-F]{6}", raw):
+        return "#" + raw[1:].upper()
+    return "#C05621"
+
+
+def _iso_tz(value: Any) -> str:
+    """Naive database clocks are server-local. Emit seconds and a numeric offset."""
+    if isinstance(value, str) and value:
+        try:
+            value = datetime.fromisoformat(value)
+        except ValueError:
+            return value
+    if not isinstance(value, datetime):
+        value = datetime.now().astimezone()
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=datetime.now().astimezone().tzinfo)
+    return value.isoformat(timespec="seconds")
+
+
+def _push_live_activity(order: Optional[Dict[str, Any]], *, is_ringing: bool, phase: str) -> None:
+    if not order:
+        return
+    try:
+        from . import apns_service
+        asyncio.create_task(apns_service.notify_order_live_activity(order, is_ringing=is_ringing, phase=phase))
+    except Exception as e:
+        print("APNs trigger error:", e)
+
+
 @app.get("/api/pager/{token}/status")
 @app.get("/api/orders/{token}/details")
 async def get_order_details(token: str, request: Request):
@@ -1819,6 +1853,18 @@ async def get_order_details(token: str, request: Request):
     q_info = db.get_order_queue_info(order["id"])
     theme = db.get_setting("theme", "light")
     default_rest = db.get_setting("restaurant_name", "بيجر الطلبات")
+    rest_row = None
+    if order.get("restaurant_id"):
+        rest_row = db.get_restaurant_by_id(int(order["restaurant_id"]))
+    raw_prep = (rest_row or {}).get("prep_minutes")
+    prep_minutes = int(raw_prep) if raw_prep is not None else 6
+    logo_raw = str((rest_row or {}).get("logo_url") or "").strip()
+    if not logo_raw:
+        logo_url = None
+    elif logo_raw.startswith("http://") or logo_raw.startswith("https://"):
+        logo_url = logo_raw
+    else:
+        logo_url = get_public_base_url(request).rstrip("/") + "/" + logo_raw.lstrip("/")
     return {
         "id": order["id"],
         "order_number": order["order_number"],
@@ -1827,11 +1873,13 @@ async def get_order_details(token: str, request: Request):
         "status": order["status"],
         "token": order["token"],
         "restaurant_id": order.get("restaurant_id", 1),
-        "restaurant_name": order.get("restaurant_name") or default_rest,
-        "brand_color": order.get("brand_color") or "#C05621",
+        "restaurant_name": str(order.get("restaurant_name") or (rest_row or {}).get("name") or default_rest),
+        "logo_url": logo_url,
+        "brand_color": _brand_hex(order.get("brand_color") or (rest_row or {}).get("brand_color")),
         "brand_icon": order.get("brand_icon") or "cup.and.saucer.fill",
+        "prep_minutes": prep_minutes,
         "call_count": order.get("call_count", 0),
-        "created_at": order["created_at"],
+        "created_at": _iso_tz(order.get("created_at")),
         "called_at": order["called_at"],
         "completed_at": order["completed_at"],
         "orders_ahead": q_info["orders_ahead"],
@@ -1853,6 +1901,7 @@ async def mobile_onway_order(token: str, request: Request):
         "event": "customer_onway",
         "order": updated
     })
+    _push_live_activity(updated, is_ringing=False, phase="onway")
     real_token = order.get("token") or token
     await manager.notify_pager(real_token, {
         "event": "order_onway",
@@ -1868,6 +1917,10 @@ async def register_live_activity_token(token: str, req: LiveActivityTokenRequest
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     await _note_customer_view(request, order)
+    chosen = (req.lang or "").strip().lower()
+    if chosen in ("en", "ar"):
+        db.set_order_lang(order["id"], chosen)
+        order["lang"] = chosen
     actual_tok = req.push_token or req.pushToken or ""
     db.save_live_activity_token(
         order_token=token,
@@ -2070,11 +2123,7 @@ async def ring_order(order_id: int, request: Request):
     except Exception as e:
         print("WebPush trigger error:", e)
 
-    try:
-        from . import apns_service
-        asyncio.create_task(apns_service.notify_order_live_activity(order, is_ringing=True, phase="calling"))
-    except Exception as e:
-        print("APNs trigger error:", e)
+    _push_live_activity(order, is_ringing=True, phase="calling")
 
     return order
 
@@ -2105,6 +2154,7 @@ async def onway_order(order_id: int, request: Request):
         "event": "customer_onway",
         "order": order
     })
+    _push_live_activity(order, is_ringing=False, phase="onway")
     return order
 
 @app.post("/api/orders/{order_id}/done")
@@ -2241,6 +2291,7 @@ async def websocket_pager(websocket: WebSocket, token: str):
                             "event": "order_onway",
                             "order": updated
                         })
+                        _push_live_activity(updated, is_ringing=False, phase="onway")
                 elif msg.get("action") == "ping":
                     await websocket.send_text(json.dumps({"event": "pong"}))
             except Exception:

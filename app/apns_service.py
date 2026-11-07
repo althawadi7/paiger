@@ -2,6 +2,7 @@ import time
 import json
 import jwt
 import httpx
+from datetime import datetime
 from pathlib import Path
 from . import database as db
 
@@ -35,34 +36,86 @@ def get_apns_jwt() -> str:
     _token_generated_at = now
     return token
 
+def clean_order_number(order_number: str) -> str:
+    clean_num = str(order_number).strip()
+    if len(clean_num) > 5 or any(c.isalpha() for c in clean_num):
+        digits = "".join(c for c in clean_num if c.isdigit())
+        clean_num = digits[:4] if digits else "1"
+    return clean_num
+
+
+def _aware_created(value):
+    if isinstance(value, str) and value:
+        try:
+            value = datetime.fromisoformat(value)
+        except ValueError:
+            return None
+    if not isinstance(value, datetime):
+        return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=datetime.now().astimezone().tzinfo)
+    return value
+
+
+def waiting_eta_end(order: dict):
+    """Unix seconds for the prep window. Only while the order is still waiting."""
+    if (order.get("status") or "") != "waiting":
+        return None
+    created = _aware_created(order.get("created_at"))
+    if created is None:
+        return None
+    prep = 6
+    rest_id = order.get("restaurant_id")
+    if rest_id:
+        rest = db.get_restaurant_by_id(int(rest_id))
+        raw = (rest or {}).get("prep_minutes")
+        if raw is not None:
+            prep = int(raw)
+    return int(created.timestamp()) + prep * 60
+
+
+def live_activity_payload(
+    order_number: str,
+    status_text: str = "طلبك جاهز للاستلام",
+    is_ringing: bool = True,
+    phase: str = "calling",
+    lang: str = "en",
+    eta_end=None,
+) -> dict:
+    state = {
+        "orderNumber": clean_order_number(order_number),
+        "statusText": status_text,
+        "isRinging": is_ringing,
+        "phase": phase,
+        "lang": lang if lang in ("en", "ar") else "en",
+    }
+    if eta_end is not None:
+        state["etaEnd"] = int(eta_end)
+    payload = {
+        "aps": {
+            "timestamp": int(time.time()),
+            "event": "update",
+            "content-state": state,
+        }
+    }
+    return payload
+
+
 async def send_live_activity_update(
     push_token: str,
     order_number: str,
     status_text: str = "طلبك جاهز للاستلام",
     is_ringing: bool = True,
-    phase: str = "calling"
+    phase: str = "calling",
+    lang: str = "en",
+    eta_end=None,
 ):
     try:
         jwt_token = get_apns_jwt()
-
-        # Clean order number for display (e.g. "8", never a hex token)
-        clean_num = str(order_number).strip()
-        if len(clean_num) > 5 or any(c.isalpha() for c in clean_num):
-            digits = "".join(c for c in clean_num if c.isdigit())
-            clean_num = digits[:4] if digits else "1"
-
-        payload = {
-            "aps": {
-                "timestamp": int(time.time()),
-                "event": "update",
-                "content-state": {
-                    "orderNumber": clean_num,
-                    "statusText": status_text,
-                    "isRinging": is_ringing,
-                    "phase": phase
-                }
-            }
-        }
+        payload = live_activity_payload(
+            order_number, status_text, is_ringing, phase, lang, eta_end
+        )
+        clean_num = payload["aps"]["content-state"]["orderNumber"]
         if is_ringing:
             payload["aps"]["alert"] = {
                 "title": "طلبك جاهز للاستلام",
@@ -119,6 +172,8 @@ async def notify_order_live_activity(
     if not tokens:
         print(f"[APNs] No Live Activity push tokens registered for order token {token}")
         return
+    lang = order.get("lang") if order.get("lang") in ("en", "ar") else "en"
+    eta_end = waiting_eta_end(order)
     for item in tokens:
         push_token = item.get("push_token")
         if push_token:
@@ -127,5 +182,7 @@ async def notify_order_live_activity(
                 order_number=str(order.get("order_number", "")),
                 status_text=status_text,
                 is_ringing=is_ringing,
-                phase=phase
+                phase=phase,
+                lang=lang,
+                eta_end=eta_end,
             )
