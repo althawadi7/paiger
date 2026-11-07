@@ -8,10 +8,48 @@ from . import database as db
 
 BAHRAIN = ZoneInfo("Asia/Bahrain")
 PAGE_SIZE = 50
+BUSINESS_DAY_HOUR = 4
 
 
 def bahrain_now() -> datetime:
     return datetime.now(BAHRAIN)
+
+
+def restaurant_zone(restaurant: Optional[Dict[str, Any]]) -> ZoneInfo:
+    name = ""
+    if isinstance(restaurant, dict):
+        name = str(restaurant.get("timezone") or restaurant.get("time_zone") or "").strip()
+    try:
+        return ZoneInfo(name) if name else BAHRAIN
+    except Exception:
+        return BAHRAIN
+
+
+def business_day_start(restaurant: Optional[Dict[str, Any]], now: Optional[datetime] = None) -> datetime:
+    """04:00 in the restaurant's zone for the business day that contains `now`.
+
+    The result is aware. A naive `now` is read as the restaurant zone, never as
+    the server's CET clock. Call as_stored() only when comparing with a naive
+    timestamp that MySQL stored from datetime.now().
+    """
+    zone = restaurant_zone(restaurant)
+    if now is None:
+        moment = datetime.now(zone)
+    elif now.tzinfo is None:
+        moment = now.replace(tzinfo=zone)
+    else:
+        moment = now.astimezone(zone)
+    start = moment.replace(hour=BUSINESS_DAY_HOUR, minute=0, second=0, microsecond=0)
+    if moment < start:
+        start -= timedelta(days=1)
+    return start
+
+
+def as_stored(moment: datetime) -> datetime:
+    """The same instant as the naive clock used by stored order timestamps."""
+    if moment.tzinfo is None:
+        raise ValueError("business day instant must be timezone-aware")
+    return moment.astimezone().replace(tzinfo=None)
 
 
 def _naive_local(moment: datetime) -> datetime:

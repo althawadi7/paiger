@@ -7,8 +7,10 @@ import hmac
 import hashlib
 import logging
 import secrets
+import shutil
 import socket
 import asyncio
+import subprocess
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -97,6 +99,71 @@ def static_version(name: str) -> str:
         return "0"
 
 
+def _git_revision() -> str:
+    git = shutil.which("git")
+    if not git:
+        return ""
+    try:
+        out = subprocess.run(
+            [git, "rev-parse", "--short", "HEAD"],
+            cwd=str(BASE_DIR.parent),
+            capture_output=True,
+            text=True,
+            timeout=2,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    rev = (out.stdout or "").strip()
+    if out.returncode != 0 or not rev or any(c not in "0123456789abcdef" for c in rev):
+        return ""
+    return rev
+
+
+def _newest_asset_mtime_ns() -> int:
+    """Newest template or static JS/CSS. Images and uploads are ignored."""
+    newest = 0
+    try:
+        for path in (BASE_DIR / "templates").rglob("*"):
+            if path.is_file():
+                newest = max(newest, path.stat().st_mtime_ns)
+        static = BASE_DIR / "static"
+        for pattern in ("*.js", "*.css"):
+            for path in static.rglob(pattern):
+                if path.is_file():
+                    newest = max(newest, path.stat().st_mtime_ns)
+    except OSError:
+        return 0
+    return newest
+
+
+def _build_file() -> str:
+    try:
+        return (BASE_DIR / "BUILD").read_text(encoding="utf-8").strip()
+    except OSError:
+        return ""
+
+
+def _compute_app_build() -> str:
+    """Deploy id for this process. A newer template, JS, or CSS changes it on the next start."""
+    newest = _newest_asset_mtime_ns()
+    rev = _git_revision()
+    if newest and rev:
+        return f"{rev}-{newest}"
+    if newest:
+        return str(newest)
+    if rev:
+        return rev
+    return _build_file() or "0"
+
+
+_APP_BUILD = _compute_app_build()
+
+
+def app_build() -> str:
+    return _APP_BUILD
+
+
 templates.env.globals["restaurant_brand"] = restaurant_brand
 templates.env.globals["static_version"] = static_version
 
@@ -120,6 +187,8 @@ async def admin_robots_header(request: Request, call_next):
     path = request.url.path
     if path == "/admin" or path.startswith("/admin/") or path.startswith("/pay/"):
         response.headers["X-Robots-Tag"] = "noindex"
+    if path == "/static/js/cashier-page.js" or (path.startswith("/r/") and path.rstrip("/").endswith("/cashier")):
+        response.headers["Cache-Control"] = "no-cache"
     return response
 
 
@@ -271,9 +340,13 @@ class ConnectionManager:
             if not self.pager_connections[token_str]:
                 del self.pager_connections[token_str]
 
-    async def connect_cashier(self, websocket: WebSocket, restaurant_id: Optional[int]):
+    async def connect_cashier(self, websocket: WebSocket, restaurant_id: Optional[int], admin_all: bool = False):
         await websocket.accept()
-        self.cashier_connections.append({"ws": websocket, "restaurant_id": restaurant_id})
+        self.cashier_connections.append({
+            "ws": websocket,
+            "restaurant_id": None if admin_all else restaurant_id,
+            "admin_all": bool(admin_all),
+        })
 
     def disconnect_cashier(self, websocket: WebSocket):
         self.cashier_connections = [c for c in self.cashier_connections if c["ws"] is not websocket]
@@ -297,13 +370,20 @@ class ConnectionManager:
         order = payload.get("order")
         if restaurant_id is None and isinstance(order, dict):
             restaurant_id = order.get("restaurant_id")
-        if restaurant_id is not None:
-            payload["restaurant_id"] = int(restaurant_id)
+        if restaurant_id is None:
+            return
+        restaurant_id = int(restaurant_id)
+        payload["restaurant_id"] = restaurant_id
+        if payload.get("order_id") is None and isinstance(order, dict) and order.get("id") is not None:
+            payload["order_id"] = order.get("id")
         message = json.dumps(payload)
         for conn in list(self.cashier_connections):
-            conn_restaurant = conn.get("restaurant_id")
-            if conn_restaurant is not None and payload.get("restaurant_id") is not None and int(conn_restaurant) != int(payload["restaurant_id"]):
-                continue
+            if conn.get("admin_all"):
+                target = None
+            else:
+                target = conn.get("restaurant_id")
+                if target is None or int(target) != restaurant_id:
+                    continue
             try:
                 await conn["ws"].send_text(message)
             except Exception:
@@ -1434,7 +1514,7 @@ async def restaurant_customer_track(request: Request, slug: str, num: Optional[s
         raise HTTPException(status_code=404, detail="Restaurant not found")
 
     if num and num.strip():
-        matched = db.get_order_by_number_and_restaurant(num.strip(), rest["id"])
+        matched = db.find_active_order_number(rest["id"], num.strip())
         if matched and matched.get("token"):
             return RedirectResponse(url=f"/pager/{matched['token']}", status_code=status.HTTP_302_FOUND)
 
@@ -1460,7 +1540,9 @@ async def restaurant_dedicated_cashier(request: Request, slug: str):
         base_url = get_public_base_url(request)
         port = request.url.port or (443 if request.url.scheme == "https" else 80)
         theme = db.get_setting("theme", "light")
-        return templates.TemplateResponse("cashier.html", _cashier_context(request, rest, local_ip, port, base_url, theme))
+        response = templates.TemplateResponse("cashier.html", _cashier_context(request, rest, local_ip, port, base_url, theme))
+        response.headers["Cache-Control"] = "no-cache"
+        return response
     key = cashier_gate.device_key(_client_ip(request), request.headers.get("user-agent", ""))
     gate = cashier_gate.pin_status(int(rest["id"]), key)
     return templates.TemplateResponse(
@@ -1537,7 +1619,9 @@ async def default_cashier_redirect(request: Request):
     port = request.url.port or (443 if request.url.scheme == "https" else 80)
     theme = db.get_setting("theme", "light")
 
-    return templates.TemplateResponse("cashier.html", _cashier_context(request, rest, local_ip, port, base_url, theme))
+    response = templates.TemplateResponse("cashier.html", _cashier_context(request, rest, local_ip, port, base_url, theme))
+    response.headers["Cache-Control"] = "no-cache"
+    return response
 
 @app.get("/lang/{code}")
 async def set_language(code: str, request: Request):
@@ -1891,9 +1975,6 @@ async def get_order_details(token: str, request: Request):
 @app.post("/api/orders/{token}/onway")
 async def mobile_onway_order(token: str, request: Request):
     order = db.get_order_by_token(token)
-    # Numeric ids share this shape. Accept both token and numeric order ID publicly.
-    if not order and token.isdigit():
-        order = db.get_order_by_id(int(token))
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     updated = db.update_order_status(order["id"], "onway")
@@ -1933,8 +2014,29 @@ async def register_live_activity_token(token: str, req: LiveActivityTokenRequest
 # CORE ORDERS REST APIS
 # ─────────────────────────────────────────────────────────────
 
+def _business_since(restaurant_id: int) -> datetime:
+    rest = db.get_restaurant_by_id(int(restaurant_id)) or {"id": int(restaurant_id)}
+    return owner_board.as_stored(owner_board.business_day_start(rest))
+
+
+def _picked_before_business_day(order: Dict[str, Any]) -> bool:
+    if (order.get("status") or "") != "done":
+        return False
+    raw = order.get("completed_at")
+    if not raw:
+        return True
+    if isinstance(raw, str):
+        raw = datetime.fromisoformat(raw)
+    if not isinstance(raw, datetime):
+        return True
+    if raw.tzinfo is not None:
+        raw = raw.astimezone().replace(tzinfo=None)
+    return raw < _business_since(int(order.get("restaurant_id") or 0))
+
+
 def _cashier_context(request: Request, rest: Dict[str, Any], local_ip: str, port: int, base_url: str, theme: str) -> Dict[str, Any]:
-    stats = db.cashier_today_stats(int(rest["id"]))
+    day_start = owner_board.business_day_start(rest)
+    stats = db.cashier_today_stats(int(rest["id"]), owner_board.as_stored(day_start))
     offset = datetime.now().astimezone().strftime("%z")
     tz_offset = f"{offset[:3]}:{offset[3:]}" if len(offset) == 5 else "+00:00"
     return {
@@ -1945,6 +2047,10 @@ def _cashier_context(request: Request, rest: Dict[str, Any], local_ip: str, port
         "base_url": base_url,
         "theme": theme,
         "tz_offset": tz_offset,
+        "time_zone": str(owner_board.restaurant_zone(rest)),
+        "day_start_hour": owner_board.BUSINESS_DAY_HOUR,
+        "business_day_start": day_start.isoformat(),
+        "build": app_build(),
         "today_count": stats["today_count"],
         "called_count": stats["called_count"],
         "avg_seconds": stats["avg_seconds"] if stats["avg_seconds"] is not None else "",
@@ -1976,26 +2082,69 @@ async def _note_customer_view(source, order: Optional[Dict[str, Any]]) -> Option
 
 
 def _order_actor(request: Request) -> Dict[str, Any]:
-    """Restaurant id comes from the owner session or a paired cashier device."""
+    """Restaurant id comes from the owner session or a paired cashier device.
+
+    Two device cookies in one browser are not collapsed onto the first cookie.
+    """
     restaurant = auth.get_current_restaurant(request)
     if restaurant and restaurant.get("sub"):
         return {"role": "restaurant", "restaurant_id": int(restaurant["sub"]), "device_id": None}
     admin = auth.get_current_super_admin(request)
     if admin:
         return {"role": "super_admin", "restaurant_id": None, "device_id": None}
-    device = cashier_gate.device_from_cookies(request.cookies)
-    if device:
-        return {"role": "device", "restaurant_id": int(device["restaurant_id"]), "device_id": int(device["id"])}
+    ids = cashier_gate.device_restaurant_ids(request.cookies)
+    if len(ids) == 1:
+        device = cashier_gate.device_from_cookies(request.cookies, ids[0])
+        if device:
+            return {"role": "device", "restaurant_id": int(device["restaurant_id"]), "device_id": int(device["id"])}
+    if ids:
+        return {"role": "device", "restaurant_id": None, "device_id": None}
     raise HTTPException(status_code=401, detail="Unauthorized")
 
 
-def _order_for_actor(order_id: int, actor: Dict[str, Any]) -> Dict[str, Any]:
+def _order_for_actor(order_id: int, actor: Dict[str, Any], request: Optional[Request] = None) -> Dict[str, Any]:
     order = db.get_order_by_id(order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    if actor["role"] in ("restaurant", "device") and int(order.get("restaurant_id") or 0) != actor["restaurant_id"]:
+    order_restaurant = int(order.get("restaurant_id") or 0)
+    if actor["role"] == "super_admin":
+        return order
+    if actor["role"] == "restaurant":
+        if order_restaurant == actor["restaurant_id"]:
+            return order
+        if request and auth.get_current_super_admin(request):
+            return order
         raise HTTPException(status_code=404, detail="Order not found")
-    return order
+    if actor["role"] == "device":
+        if actor.get("restaurant_id") is not None and order_restaurant == int(actor["restaurant_id"]):
+            return order
+        if request and cashier_gate.device_from_cookies(request.cookies, order_restaurant):
+            return order
+    raise HTTPException(status_code=404, detail="Order not found")
+
+
+def _restaurant_for_cashier_write(request: Request, actor: Dict[str, Any], requested_id: Optional[int]) -> tuple:
+    """The page's restaurant, accepted only when this session may write it."""
+    if actor["role"] == "super_admin":
+        return _restaurant_id_for_create(actor, requested_id), None
+    if actor["role"] == "restaurant":
+        session_id = int(actor["restaurant_id"])
+        if requested_id and int(requested_id) != session_id:
+            if not auth.get_current_super_admin(request):
+                raise HTTPException(status_code=403, detail="Wrong restaurant")
+            restaurant = db.get_restaurant_by_id(int(requested_id))
+            if not restaurant:
+                raise HTTPException(status_code=404, detail="Restaurant not found")
+            return int(restaurant["id"]), None
+        return session_id, None
+    if not requested_id:
+        if actor.get("restaurant_id") is None:
+            raise HTTPException(status_code=403, detail="Restaurant is ambiguous")
+        requested_id = int(actor["restaurant_id"])
+    device = cashier_gate.device_from_cookies(request.cookies, int(requested_id))
+    if not device:
+        raise HTTPException(status_code=403, detail="Wrong restaurant")
+    return int(device["restaurant_id"]), int(device["id"])
 
 
 def _reject_if_paused(restaurant_id: int) -> None:
@@ -2048,39 +2197,56 @@ def _restaurant_id_for_create(actor: Dict[str, Any], requested_id: Optional[int]
     return int(restaurant["id"])
 
 
+def _staff_orders(restaurant_id: int, board: bool) -> List[Dict[str, Any]]:
+    if board:
+        return db.get_cashier_board(int(restaurant_id), _business_since(int(restaurant_id)))
+    return db.get_all_orders(limit=150, restaurant_id=int(restaurant_id))
+
+
 @app.get("/api/orders")
-async def list_orders(request: Request, restaurant_id: Optional[int] = None):
+async def list_orders(request: Request, restaurant_id: Optional[int] = None, board: Optional[int] = None):
     """Staff sessions keep the Phase 0 scope.
 
     The shipped Dawrak app calls this with ?restaurant_id= and no cookie, then
     registers the Live Activity token. That public response is the full order
     payload from this morning. Writes stay session-only.
+
+    ?board=1 is the cashier screen: active orders plus picked-up orders from
+    the current business day only. Other callers still receive the full list.
     """
+    cashier_board = board == 1
     restaurant = auth.get_current_restaurant(request)
     if restaurant and restaurant.get("sub"):
-        return db.get_all_orders(limit=150, restaurant_id=int(restaurant["sub"]))
+        session_id = int(restaurant["sub"])
+        if restaurant_id and int(restaurant_id) != session_id:
+            if not auth.get_current_super_admin(request):
+                raise HTTPException(status_code=403, detail="Wrong restaurant")
+            return _staff_orders(int(restaurant_id), cashier_board)
+        return _staff_orders(session_id, cashier_board)
     if auth.get_current_super_admin(request):
+        if restaurant_id:
+            return _staff_orders(int(restaurant_id), cashier_board)
         return db.get_all_orders(limit=150)
-    device = cashier_gate.device_from_cookies(request.cookies)
-    if device:
-        return db.get_all_orders(limit=150, restaurant_id=int(device["restaurant_id"]))
     if restaurant_id:
-        # Public / legacy App Clip fallback: NEVER return completed 'done' orders
-        return db.get_all_orders(limit=150, restaurant_id=int(restaurant_id), active_only=True)
+        device = cashier_gate.device_from_cookies(request.cookies, int(restaurant_id))
+        if device:
+            return _staff_orders(int(restaurant_id), cashier_board)
+        if not cashier_gate.device_restaurant_ids(request.cookies):
+            # Public / legacy App Clip fallback: NEVER return completed 'done' orders
+            return db.get_all_orders(limit=150, restaurant_id=int(restaurant_id), active_only=True)
+        raise HTTPException(status_code=403, detail="Wrong restaurant")
+    device_ids = cashier_gate.device_restaurant_ids(request.cookies)
+    if len(device_ids) == 1:
+        return _staff_orders(device_ids[0], cashier_board)
     raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 @app.post("/api/orders")
 async def create_new_order(order_data: CreateOrderRequest, request: Request):
     actor = _order_actor(request)
-    if actor["role"] == "device":
-        if cashier_gate.recent_device_orders(actor["device_id"]) >= 30:
-            raise HTTPException(status_code=429, detail="Too many orders. Wait a moment and try again.")
-        restaurant_id = actor["restaurant_id"]
-    elif actor["role"] == "restaurant":
-        restaurant_id = actor["restaurant_id"]
-    else:
-        restaurant_id = _restaurant_id_for_create(actor, order_data.restaurant_id)
+    restaurant_id, device_id = _restaurant_for_cashier_write(request, actor, order_data.restaurant_id)
+    if device_id and cashier_gate.recent_device_orders(device_id) >= 30:
+        raise HTTPException(status_code=429, detail="Too many orders. Wait a moment and try again.")
     _reject_if_paused(restaurant_id)
     blocked = billing.points_block_reason(restaurant_id)
     if blocked:
@@ -2095,7 +2261,7 @@ async def create_new_order(order_data: CreateOrderRequest, request: Request):
         restaurant_name=order_data.restaurant_name or "",
         brand_color=order_data.brand_color or "",
         brand_icon=order_data.brand_icon or "",
-        cashier_device_id=actor.get("device_id"),
+        cashier_device_id=device_id,
     )
     billing.charge_order_point(restaurant_id)
     await manager.notify_cashiers({"event": "order_created", "order": order})
@@ -2105,7 +2271,7 @@ async def create_new_order(order_data: CreateOrderRequest, request: Request):
 @app.post("/api/orders/{order_id}/call")
 async def ring_order(order_id: int, request: Request):
     actor = _order_actor(request)
-    order = _order_for_actor(order_id, actor)
+    order = _order_for_actor(order_id, actor, request)
     _reject_if_paused(int(order.get("restaurant_id") or 0))
     order = db.update_order_status(order_id, "ringing")
     if not order:
@@ -2129,17 +2295,9 @@ async def ring_order(order_id: int, request: Request):
 
 @app.post("/api/orders/{order_id}/onway")
 async def onway_order(order_id: int, request: Request):
-    try:
-        actor = _order_actor(request)
-        order = _order_for_actor(order_id, actor)
-        _reject_if_paused(int(order.get("restaurant_id") or 0))
-    except HTTPException as auth_err:
-        if auth_err.status_code == 401:
-            order = db.get_order_by_id(order_id)
-            if not order:
-                raise HTTPException(status_code=404, detail="Order not found")
-        else:
-            raise auth_err
+    actor = _order_actor(request)
+    order = _order_for_actor(order_id, actor, request)
+    _reject_if_paused(int(order.get("restaurant_id") or 0))
 
     order = db.update_order_status(order_id, "onway")
     if not order:
@@ -2161,7 +2319,7 @@ async def onway_order(order_id: int, request: Request):
 @app.post("/api/orders/{order_id}/complete")
 async def complete_order(order_id: int, request: Request):
     actor = _order_actor(request)
-    order = _order_for_actor(order_id, actor)
+    order = _order_for_actor(order_id, actor, request)
     _reject_if_paused(int(order.get("restaurant_id") or 0))
     order = db.update_order_status(order_id, "done")
     if not order:
@@ -2179,8 +2337,10 @@ async def complete_order(order_id: int, request: Request):
 @app.post("/api/orders/{order_id}/reset")
 async def reset_order(order_id: int, request: Request):
     actor = _order_actor(request)
-    order = _order_for_actor(order_id, actor)
+    order = _order_for_actor(order_id, actor, request)
     _reject_if_paused(int(order.get("restaurant_id") or 0))
+    if _picked_before_business_day(order):
+        raise HTTPException(status_code=409, detail="That pickup is from a previous business day")
     order = db.update_order_status(order_id, "waiting")
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -2196,7 +2356,7 @@ async def reset_order(order_id: int, request: Request):
 @app.delete("/api/orders/{order_id}")
 async def delete_order(order_id: int, request: Request):
     actor = _order_actor(request)
-    order = _order_for_actor(order_id, actor)
+    order = _order_for_actor(order_id, actor, request)
     _reject_if_paused(int(order.get("restaurant_id") or 0))
     if order:
         db.delete_order(order_id)
@@ -2305,27 +2465,58 @@ class _AuthSource:
         self.headers = headers
 
 
-@app.websocket("/ws/cashier")
-async def websocket_cashier(websocket: WebSocket):
-    source = _AuthSource(websocket.cookies, websocket.headers)
-    restaurant = auth.get_current_restaurant(source)
-    if restaurant and restaurant.get("sub"):
-        scope_id: Optional[int] = int(restaurant["sub"])
-    elif auth.get_current_super_admin(source):
-        scope_id = None
-    else:
-        device = cashier_gate.device_from_cookies(websocket.cookies)
-        if not device:
-            await websocket.accept()
-            await websocket.close(code=4401)
-            return
-        scope_id = int(device["restaurant_id"])
-    await manager.connect_cashier(websocket, scope_id)
+async def _cashier_socket_loop(websocket: WebSocket) -> None:
     try:
+        await websocket.send_text(json.dumps({"event": "hello", "build": app_build()}))
         while True:
             await websocket.receive_text()
     except WebSocketDisconnect:
         manager.disconnect_cashier(websocket)
+
+
+@app.websocket("/ws/cashier")
+async def websocket_cashier(websocket: WebSocket):
+    """Super-admin board only. Cashier pages use /ws/cashier/{slug}.
+
+    A cached cashier page, a device cookie, or a restaurant owner must not
+    sit on this socket: it hears every restaurant.
+    """
+    source = _AuthSource(websocket.cookies, websocket.headers)
+    if not auth.get_current_super_admin(source):
+        await websocket.accept()
+        await websocket.close(code=4403)
+        return
+    await manager.connect_cashier(websocket, None, admin_all=True)
+    await _cashier_socket_loop(websocket)
+
+
+@app.websocket("/ws/cashier/{slug}")
+async def websocket_cashier_room(websocket: WebSocket, slug: str):
+    """Cashier page room. The restaurant comes from the slug after the cookie is checked.
+
+    A client-supplied restaurant id is never trusted: the slug is resolved on
+    the server, then the session or the device cookie for that restaurant
+    must match.
+    """
+    rest = db.get_restaurant_by_slug(slug)
+    if not rest:
+        await websocket.accept()
+        await websocket.close(code=4404)
+        return
+    rid = int(rest["id"])
+    source = _AuthSource(websocket.cookies, websocket.headers)
+    session = auth.get_current_restaurant(source)
+    allowed = bool(session and str(session.get("sub")) == str(rid))
+    if not allowed and auth.get_current_super_admin(source):
+        allowed = True
+    if not allowed and cashier_gate.device_from_cookies(websocket.cookies, rid):
+        allowed = True
+    if not allowed:
+        await websocket.accept()
+        await websocket.close(code=4401)
+        return
+    await manager.connect_cashier(websocket, rid, admin_all=False)
+    await _cashier_socket_loop(websocket)
 
 # ========================================================
 #  MYFATOORAH EMBEDDED & IN-APP PAYMENT ROUTERS

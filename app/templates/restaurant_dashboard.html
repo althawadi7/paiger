@@ -811,7 +811,7 @@
 
     // Connect WebSocket to listen to live cashier notifications
     const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${wsProto}//${window.location.host}/ws/cashier`);
+    const ws = new WebSocket(`${wsProto}//${window.location.host}/ws/cashier/${encodeURIComponent(restSlug)}`);
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);

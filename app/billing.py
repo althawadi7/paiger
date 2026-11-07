@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 from zoneinfo import ZoneInfo
 
 from . import database as db
+from . import i18n
 from . import owner_board
 
 BAHRAIN = ZoneInfo("Asia/Bahrain")
@@ -324,6 +325,26 @@ def list_restaurants(status: str, query: str, page: int) -> Dict[str, Any]:
     }
 
 
+def _on_trial(row: Dict[str, Any]) -> bool:
+    """Stored status stays trialing after the end date. That is an expired trial."""
+    return (row.get("subscription_status") or "").strip() == "trialing"
+
+
+def _plan_texts(row: Dict[str, Any], wallet: Optional[Dict[str, Any]]) -> Dict[str, str]:
+    if _on_trial(row):
+        name = i18n.t("admin.planTrial")
+        return {"plan_name": name, "plan_label": name}
+    code = (row.get("plan_code") or "").strip()
+    if not code:
+        return {"plan_name": "—", "plan_label": "—"}
+    name = i18n.t(f"admin.pl.{code}") if code in ("monthly", "yearly", "points") else code
+    if code != "points":
+        return {"plan_name": name, "plan_label": name}
+    balance = int((wallet or {}).get("balance") or 0)
+    pts = i18n.t("admin.pts").replace("{n}", str(balance))
+    return {"plan_name": name, "plan_label": f"{name} · {pts}"}
+
+
 def _restaurant_row(row: Dict[str, Any], state: str, wallet: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     renew = row.get("manual_plan_until") or row.get("trial_ends_at")
     when = owner_board._as_bahrain(renew) if not hasattr(renew, "year") or isinstance(renew, datetime) else None
@@ -340,6 +361,7 @@ def _restaurant_row(row: Dict[str, Any], state: str, wallet: Optional[Dict[str, 
         "phone": row.get("phone") or "",
         "status": state,
         "plan_code": row.get("plan_code") or "",
+        **_plan_texts(row, wallet),
         "renew": label,
         "orders_30d": int(row.get("orders_30d") or 0),
         "joined": owner_board._as_bahrain(row.get("created_at")).strftime("%d %b %Y") if row.get("created_at") else "",
@@ -398,6 +420,7 @@ def restaurant_detail(restaurant_id: int) -> Optional[Dict[str, Any]]:
         "phone": raw.get("phone") or "",
         "status": state,
         "plan_code": raw.get("plan_code") or "",
+        **_plan_texts(raw, wallet),
         "renew": renew,
         "orders_30d": orders_30,
         "points": None if not wallet else int(wallet["balance"]),

@@ -488,7 +488,7 @@ def install(app: FastAPI, templates) -> None:
         writer = csv.writer(buf)
         writer.writerow(["name", "slug", "email", "status", "plan", "renew", "orders_30d", "joined"])
         for row in found["all_rows"]:
-            writer.writerow([row["name"], row["slug"], row["email"], row["status"], row["plan_code"], row["renew"], row["orders_30d"], row["joined"]])
+            writer.writerow([row["name"], row["slug"], row["email"], row["status"], row["plan_label"], row["renew"], row["orders_30d"], row["joined"]])
         return Response(buf.getvalue(), media_type="text/csv", headers={"Content-Disposition": 'attachment; filename="restaurants.csv"'})
 
     @app.get("/admin/restaurants/{restaurant_id}.json")

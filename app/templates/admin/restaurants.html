@@ -23,7 +23,7 @@
           <tr class="click" data-open="{{ row.id }}" tabindex="-1">
             <td><div class="rcell"><span class="rlogo">{{ row.initial }}</span><div><b>{{ row.name }}</b><span>/r/{{ row.slug }}</span></div></div></td>
             <td><span class="pill {{ row.status }}">{{ t('admin.st.' + row.status) }}</span></td>
-            <td>{% if row.plan_code %}{{ t('admin.pl.' + row.plan_code) if row.plan_code in ['monthly','yearly','points'] else row.plan_code }}{% if row.points is not none %} · {{ row.points }}{% endif %}{% else %}—{% endif %}</td>
+            <td>{{ row.plan_label }}</td>
             <td class="sub">{{ row.renew }}</td>
             <td class="r"><span class="num">{{ row.orders_30d }}</span></td>
             <td class="sub">{{ row.joined }}</td>
@@ -140,7 +140,7 @@
     var pill = el("span", { class: "pill " + d.status }, d.status);
     body.appendChild(el("div")).appendChild(pill);
     var facts = el("div", { class: "facts" });
-    facts.appendChild(field(labels.plan, d.plan_code || "—"));
+    facts.appendChild(field(labels.plan, d.plan_name || "—"));
     facts.appendChild(field(labels.renew, d.renew));
     facts.appendChild(field(labels.owner, d.email));
     facts.appendChild(field(labels.phone, d.phone));

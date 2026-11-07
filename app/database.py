@@ -2,7 +2,7 @@ import hashlib
 import json
 import os
 import re
-import uuid
+import secrets
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional, Dict, Any, List
@@ -1171,8 +1171,6 @@ def create_order(
     brand_icon: str = "",
     cashier_device_id: Optional[int] = None,
 ) -> Optional[Dict[str, Any]]:
-    token = uuid.uuid4().hex[:10]
-    
     # Resolve restaurant details if provided by ID
     rest = get_restaurant_by_id(restaurant_id)
     if rest:
@@ -1187,15 +1185,24 @@ def create_order(
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO orders (restaurant_id, order_number, customer_name, notes, token, status, restaurant_name, brand_color, brand_icon, cashier_device_id)
-                VALUES (%s, %s, %s, %s, %s, 'waiting', %s, %s, %s, %s)
-                """,
-                (restaurant_id, order_number, customer_name, notes, token, final_restaurant, final_color, final_icon, cashier_device_id)
-            )
-            order_id = cur.lastrowid
-            conn.commit()
+            order_id = None
+            for _ in range(5):
+                token = secrets.token_hex(16)
+                try:
+                    cur.execute(
+                        """
+                        INSERT INTO orders (restaurant_id, order_number, customer_name, notes, token, status, restaurant_name, brand_color, brand_icon, cashier_device_id)
+                        VALUES (%s, %s, %s, %s, %s, 'waiting', %s, %s, %s, %s)
+                        """,
+                        (restaurant_id, order_number, customer_name, notes, token, final_restaurant, final_color, final_icon, cashier_device_id)
+                    )
+                    order_id = cur.lastrowid
+                    conn.commit()
+                    break
+                except pymysql.err.IntegrityError:
+                    conn.rollback()
+            if not order_id:
+                raise RuntimeError("could not allocate an order token")
             return get_order_by_id(order_id)
     finally:
         conn.close()
@@ -1261,23 +1268,24 @@ def mark_order_scanned(order_id: int) -> Optional[Dict[str, Any]]:
         conn.close()
 
 
-def cashier_today_stats(restaurant_id: int) -> Dict[str, Any]:
+def cashier_today_stats(restaurant_id: int, since: datetime) -> Dict[str, Any]:
+    """Orders and prep inside the business day that starts at `since` (stored clock)."""
     conn = get_db_connection()
     try:
         with conn.cursor() as cur:
             cur.execute(
                 """
                 SELECT
-                    SUM(DATE(created_at) = CURDATE()) AS today_count,
-                    SUM(called_at IS NOT NULL AND DATE(called_at) = CURDATE()) AS called_count,
+                    SUM(created_at >= %s) AS today_count,
+                    SUM(called_at IS NOT NULL AND called_at >= %s) AS called_count,
                     AVG(CASE
-                        WHEN called_at IS NOT NULL AND DATE(called_at) = CURDATE()
+                        WHEN called_at IS NOT NULL AND called_at >= %s
                         THEN TIMESTAMPDIFF(SECOND, created_at, called_at)
                     END) AS avg_seconds
                 FROM orders
                 WHERE restaurant_id = %s
                 """,
-                (restaurant_id,),
+                (since, since, since, restaurant_id),
             )
             row = cur.fetchone() or {}
         if not isinstance(row, dict):
@@ -1292,18 +1300,8 @@ def cashier_today_stats(restaurant_id: int) -> Dict[str, Any]:
 
 
 def get_order_by_number_and_restaurant(order_number: str, restaurant_id: int) -> Optional[Dict[str, Any]]:
-    conn = get_db_connection()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("""
-                SELECT * FROM orders 
-                WHERE order_number = %s AND restaurant_id = %s 
-                ORDER BY id DESC LIMIT 1
-            """, (str(order_number).strip(), restaurant_id))
-            row = cur.fetchone()
-            return _serialize_row(row)
-    finally:
-        conn.close()
+    """Same rule as find_active_order_number: newest waiting, ringing, or onway row."""
+    return find_active_order_number(restaurant_id, order_number)
 
 _PUBLIC_ORDER_FIELDS = (
     "id", "token", "order_number", "status", "restaurant_id",
@@ -1334,6 +1332,40 @@ def get_recent_public_orders(restaurant_id: int, since: datetime) -> List[Dict[s
                 item = _serialize_row(row) or {}
                 rows.append({key: item.get(key) for key in _PUBLIC_ORDER_FIELDS})
             return rows
+    finally:
+        conn.close()
+
+
+def get_cashier_board(restaurant_id: int, since: datetime) -> List[Dict[str, Any]]:
+    """Active orders, plus today's picked-up orders. Nothing is deleted."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT o.*, r.name as restaurant_display_name, r.slug as restaurant_slug, r.brand_color as restaurant_color
+                FROM orders o
+                LEFT JOIN restaurants r ON o.restaurant_id = r.id
+                WHERE o.restaurant_id = %s AND o.status IN ('waiting', 'ringing', 'onway')
+                ORDER BY o.id DESC
+                LIMIT 150
+                """,
+                (restaurant_id,),
+            )
+            active = [_serialize_row(row) for row in cur.fetchall()]
+            cur.execute(
+                """
+                SELECT o.*, r.name as restaurant_display_name, r.slug as restaurant_slug, r.brand_color as restaurant_color
+                FROM orders o
+                LEFT JOIN restaurants r ON o.restaurant_id = r.id
+                WHERE o.restaurant_id = %s AND o.status = 'done' AND o.completed_at >= %s
+                ORDER BY o.completed_at DESC, o.id DESC
+                LIMIT 30
+                """,
+                (restaurant_id, since),
+            )
+            picked = [_serialize_row(row) for row in cur.fetchall()]
+            return active + picked
     finally:
         conn.close()
 

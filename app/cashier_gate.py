@@ -351,6 +351,21 @@ def valid_device(restaurant_id: int, token: str) -> Optional[Dict[str, Any]]:
         conn.close()
 
 
+def device_restaurant_ids(cookies) -> list:
+    """Every restaurant this browser has a valid cashier device cookie for."""
+    found = []
+    for name in cookies.keys():
+        if not name.startswith(COOKIE_PREFIX):
+            continue
+        try:
+            rid = int(name[len(COOKIE_PREFIX):])
+        except ValueError:
+            continue
+        if valid_device(rid, cookies.get(name) or ""):
+            found.append(rid)
+    return found
+
+
 def device_from_cookies(cookies, restaurant_id: Optional[int] = None) -> Optional[Dict[str, Any]]:
     names = [cookie_name(restaurant_id)] if restaurant_id else [
         name for name in cookies.keys() if name.startswith(COOKIE_PREFIX)
