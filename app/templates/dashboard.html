@@ -1,8 +1,10 @@
 {% extends "base.html" %}
+{% from "partials/static_asset.html" import href as static_asset %}
+{% from "partials/mf_session_script.html" import tag as mf_session_script %}
 {% from "partials/restaurant_logo.html" import logo_slot %}
 {% block title %}{{ t('dash.overview') if section == 'overview' else t('dash.orders') if section == 'orders' else t('dash.sub') if section == 'subscription' else t('dash.settings') }} · {{ restaurant.name }} · Trings{% endblock %}
 {% block body_class %}dash{% endblock %}
-{% block head %}<link rel="stylesheet" href="/static/css/dashboard.css?v={{ static_version('css/dashboard.css') if static_version is defined else '1' }}"><script src="/static/js/restaurant-logo.js?v={{ static_version('js/restaurant-logo.js') if static_version is defined else '1' }}" defer></script>{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ static_asset('css/dashboard.css') }}"><script src="{{ static_asset('js/restaurant-logo.js') }}" defer></script>{% if section == 'subscription' and payment_config is defined %}{{ mf_session_script(payment_config) }}<script src="{{ static_asset('js/mf-embedded.js') }}" defer></script><script src="{{ static_asset('js/subscription-checkout.js') }}" defer></script>{% endif %}{% endblock %}
 {% block shell_nav %}{% endblock %}
 {% block shell_footer %}{% endblock %}
 {% block content %}
@@ -111,52 +113,76 @@
     {% elif section == 'subscription' %}
     <section>
       <div class="ph"><div><h1>{{ t('dash.sub') }}</h1><p>{{ t('dash.subSub') }}</p></div></div>
+      {% if past_due %}<div class="card" style="border-color:#fca5a5;background:#fef2f2;padding:14px 16px;margin-bottom:16px;color:#b42318">{{ t('dash.pastDue') }}</div>{% endif %}
       <div class="card status-card">
-        <div class="grow"><p class="k">{{ t('dash.curPlan') }}</p><p class="v">{{ plan_title }} <span class="tag {{ plan_tag_class }}">{{ plan_tag }}</span></p></div>
-        <div class="facts">
-          {% for fact in plan_facts %}<div><span>{{ fact.label }}</span><b dir="ltr">{{ fact.value }}</b></div>{% endfor %}
+        <div class="grow">
+          <p class="k">{{ t('dash.curPlan') }}</p>
+          <p class="v">{{ plan_title }} <span class="tag {{ plan_tag_class }}">{{ plan_until_label or plan_tag }}</span></p>
+          {% if plan_ends_soon %}<p class="ends-soon">{{ plan_ends_soon }}</p>{% endif %}
+          {% if plan_change_label %}<p class="plan-change">{{ plan_change_label }} · <button type="button" class="link-btn" id="cancelPlanChange">{{ t('dash.cancelChange') }}</button></p>{% endif %}
         </div>
+        <div class="facts">
+          {% for fact in plan_facts %}<div><span>{{ fact.label }}</span><b dir="auto">{{ fact.value }}</b></div>{% endfor %}
+        </div>
+        {% if extend_label %}
+        <div class="card-action">
+          <button type="button" class="btn btn-line" id="payAheadBtn" data-code="{{ plan_code }}" aria-pressed="false">{{ extend_label }}</button>
+        </div>
+        {% endif %}
       </div>
       {% if plan_code == 'points' and sub_state == 'active' %}
       <div class="card wallet">
         <div class="bal"><b>{{ points_balance }}</b><span>{{ t('dash.pointsLeft') }}</span></div>
         <div><div class="meter"><i style="width:0%"></i></div><div class="meta"><span>{{ t('dash.pointRate').replace('{price}', point_price) }}</span></div></div>
-        <button class="btn btn-ink" type="button" disabled title="{{ t('dash.soon') }}">{{ t('dash.topUp') }}</button>
+        <button class="btn btn-ink" type="button" id="topUpBtn" data-pack="">{{ t('dash.topUp') }}</button>
       </div>
       {% endif %}
       <h2 class="h3">{{ t('dash.pickPlan') if sub_state != 'active' else t('dash.changePlan') }}</h2>
-      <div class="plans">
+      <div class="plans" role="radiogroup" aria-label="{{ t('dash.pickPlan') if sub_state != 'active' else t('dash.changePlan') }}">
         {% for plan in plans %}
-        <div class="plan" aria-checked="{{ 'true' if plan.code == plan_code and sub_state == 'active' else 'false' }}">
-          {% if plan.code == plan_code and sub_state == 'active' %}<span class="cur-tag">{{ t('dash.current') }}</span>{% endif %}
-          <span class="radio"></span>
+        {% set is_current = current_locked and plan.code == plan_code %}
+        <button type="button" class="plan{% if is_current %} is-current{% endif %}" role="radio" data-code="{{ plan.code }}"{% if is_current %} aria-disabled="true"{% endif %} aria-checked="{{ 'true' if plan.code == preselected_checkout and preselected_checkout and not is_current else 'false' }}" tabindex="{{ '0' if plan.code == preselected_checkout and preselected_checkout and not is_current else '-1' }}">
+          {% if is_current %}<span class="plan-badge neutral">{{ t('dash.currentPlan') }}</span>{% else %}<span class="radio" aria-hidden="true"></span>{% endif %}
           <h4>{{ plan.name_ar if lang == 'ar' else plan.name_en }}</h4>
           {% if plan.badge %}<span class="plan-badge">{{ plan.badge }}</span>{% endif %}
           <p class="for">{{ (plan.blurb_ar if lang == 'ar' else plan.blurb_en) or t('dash.for.' + plan.type) }}</p>
           <p class="price"><span>BHD</span><b>{{ plan.price_label }}</b><span>{{ t('dash.per.' + plan.type) }}</span></p>
           <p class="save">{% if plan.code == 'yearly' %}{{ t('dash.yearSave') }}{% endif %}</p>
           {% if plan.feature_lines %}<ul class="feats">{% for line in plan.feature_lines %}<li>{{ line }}</li>{% endfor %}</ul>{% endif %}
-        </div>
+        </button>
         {% endfor %}
       </div>
-      <div class="checkout">
-        <div class="card box">
+      <script type="application/json" id="checkout-bootstrap">{{ checkout_bootstrap|tojson }}</script>
+      <div id="subCheckout" class="checkout">
+        <div class="card box pay-form">
           <h3>{{ t('dash.payCard') }}</h3>
-          <div class="card-field"><div class="fake">{{ t('dash.cardNo') }}</div><div class="row"><div class="fake">MM / YY</div><div class="fake">CVV</div></div><small>{{ t('dash.cardNote') }}</small></div>
+          <p class="sub">{{ t('dash.cardNote') }}</p>
+          <div class="mf-box" data-state="idle"><div id="mf-form" class="mf-mount"></div></div>
         </div>
         <div class="card box">
           <h3>{{ t('dash.summary') }}</h3>
-          <div class="sum"><div><span>{{ t('dash.plan') }}</span><span>{{ plan_title }}</span></div><div class="tot"><span>{{ t('dash.due') }}</span><b>BHD {{ selected_price }}</b></div></div>
-          <button class="btn btn-ink pay" type="button" disabled title="{{ t('dash.soon') }}">{{ t('dash.pay') }}</button>
+          <div class="sum"><div><span>{{ t('dash.plan') }}</span><span id="summaryPlanName">{% if checkout_summary_name %}{{ checkout_summary_name }}{% else %}—{% endif %}</span></div><p class="muted" id="summaryNote" hidden></p><div class="tot"><span>{{ t('dash.due') }}</span><b id="summaryDueAmount">{% if checkout_summary_price %}BHD {{ checkout_summary_price }}{% else %}—{% endif %}</b></div></div>
+          <button class="btn btn-primary pay" type="button" id="subscribePay" disabled>{{ t('dash.pay') }}</button>
+          <button class="btn btn-ink pay" type="button" id="schedulePlanBtn" hidden>{{ t('dash.scheduleChange') }}</button>
+          <label class="save-card" id="saveCardRow"><input type="checkbox" id="saveCardSub" checked> {{ t('dash.saveCard') }}</label>
           <p class="secure">{{ t('dash.secure') }}</p>
         </div>
       </div>
       {% if plan_code == 'points' %}
+      <script type="application/json" id="dash-packs-data">{{ packs|tojson }}</script>
       <h2 class="h3">{{ t('dash.packs') }}</h2>
       <div class="packs">
         {% for pack in packs %}<div class="pack"><b class="num">{{ pack.points }}</b><span>BHD {{ pack.price_label }}</span></div>{% endfor %}
       </div>
       {% endif %}
+      <h2 class="h3">{{ t('dash.cards') }}</h2>
+      <div class="card" style="padding:14px">
+        <div id="cardList">{% for card in saved_cards %}<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee"><span>{{ card.brand }} ·••• {{ card.last4 }}{% if card.is_default %} ★{% endif %}</span><button type="button" class="btn btn-quiet btn-sm" data-rm-card="{{ card.id }}">{{ t('dash.remove') }}</button></div>{% else %}<p class="sub">{{ t('dash.noCards') }}</p>{% endfor %}</div>
+        <div style="margin-top:12px;display:flex;gap:16px;flex-wrap:wrap;font-size:14px">
+          <label><input type="checkbox" id="prefRenew" {% if billing_prefs.auto_renew_enabled %}checked{% endif %}> {{ t('dash.autoRenew') }}</label>
+          {% if plan_code == 'points' %}<label><input type="checkbox" id="prefTopup" {% if billing_prefs.auto_topup_enabled %}checked{% endif %}> {{ t('dash.autoTopup') }}</label>{% endif %}
+        </div>
+      </div>
       <h2 class="h3">{{ t('dash.invoices') }}</h2>
       <div class="card"><div class="table-scroll"><table class="t"><thead><tr><th>{{ t('dash.iDate') }}</th><th>{{ t('dash.iDesc') }}</th><th>{{ t('dash.iAmount') }}</th><th>{{ t('dash.iStatus') }}</th><th></th></tr></thead><tbody>
         {% for inv in invoices %}<tr><td>{{ inv.created_at }}{% if inv.status == 'unpaid' and inv.due %}<br><span class="sub">{{ t('dash.dueOn') }} {{ inv.due }}</span>{% endif %}</td><td>{{ inv.description }}</td><td class="num">{{ inv.amount_label }}</td><td>{{ inv.status }}</td><td>{% if inv.number %}<a class="btn btn-quiet btn-sm" href="/dashboard/invoices/{{ inv.number }}.pdf">{{ inv.doc }}</a>{% endif %}{% if inv.pay %} <a href="{{ inv.pay }}">{{ t('dash.pay') }}</a>{% endif %}</td></tr>{% else %}<tr><td colspan="5" class="sub">{{ t('dash.noInv') }}</td></tr>{% endfor %}
@@ -256,7 +282,7 @@
 {% endblock %}
 {% block scripts %}
 {% include "partials/confirm.html" %}
-<script src="/static/js/confirm.js?v={{ static_version('js/confirm.js') if static_version is defined else '1' }}"></script>
+<script src="{{ static_asset('js/confirm.js') }}"></script>
 <script>
 (function () {
   var side = document.getElementById("side");
@@ -276,7 +302,7 @@
   });
   var chart = document.getElementById("chart");
   if (chart) {
-    var hours = {{ stats.hours|tojson if stats else '[]' }};
+    var hours = {{ (stats.hours if stats else [])|tojson }};
     var nowH = {{ stats.hour_now if stats else 0 }};
     var tipLabel = {{ t('dash.tip')|tojson }};
     function draw() {
@@ -368,7 +394,39 @@
       fetch("/api/merchant/logo", { method: "DELETE", credentials: "same-origin" }).then(function (r) { if (r.ok) location.reload(); });
     });
   }
-  var pin = {{ pin|tojson if pin is not none else '""' }};
+  function startCheckout(payload) {
+    return fetch("/api/billing/checkout/intent", {
+      method: "POST", credentials: "same-origin",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json().then(function (b) { if (!r.ok) throw new Error(b.detail || "Failed"); return b.intent; }); })
+      .then(function (intent) { window.location.href = "/dashboard/checkout?intent=" + encodeURIComponent(intent.intent_id); });
+  }
+  var packs = [];
+  var packsNode = document.getElementById("dash-packs-data");
+  if (packsNode) {
+    try { packs = JSON.parse(packsNode.textContent || "[]"); } catch (e) { packs = []; }
+  }
+  document.querySelectorAll(".pack").forEach(function (pack, idx) {
+    pack.addEventListener("click", function () {
+      if (!packs[idx]) return;
+      startCheckout({ purpose: "topup", pack_id: packs[idx].id }).catch(function (e) { alert(e.message); });
+    });
+  });
+  function postPrefs(body) {
+    return fetch("/api/billing/preferences", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  }
+  var pr = document.getElementById("prefRenew");
+  var pt = document.getElementById("prefTopup");
+  if (pr) pr.addEventListener("change", function () { postPrefs({ auto_renew: pr.checked }); });
+  if (pt) pt.addEventListener("change", function () { postPrefs({ auto_topup: pt.checked }); });
+  document.querySelectorAll("[data-rm-card]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var id = btn.getAttribute("data-rm-card");
+      fetch("/api/billing/cards/" + id, { method: "DELETE", credentials: "same-origin" }).then(function () { location.reload(); });
+    });
+  });
+  var pin = {{ (pin or "")|tojson }};
   var eye = document.getElementById("pinEye");
   if (eye) {
     var shown = false;

@@ -120,4 +120,9 @@ def install(templates) -> None:
     templates.env.globals["t"] = t
     templates.env.globals["lang"] = _LangValue()
     templates.env.globals["dir"] = _DirValue()
-    templates.env.filters["tojson"] = lambda value: Markup(json.dumps(value, ensure_ascii=False))
+    def _tojson(value) -> Markup:
+        text = json.dumps(value, ensure_ascii=False)
+        text = text.replace("</", "<\\/")
+        return Markup(text)
+
+    templates.env.filters["tojson"] = _tojson

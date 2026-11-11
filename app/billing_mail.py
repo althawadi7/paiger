@@ -9,11 +9,13 @@ from typing import Any, Dict, List, Optional
 import pymysql
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from . import billing, database as db, mailer, owner_board
+from . import billing, database as db, i18n, mailer, owner_board
 
 logger = logging.getLogger("uvicorn.error")
 _TEMPLATES = Path(__file__).resolve().parent / "templates"
 _env = Environment(loader=FileSystemLoader(str(_TEMPLATES)), autoescape=select_autoescape(["html"]))
+_env.globals["t"] = i18n.t
+_LOCALIZED = {"payment_received"}
 _WD = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 _WEEK = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 _MO = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -71,10 +73,17 @@ def _parts(value: Any):
     return owner_board._as_bahrain(value)
 
 
+def _arabic_date(when: Any) -> str:
+    months = i18n.t("date.monthsLong").split(",")
+    return f"{when.day} {months[when.month - 1] if len(months) == 12 else when.month} {when.year}"
+
+
 def short_date(value: Any) -> str:
     when = _parts(value)
     if not when:
         return "—"
+    if i18n.current_lang() == "ar":
+        return _arabic_date(when)
     return f"{_WD[when.weekday()]} {when.day} {_MO[when.month - 1]} {when.year}"
 
 
@@ -82,6 +91,8 @@ def long_date(value: Any) -> str:
     when = _parts(value)
     if not when:
         return "—"
+    if i18n.current_lang() == "ar":
+        return _arabic_date(when)
     return f"{when.day} {_MONTH[when.month - 1]} {when.year}"
 
 
@@ -150,19 +161,6 @@ def _seller() -> Dict[str, str]:
         "seller_address": cfg.get("seller_address") or "",
         "support_email": cfg.get("support_email") or "",
     }
-
-
-def _card_label(last4: str, brand: str = "") -> str:
-    if not (last4 or "").strip():
-        return "—"
-    return f"{(brand or 'Visa').strip()} ending {last4.strip()}"
-
-
-def _paid_with(invoice: Dict[str, Any]) -> str:
-    method = invoice.get("paid_method") or ""
-    if method == "card" and invoice.get("card_last4"):
-        return _card_label(str(invoice.get("card_last4")), str(invoice.get("card_brand") or "Visa"))
-    return {"cash": "Cash", "bank_transfer": "Bank transfer", "other": "Other", "card": "Card"}.get(method, method or "—")
 
 
 def _item_label(invoice: Dict[str, Any]) -> str:
@@ -242,16 +240,17 @@ def _invoice_context(invoice: Dict[str, Any]) -> Dict[str, Any]:
     token = invoice.get("pay_token") or ""
     base = public_base()
     pay = f"{base}/pay/{number}?t={token}" if number and token else f"{base}/dashboard"
-    return {
+    ctx = {
         "number": number,
         "amount": amount,
         "due_label": short_date(invoice.get("due_at")),
         "due_long": long_date(invoice.get("due_at")),
         "item_label": _item_label(invoice),
         "pay_url": pay,
-        "paid_with": _paid_with(invoice),
         "active_until": short_date(invoice.get("period_end")),
     }
+    ctx.update(billing.receipt_details(invoice))
+    return ctx
 
 
 def render_billing_email(kind: str, restaurant: Dict[str, Any], ref: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
@@ -259,6 +258,8 @@ def render_billing_email(kind: str, restaurant: Dict[str, Any], ref: Optional[Di
     tone_name = "error" if kind == "invoice_reminder" and (ref.get("when") or "") == "overdue" else _KIND_TONE.get(kind, "grey")
     tone_bg, tone_fg = _TONE.get(tone_name, _TONE["grey"])
     ctx = _base_context(restaurant)
+    ctx["lang"] = i18n.current_lang()
+    ctx["dir"] = i18n.current_dir()
     ctx["tone_bg"] = tone_bg
     ctx["tone_fg"] = tone_fg
     invoice = ref.get("invoice") or {}
@@ -285,7 +286,9 @@ def render_billing_email(kind: str, restaurant: Dict[str, Any], ref: Optional[Di
             ctx["plan_amount"] = f"BHD {price} per order" if (plan.get("type") or "") == "points" else f"BHD {price}"
         else:
             ctx["plan_amount"] = "—"
-    ctx["card_label"] = ref.get("card_label") or _card_label(str(ref.get("card_last4") or ""), str(ref.get("card_brand") or ""))
+    ctx["card_label"] = ref.get("card_label") or billing.payment_label(
+        str(ref.get("card_brand") or ""), str(ref.get("card_last4") or ""), "—"
+    )
     ctx["when"] = ref.get("when") or "due"
     ctx["next_try"] = short_date(ref.get("next_try"))
     ctx["pauses_on"] = short_date(ref.get("pauses_on"))
@@ -340,7 +343,7 @@ def subject_for(kind: str, ctx: Dict[str, Any]) -> str:
             return f"Reminder: invoice {number} was due on {ctx.get('due_label') or ''}".strip()
         return f"Reminder: invoice {number} is due tomorrow"
     if kind == "payment_received":
-        return f"Receipt {number}, thank you"
+        return i18n.t("receipt.subject").replace("{number}", number)
     if kind == "payment_failed":
         return "We couldn't charge your card for Trings"
     if kind == "points_low":
@@ -395,6 +398,14 @@ def _exists(kind: str, ref_key: str) -> bool:
 
 def send_billing_email(kind: str, restaurant: Dict[str, Any], ref: Optional[Dict[str, Any]] = None, attach_pdf_of: Any = None) -> Dict[str, str]:
     ref = dict(ref or {})
+    token = i18n.activate((ref.get("lang") if kind in _LOCALIZED else "") or "en")
+    try:
+        return _send_billing_email(kind, restaurant, ref, attach_pdf_of)
+    finally:
+        i18n.reset(token)
+
+
+def _send_billing_email(kind: str, restaurant: Dict[str, Any], ref: Dict[str, Any], attach_pdf_of: Any) -> Dict[str, str]:
     ref_key = str(ref.get("ref_key") or "")
     try:
         if kind not in _KINDS:
@@ -449,7 +460,7 @@ def on_unpaid_invoice(number: str) -> None:
 
 
 def on_invoice_paid(number: str) -> None:
-    _spawn(_send_receipt, number)
+    _spawn(_send_receipt, number, i18n.current_lang())
 
 
 def _send_invoice_new(number: str) -> None:
@@ -464,14 +475,14 @@ def _send_invoice_new(number: str) -> None:
     )
 
 
-def _send_receipt(number: str) -> None:
+def _send_receipt(number: str, lang: str = "en") -> None:
     invoice = billing.get_invoice(number)
     if not invoice or (invoice.get("status") or "") != "paid":
         return
     send_billing_email(
         "payment_received",
         _rest_from_invoice(invoice),
-        {"invoice": invoice, "ref_key": f"inv:{invoice['id']}"},
+        {"invoice": invoice, "ref_key": f"inv:{invoice['id']}", "lang": lang},
         attach_pdf_of=invoice,
     )
 
@@ -514,7 +525,7 @@ def send_payment_failed(
     ref_key: str,
     amount_fils: Optional[int] = None,
     card_last4: str = "",
-    card_brand: str = "Visa",
+    card_brand: str = "",
     next_try: Any = None,
     pauses_on: Any = None,
 ) -> Dict[str, str]:
@@ -536,7 +547,7 @@ def send_renewal_soon(
     restaurant: Dict[str, Any],
     renews_on: Any,
     card_last4: str = "",
-    card_brand: str = "Visa",
+    card_brand: str = "",
     ref_key: str = "",
 ) -> Dict[str, str]:
     stamp = renews_on.isoformat() if hasattr(renews_on, "isoformat") else str(renews_on)[:10]
@@ -554,7 +565,7 @@ def resend_invoice(invoice: Dict[str, Any]) -> Dict[str, str]:
     return send_billing_email(
         kind,
         _rest_from_invoice(invoice),
-        {"invoice": invoice, "ref_key": f"inv:{invoice['id']}:again:{int(time.time())}"},
+        {"invoice": invoice, "ref_key": f"inv:{invoice['id']}:again:{int(time.time())}", "lang": i18n.current_lang()},
         attach_pdf_of=invoice,
     )
 
@@ -584,7 +595,7 @@ def send_admin_test(to_email: str, restaurant_name: str = "Sample") -> Dict[str,
     return send_billing_email(
         "payment_received",
         {"id": None, "name": restaurant_name, "email": to_email, "slug": ""},
-        {"invoice": invoice, "ref_key": f"test:{time.time_ns()}", "paid_with": "Card"},
+        {"invoice": invoice, "ref_key": f"test:{time.time_ns()}", "lang": i18n.current_lang()},
         attach_pdf_of=invoice,
     )
 
@@ -648,6 +659,11 @@ def run_daily() -> List[Dict[str, str]]:
     sent.extend(_daily_trials())
     sent.extend(_daily_reminders())
     sent.extend(_daily_renewals())
+    try:
+        from . import payments as pay
+        pay.run_auto_renewals()
+    except Exception:
+        logger.exception("auto renewal job failed")
     return [row for row in sent if row.get("error") != "already sent"]
 
 
@@ -747,7 +763,7 @@ def _daily_renewals() -> List[Dict[str, str]]:
             restaurant,
             restaurant.get("manual_plan_until"),
             str(card.get("last4") or ""),
-            str(card.get("brand") or "Visa"),
+            str(card.get("brand") or ""),
         )
         if result.get("error") != "already sent":
             sent.append(result)

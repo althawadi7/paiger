@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "partials/static_asset.html" import href as static_asset %}
 {% from "partials/restaurant_logo.html" import logo_slot %}
 {% set errors = errors if errors is defined else {} %}
 {% set values = values if values is defined else {} %}
@@ -8,7 +9,7 @@
 {% block title %}Trings · {{ t('auth.suH') if screen == 'signup' else t('auth.brH') if screen == 'brand' else t('auth.fpH') if screen in ['forgot', 'sent'] else t('auth.resetH') if screen in ['reset', 'reset_bad'] else t('auth.login') }}{% endblock %}
 {% block body_class %}auth{% endblock %}
 {% block head %}
-<link rel="stylesheet" href="/static/css/restaurant-logo.css?v={{ static_version('css/restaurant-logo.css') if static_version is defined else '1' }}">
+<link rel="stylesheet" href="{{ static_asset('css/restaurant-logo.css') }}">
 <style>
 :root {
   --ink: #111111; --ink-2: #1c1c1e; --grey: #5f6368; --grey-2: #8e8e93; --line: #e6e6e8;
@@ -315,7 +316,7 @@ html[lang="ar"] .quote { font-weight: 600; line-height: 1.4; }
 </div>
 {% endblock %}
 {% block scripts %}
-{% if screen == 'brand' %}<script src="/static/js/restaurant-logo.js?v={{ static_version('js/restaurant-logo.js') if static_version is defined else '1' }}" defer></script>{% endif %}
+{% if screen == 'brand' %}<script src="{{ static_asset('js/restaurant-logo.js') }}" defer></script>{% endif %}
 <script>
 (() => {
   "use strict";

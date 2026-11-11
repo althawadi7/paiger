@@ -1,14 +1,19 @@
 {% extends "emails/billing_base.html" %}
-{% from "emails/_bits.html" import pair %}
-{% block preheader %}Thank you. Your receipt is attached.{% endblock %}
-{% block eyebrow %}Paid{% endblock %}
-{% block headline %}Thank you, payment received{% endblock %}
-{% block intro %}We’ve received your payment for {{ restaurant_name }}. Your receipt is attached to this email and saved in your dashboard.{% endblock %}
+{% from "emails/_bits.html" import pair with context %}
+{% block preheader %}{{ t('receipt.preheader') }}{% endblock %}
+{% block eyebrow %}{{ t('receipt.eyebrow') }}{% endblock %}
+{% block headline %}{{ t('receipt.headline') }}{% endblock %}
+{% block intro %}{{ t('receipt.intro').replace('{name}', restaurant_name) }}{% endblock %}
 {% block rows %}
-{{ pair("Receipt", number) }}
-{{ pair("Amount paid", "BHD " ~ amount) }}
-{{ pair("Paid with", paid_with) }}
-{{ pair("Active until", active_until) }}
+{{ pair(t('receipt.invoice'), number) }}
+{% if plan_label %}{{ pair(t('receipt.plan'), plan_label) }}{% endif %}
+{% if is_topup %}
+{{ pair(t('receipt.pointsAdded'), points_added) }}
+{% if points_balance %}{{ pair(t('receipt.pointsBalance'), points_balance) }}{% endif %}
+{% endif %}
+{{ pair(t('receipt.amountPaid'), "BHD " ~ amount) }}
+{{ pair(t('receipt.paidWith'), paid_with) }}
+{% if not is_topup %}{{ pair(t('receipt.activeUntil'), active_until) }}{% endif %}
 {% endblock %}
-{% block button_label %}Open your dashboard{% endblock %}
-{% block note %}Paying for points? They’re already in your balance and ready for the next order.{% endblock %}
+{% block button_label %}{{ t('receipt.button') }}{% endblock %}
+{% block note %}{% if is_topup %}{{ t('receipt.pointsNote') }}{% endif %}{% endblock %}

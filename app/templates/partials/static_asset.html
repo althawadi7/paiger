@@ -1,0 +1,2 @@
+{# Cache-busted local static URL. Works before/after deploy restart. #}
+{% macro href(rel) %}/static/{{ rel }}?v={{ build_version if build_version is defined else (static_version(rel) if static_version is defined else '1') }}{% endmacro %}

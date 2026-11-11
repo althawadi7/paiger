@@ -1,26 +1,26 @@
 <!doctype html>
-<html lang="en" dir="ltr">
+<html lang="{{ lang }}" dir="{{ dir }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ title }} {{ invoice.number }} · Trings</title>
-{% if not for_pdf %}
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
-{% endif %}
 <style>
+@font-face { font-family: "Outfit"; font-weight: 400; font-style: normal; src: url("{{ asset_root }}/fonts/outfit-latin-400.woff") format("woff"); }
+@font-face { font-family: "Outfit"; font-weight: 500; font-style: normal; src: url("{{ asset_root }}/fonts/outfit-latin-500.woff") format("woff"); }
+@font-face { font-family: "Outfit"; font-weight: 600; font-style: normal; src: url("{{ asset_root }}/fonts/outfit-latin-600.woff") format("woff"); }
+@font-face { font-family: "IBM Plex Sans Arabic"; font-weight: 400; font-style: normal; src: url("{{ asset_root }}/fonts/IBMPlexSansArabic-Regular.ttf") format("truetype"); }
+@font-face { font-family: "IBM Plex Sans Arabic"; font-weight: 600; font-style: normal; src: url("{{ asset_root }}/fonts/IBMPlexSansArabic-SemiBold.ttf") format("truetype"); }
 :root { --ink: #111111; --grey: #5f6368; --grey-2: #8e8e93; --line: #e6e6e8; --paper-2: #f6f6f7; --ready-deep: #15803d; --ready-soft: #e7f8ee; --warn: #b45309; --warn-soft: #fdf2e3; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { background: #ececee; }
-body { font-family: {% if for_pdf %}"DejaVu Sans", "Liberation Sans", sans-serif{% else %}"IBM Plex Sans", "DejaVu Sans", sans-serif{% endif %}; color: var(--ink); font-size: 13.5px; line-height: 1.55; }
+body { font-family: {% if lang == 'ar' %}"IBM Plex Sans Arabic", "Outfit"{% else %}"Outfit", "IBM Plex Sans Arabic"{% endif %}, "DejaVu Sans", sans-serif; color: var(--ink); font-size: 13.5px; line-height: 1.55; }
 .num { font-variant-numeric: lining-nums tabular-nums; }
 .mono { font-family: {% if for_pdf %}"DejaVu Sans Mono", "Liberation Mono", monospace{% else %}"IBM Plex Mono", monospace{% endif %}; font-size: 12px; }
 .sheet { width: 210mm; min-height: 297mm; margin: 24px auto; background: #fff; padding: 22mm 20mm 18mm; display: flex; flex-direction: column; }
 .top { display: flex; justify-content: space-between; align-items: flex-start; }
 .wm { font-weight: 600; font-size: 22px; }
 .from { margin-top: 6px; font-size: 12px; color: var(--grey); line-height: 1.6; }
-.kind { text-align: right; }
+.kind { text-align: end; }
 .kind h1 { font-weight: 500; font-size: 34px; line-height: 1; }
 .kind p { margin-top: 8px; color: var(--grey); }
 .status { margin-top: 34px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 18px; border-radius: 14px; }
@@ -30,19 +30,28 @@ body { font-family: {% if for_pdf %}"DejaVu Sans", "Liberation Sans", sans-serif
 .status b { font-size: 15px; font-weight: 600; }
 .status span { display: block; font-size: 12.5px; }
 .status .amt { font-size: 26px; font-weight: 500; }
-.meta { margin-top: 30px; display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 24px; }
-.meta h4 { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--grey-2); margin-bottom: 6px; }
-.meta p { font-size: 13.5px; line-height: 1.6; }
+.details { margin-top: 24px; border-top: 1px solid var(--line); }
+.details div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.details dt { color: var(--grey); }
+.details dd { font-weight: 600; text-align: end; }
+.meta { margin-top: 30px; display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 20px; }
+.meta > div { min-width: 0; }
+.meta h4 { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--grey-2); margin-bottom: 6px; white-space: nowrap; }
+.meta p { font-size: 13.5px; line-height: 1.6; overflow-wrap: anywhere; }
+.meta .date { white-space: nowrap; overflow-wrap: normal; }
+.meta .sub { margin-top: 10px; color: var(--grey); }
+html[lang="ar"] .meta h4 { letter-spacing: 0; }
 table { margin-top: 34px; width: 100%; border-collapse: collapse; }
-th { text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--grey-2); padding: 0 0 10px; border-bottom: 1px solid var(--ink); }
+th { text-align: start; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--grey-2); padding: 0 0 10px; border-bottom: 1px solid var(--ink); }
 td { padding: 14px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
 td small { display: block; color: var(--grey); font-size: 12.5px; margin-top: 2px; }
-.r { text-align: right; }
-th.r, td.r { padding-left: 16px; }
-.totals { margin-top: 18px; margin-left: auto; width: 46%; }
+.r { text-align: end; }
+th.r, td.r { padding-inline-start: 16px; }
+.totals { margin-top: 18px; margin-inline-start: auto; width: 46%; }
 .totals div { display: flex; justify-content: space-between; color: var(--grey); margin-bottom: 8px; }
 .totals .grand { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--ink); color: var(--ink); font-weight: 600; font-size: 15px; }
 .totals .grand .num { font-size: 24px; font-weight: 500; }
+.note { margin-top: 24px; font-size: 12.5px; color: var(--grey); }
 .pay { margin-top: 30px; display: flex; align-items: center; gap: 16px; padding: 16px 18px; border-radius: 14px; background: var(--paper-2); }
 .pay div { flex: 1; }
 .pay b { font-weight: 600; }
@@ -57,49 +66,62 @@ th.r, td.r { padding-left: 16px; }
 <main class="sheet">
   <header class="top">
     <div>
-      <div class="wm"><img src="/static/brand/trings-logo.svg" alt="Trings" style="height:28px;width:auto" width="110" height="28"></div>
-      <p class="from">{{ seller.name }} · CR {{ seller.cr }}<br>{{ seller.address }}<br>{{ seller.billing_email }}</p>
+      <div class="wm"><img src="{{ asset_root }}/brand/trings-logo.svg" alt="Trings" style="width:120px;height:auto" width="120" height="57"></div>
+      <p class="from">{{ seller.name }} · {{ t('doc.cr') }} <bdi>{{ seller.cr }}</bdi><br>{{ seller.address }}<br><bdi>{{ seller.billing_email }}</bdi></p>
     </div>
     <div class="kind">
       <h1>{{ title }}</h1>
-      <p class="mono">{{ invoice.number }}</p>
-      {% if related %}<p>For {{ related }}</p>{% endif %}
+      <p class="mono" dir="ltr">{{ invoice.number }}</p>
+      {% if related %}<p>{{ t('doc.for').replace('{number}', related) }}</p>{% endif %}
     </div>
   </header>
   {% if invoice.status == 'paid' %}
-  <div class="status paid"><div><b>Paid</b><span>{{ paid_on }} · {{ method }}</span></div><span class="amt">BHD {{ amount }}</span></div>
+  <div class="status paid"><div><b>{{ t('doc.paid') }}</b><span>{{ paid_on }} · <bdi>{{ method }}</bdi></span></div><span class="amt" dir="ltr">BHD {{ amount }}</span></div>
+  <dl class="details">
+    <div><dt>{{ t('receipt.invoice') }}</dt><dd dir="ltr">{{ invoice.number }}</dd></div>
+    {% if receipt.plan_label %}<div><dt>{{ t('receipt.plan') }}</dt><dd>{{ receipt.plan_label }}</dd></div>{% endif %}
+    {% if receipt.is_topup %}
+    <div><dt>{{ t('receipt.pointsAdded') }}</dt><dd dir="ltr">{{ receipt.points_added }}</dd></div>
+    {% if receipt.points_balance %}<div><dt>{{ t('receipt.pointsBalance') }}</dt><dd dir="ltr">{{ receipt.points_balance }}</dd></div>{% endif %}
+    {% endif %}
+    <div><dt>{{ t('receipt.paidWith') }}</dt><dd><bdi>{{ receipt.paid_with }}</bdi></dd></div>
+  </dl>
   {% elif invoice.status == 'refunded' %}
-  <div class="status credit"><div><b>Credit note</b><span>{% if related %}For {{ related }}{% endif %}</span></div><span class="amt">BHD {{ amount }}</span></div>
+  <div class="status credit"><div><b>{{ t('doc.credit') }}</b><span>{% if related %}{{ t('doc.for').replace('{number}', related) }}{% endif %}</span></div><span class="amt" dir="ltr">BHD {{ amount }}</span></div>
   {% else %}
-  <div class="status due"><div><b>Due {{ due }}</b><span>Pay online any time before the due date</span></div><span class="amt">BHD {{ amount }}</span></div>
+  <div class="status due"><div><b>{{ t('doc.due').replace('{date}', due) }}</b><span>{{ t('doc.payBefore') }}</span></div><span class="amt" dir="ltr">BHD {{ amount }}</span></div>
   {% endif %}
   <section class="meta">
-    <div><h4>Billed to</h4><p><b>{{ invoice.restaurant_name }}</b><br>{{ invoice.restaurant_email }}<br>{{ invoice.restaurant_phone }}</p></div>
-    <div><h4>Issued</h4><p>{{ issued }}</p><h4 style="margin-top:14px">{{ second_label }}</h4><p>{{ second_value }}</p></div>
-    <div><h4>Reference</h4><p class="mono">{{ reference }}</p><h4 style="margin-top:14px">Account</h4><p>/r/{{ invoice.restaurant_slug }}</p></div>
+    <div><h4>{{ t('doc.billedTo') }}</h4><p><b>{{ invoice.restaurant_name }}</b><br><bdi>{{ invoice.restaurant_email }}</bdi><br><bdi>{{ invoice.restaurant_phone }}</bdi></p><p class="sub" dir="ltr">/r/{{ invoice.restaurant_slug }}</p></div>
+    <div><h4>{{ t('doc.issued') }}</h4><p class="date">{{ issued }}</p></div>
+    <div><h4>{{ second_label }}</h4><p class="date">{{ second_value }}</p></div>
+    <div><h4>{{ t('doc.reference') }}</h4><p class="mono" dir="ltr">{{ reference }}</p></div>
   </section>
   <table>
-    <thead><tr><th>Description</th><th class="r">Qty</th><th class="r">Amount</th></tr></thead>
+    <thead><tr><th>{{ t('doc.description') }}</th><th class="r">{{ t('doc.qty') }}</th><th class="r">{{ t('doc.amount') }}</th></tr></thead>
     <tbody>
       {% for line in lines %}
-      <tr><td>{{ line.description }}{% if line.detail %}<small>{{ line.detail }}</small>{% endif %}</td><td class="r">{{ line.qty }}</td><td class="r">BHD {{ line.amount }}</td></tr>
+      <tr><td>{{ line.description }}{% if line.detail %}<small>{{ line.detail }}</small>{% endif %}</td><td class="r">{{ line.qty }}</td><td class="r" dir="ltr">BHD {{ line.amount }}</td></tr>
       {% endfor %}
     </tbody>
   </table>
   <div class="totals">
-    <div><span>Subtotal</span><span>BHD {{ subtotal }}</span></div>
-    <div><span>VAT</span><span>Not applicable</span></div>
-    <div class="grand"><span>{{ total_label }}</span><span class="num">BHD {{ amount }}</span></div>
+    <div><span>{{ t('doc.subtotal') }}</span><span dir="ltr">BHD {{ subtotal }}</span></div>
+    <div><span>{{ t('doc.vat') }}</span><span>{{ t('doc.vatNa') }}</span></div>
+    <div class="grand"><span>{{ total_label }}</span><span class="num" dir="ltr">BHD {{ amount }}</span></div>
   </div>
+  {% if invoice.status == 'paid' and receipt.is_topup %}
+  <p class="note">{{ t('receipt.pointsNote') }}</p>
+  {% endif %}
   {% if invoice.status == 'unpaid' %}
   <div class="pay">
-    <div><b>Pay this invoice online</b><span>{{ pay_host }}/pay/{{ invoice.number }}</span></div>
-    <a href="{{ pay_url }}">Pay BHD {{ amount }}</a>
+    <div><b>{{ t('doc.payOnline') }}</b><span dir="ltr">{{ pay_host }}/pay/{{ invoice.number }}</span></div>
+    <a href="{{ pay_url }}">{{ t('doc.payBtn').replace('{amount}', amount) }}</a>
   </div>
   {% endif %}
   <footer class="foot">
-    <span>Thank you for using Trings.</span>
-    <span>Questions? {{ seller.support_email }}</span>
+    <span>{{ t('doc.thanks') }}</span>
+    <span>{{ t('doc.questions') }} <bdi>{{ seller.support_email }}</bdi></span>
   </footer>
 </main>
 </body>

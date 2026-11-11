@@ -1,8 +1,15 @@
 {% extends "base.html" %}
+{% from "partials/static_asset.html" import href as static_asset %}
+{% from "partials/mf_session_script.html" import tag as mf_session_script %}
 {% block title %}{{ title }} {{ invoice.number }} · Trings{% endblock %}
-{% block head %}<meta name="robots" content="noindex">{% endblock %}
+{% block head %}
+<meta name="robots" content="noindex">
+{% if invoice.status == 'unpaid' and checkout_intent and payment_config is defined %}
+{{ mf_session_script(payment_config) }}
+{% endif %}
+{% endblock %}
 {% block content %}
-<main style="max-width:560px;margin:40px auto;padding:0 16px">
+<main style="max-width:560px;margin:40px auto;padding:0 16px 40px">
   <p style="color:#8e8e93;font-size:13px">Trings</p>
   <h1 style="font-size:32px;font-weight:500;margin-top:8px">{{ title }}</h1>
   <p style="margin-top:4px;color:#5f6368">{{ invoice.number }}</p>
@@ -12,7 +19,15 @@
     <p style="margin-top:14px;font-size:28px">BHD {{ amount }}</p>
     {% if due %}<p style="color:#b45309;margin-top:6px">{{ t('pay.due') }} {{ due }}</p>{% endif %}
   </div>
-  {% if invoice.status == 'unpaid' %}
+  {% if invoice.status == 'unpaid' and checkout_intent %}
+  <script type="application/json" id="pay-checkout-bootstrap">{{ pay_bootstrap|tojson }}</script>
+  <div class="card" style="margin-top:16px;padding:18px;border:1px solid #e6e6e8;border-radius:16px">
+    <div class="mf-box" data-state="idle"><div id="mf-form" class="mf-mount"></div></div>
+    <button class="btn btn-primary" type="button" id="payBtn" style="margin-top:12px;width:100%" disabled>{{ t('dash.pay') }}</button>
+  </div>
+  <script src="{{ static_asset('js/mf-embedded.js') }}" defer></script>
+  <script src="{{ static_asset('js/pay-invoice.js') }}" defer></script>
+  {% elif invoice.status == 'unpaid' %}
   <button class="btn btn-ink" type="button" disabled style="margin-top:16px">{{ t('pay.soon') }}</button>
   {% endif %}
 </main>

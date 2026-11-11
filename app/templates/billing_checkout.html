@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "partials/static_asset.html" import href as static_asset %}
+{% from "partials/mf_session_script.html" import tag as mf_session_script %}
+{% block title %}{{ t('dash.pay') }} · Trings{% endblock %}
+{% block head %}
+<meta name="robots" content="noindex">
+{{ mf_session_script(payment_config) }}
+<script src="{{ static_asset('js/mf-embedded.js') }}" defer></script>
+<script src="{{ static_asset('js/billing-checkout-page.js') }}" defer></script>
+{% endblock %}
+{% block content %}
+<main style="max-width:920px;margin:32px auto;padding:0 16px 48px">
+  <p style="color:#8e8e93;font-size:13px">Trings</p>
+  <h1 style="font-size:32px;font-weight:500;margin-top:6px">{{ t('dash.pay') }}</h1>
+  <p style="color:#5f6368;margin-top:6px">{{ invoice_number }}</p>
+  <script type="application/json" id="billing-checkout-bootstrap">{{ billing_checkout_bootstrap|tojson }}</script>
+  <div style="display:grid;gap:20px;margin-top:24px;grid-template-columns:1fr">
+    <div class="card" style="padding:22px;border:1px solid #e6e6e8;border-radius:18px">
+      <p style="font-size:28px;font-weight:600">BHD {{ amount_label }}</p>
+      <label style="display:flex;gap:10px;align-items:flex-start;margin:18px 0 8px;font-size:14px">
+        <input type="checkbox" id="saveCard" checked>
+        <span>{{ t('dash.saveCard') }}</span>
+      </label>
+      <div class="mf-box" data-state="idle" style="margin-top:8px"><div id="mf-form" class="mf-mount"></div></div>
+      <button class="btn btn-primary" type="button" id="payBtn" style="margin-top:16px;width:100%">{{ t('dash.pay') }}</button>
+    </div>
+  </div>
+</main>
+{% endblock %}

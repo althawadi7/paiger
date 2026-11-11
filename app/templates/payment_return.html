@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% from "partials/static_asset.html" import href as static_asset %}
+{% block title %}{{ t('pay.result') }} · Trings{% endblock %}
+{% block theme_color %}<meta name="theme-color" content="#f4f4f5">{% endblock %}
+{% block head %}
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="{{ static_asset('css/payment-result.css') }}">
+{% endblock %}
+{% block body_class %}pr-page{% endblock %}
+
+{% block shell_nav %}
+<header class="pr-top">
+  <a class="pr-logo" href="/" aria-label="Trings"><img src="/static/brand/trings-logo.svg" alt="Trings" width="104" height="26"></a>
+  <a class="pr-lang" href="/lang/{{ 'en' if lang == 'ar' else 'ar' }}" aria-label="{{ t('nav.langLabel') }}">{{ t('nav.langSwitch') }}</a>
+</header>
+{% endblock %}
+
+{% block content %}
+<main class="pr-main">
+  <section class="pr-card" id="payResult" data-state="{{ state }}" aria-live="polite">
+    {% if state == 'paid' %}
+    <span class="pr-icon pr-icon-ok" aria-hidden="true">
+      <svg width="28" height="28" viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </span>
+    <h1 class="pr-title">{{ t('pay.ok') }}</h1>
+    {% if view.rows %}
+    <dl class="pr-list">
+      {% for row in view.rows %}
+      <div class="pr-row"><dt>{{ t(row.label) }}</dt><dd{% if row.ltr %} dir="ltr"{% endif %}>{{ row.value }}</dd></div>
+      {% endfor %}
+    </dl>
+    {% endif %}
+    {% if view.email %}{% set sent = t('pay.receiptSent').split('{email}') %}
+    <p class="pr-note">{{ sent[0] }}<bdi dir="ltr">{{ view.email }}</bdi>{{ sent[1] if sent | length > 1 else '' }}</p>
+    {% endif %}
+    <div class="pr-actions">
+      <a class="pr-btn" href="/dashboard">{{ t('pay.toDashboard') }}</a>
+      {% if view.receipt_url %}<a class="pr-link" href="{{ view.receipt_url }}">{{ t('pay.receipt') }}</a>{% endif %}
+    </div>
+
+    {% elif state == 'failed' %}
+    <span class="pr-icon pr-icon-fail" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>
+    </span>
+    <h1 class="pr-title">{{ t('pay.fail') }}</h1>
+    <p class="pr-text">{{ t(reason or 'pay.reasonGeneric') }}</p>
+    <p class="pr-note">{{ t('pay.noCharge') }}</p>
+    <div class="pr-actions">
+      <a class="pr-btn" href="{{ view.retry_url }}">{{ t('pay.tryAgain') }}</a>
+      <a class="pr-link" href="/dashboard">{{ t('pay.backDashboard') }}</a>
+    </div>
+
+    {% else %}
+    <div class="pr-pending" id="prPending">
+      <span class="pr-spinner" aria-hidden="true"></span>
+      <h1 class="pr-title">{{ t('pay.pending') }}</h1>
+      <p class="pr-text">{{ t('pay.pendingSub') }}</p>
+    </div>
+    <div class="pr-timeout" id="prTimeout" hidden>
+      <span class="pr-icon pr-icon-wait" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="#fff" stroke-width="2.2"/><path d="M12 7.8V12l2.8 1.8" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <h1 class="pr-title">{{ t('pay.timeout') }}</h1>
+      <p class="pr-text">{{ t('pay.timeoutSub') }}</p>
+      <div class="pr-actions">
+        <a class="pr-btn" href="/dashboard">{{ t('pay.toDashboard') }}</a>
+        <a class="pr-link" href="{{ view.retry_url }}">{{ t('pay.tryAgain') }}</a>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}
+
+{% block shell_footer %}{% endblock %}
+
+{% block scripts %}
+{% if state == 'pending' %}
+<script type="application/json" id="pay-result-poll">{{ poll | tojson }}</script>
+<script src="{{ static_asset('js/payment-result.js') }}" defer></script>
+{% endif %}
+{% endblock %}

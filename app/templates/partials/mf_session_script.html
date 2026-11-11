@@ -1,0 +1,12 @@
+{# Embedded v3 session.js host (API base is separate: apitest / api). #}
+{% macro tag(config) -%}
+{%- set script_url = config.session_script_url if config.session_script_url and 'sessions/v1/session.js' in config.session_script_url else none -%}
+{%- if not script_url -%}
+{%- if config.is_test -%}
+{%- set script_url = 'https://demo.myfatoorah.com/sessions/v1/session.js' -%}
+{%- else -%}
+{%- set script_url = 'https://portal.myfatoorah.com/sessions/v1/session.js' -%}
+{%- endif -%}
+{%- endif -%}
+<script src="{{ script_url }}"></script>
+{%- endmacro %}

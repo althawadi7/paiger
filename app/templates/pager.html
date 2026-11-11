@@ -1,3 +1,4 @@
+{% from "partials/static_asset.html" import href as static_asset %}
 {% set brand = restaurant_brand({
   'name': order.restaurant_name or 'Trings',
   'brand_color': order.brand_color|default('', true),
@@ -63,7 +64,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/restaurant-logo.css?v={{ static_version('css/restaurant-logo.css') if static_version is defined else '1' }}">
+<link rel="stylesheet" href="{{ static_asset('css/restaurant-logo.css') }}">
 <link rel="icon" href="/static/brand/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png">
 <link rel="manifest" href="/manifest.json">
@@ -837,6 +838,6 @@ updateUI();
   setInterval(paint, 1000);
 })();
 </script>
-<script src="/static/js/restaurant-logo.js?v={{ static_version('js/restaurant-logo.js') if static_version is defined else '1' }}" defer></script>
+<script src="{{ static_asset('js/restaurant-logo.js') }}" defer></script>
 </body>
 </html>

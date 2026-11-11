@@ -1,6 +1,7 @@
 {% macro pair(label, value) -%}
+{% set rtl = dir is defined and dir == 'rtl' %}
 <tr>
-  <td style="padding:12px 18px;font-family:'IBM Plex Sans',Arial,sans-serif;font-size:14px;line-height:20px;color:#5f6368;word-break:break-word;">{{ label }}</td>
-  <td align="right" style="padding:12px 18px;font-family:'IBM Plex Sans',Arial,sans-serif;font-size:14px;line-height:20px;font-weight:600;color:#111111;word-break:break-word;">{{ value }}</td>
+  <td align="{{ 'right' if rtl else 'left' }}" style="padding:12px 18px;font-family:{% if rtl %}'IBM Plex Sans Arabic',{% endif %}'IBM Plex Sans',Arial,sans-serif;font-size:14px;line-height:20px;color:#5f6368;word-break:break-word;">{{ label }}</td>
+  <td align="{{ 'left' if rtl else 'right' }}" style="padding:12px 18px;font-family:{% if rtl %}'IBM Plex Sans Arabic',{% endif %}'IBM Plex Sans',Arial,sans-serif;font-size:14px;line-height:20px;font-weight:600;color:#111111;word-break:break-word;">{{ value }}</td>
 </tr>
 {%- endmacro %}

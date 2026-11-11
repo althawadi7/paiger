@@ -1,15 +1,18 @@
-Thank you, payment received
-We’ve received your payment for {{ restaurant_name }}. Your receipt is attached to this email and saved in your dashboard.
+{{ t('receipt.headline') }}
+{{ t('receipt.intro').replace('{name}', restaurant_name) }}
 
-Receipt: {{ number }}
-Amount paid: BHD {{ amount }}
-Paid with: {{ paid_with }}
-Active until: {{ active_until }}
-{% if attachment_name %}Attached: {{ attachment_name }}{% endif %}
+{{ t('receipt.invoice') }}: {{ number }}
+{% if plan_label %}{{ t('receipt.plan') }}: {{ plan_label }}
+{% endif %}{% if is_topup %}{{ t('receipt.pointsAdded') }}: {{ points_added }}
+{% if points_balance %}{{ t('receipt.pointsBalance') }}: {{ points_balance }}
+{% endif %}{% endif %}{{ t('receipt.amountPaid') }}: BHD {{ amount }}
+{{ t('receipt.paidWith') }}: {{ paid_with }}
+{% if not is_topup %}{{ t('receipt.activeUntil') }}: {{ active_until }}
+{% endif %}{% if attachment_name %}{{ t('receipt.attached') }}: {{ attachment_name }}{% endif %}
 
-Open your dashboard: {{ button_url }}
-
-Paying for points? They’re already in your balance and ready for the next order.
-
-Trings account: {{ restaurant_name }}
+{{ t('receipt.button') }}: {{ button_url }}
+{% if is_topup %}
+{{ t('receipt.pointsNote') }}
+{% endif %}
+{{ t('receipt.account') }}: {{ restaurant_name }}
 {{ support_email }}

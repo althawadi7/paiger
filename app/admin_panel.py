@@ -9,6 +9,7 @@ import os
 import re
 import secrets
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 from urllib.parse import quote
 
@@ -124,6 +125,9 @@ def _long_date(value) -> str:
         when = db._parse_dt(value)
     if not when:
         return "—"
+    months = i18n.t("date.monthsLong").split(",")
+    if len(months) == 12:
+        return f"{when.day} {months[when.month - 1]} {when.year}"
     return when.strftime("%-d %B %Y")
 
 
@@ -203,9 +207,16 @@ def _public_base() -> str:
     return f"http://127.0.0.1:{port}"
 
 
+_STATIC_DIR = Path(__file__).resolve().parent / "static"
+
+
+def _doc_date(value) -> str:
+    return billing.date_label(value) or "—"
+
+
 def _doc_model(invoice: dict, request: Optional[Request], for_pdf: bool, base: str = "") -> Dict[str, Any]:
     status = invoice.get("status") or "unpaid"
-    title = "Credit note" if status == "refunded" else "Receipt" if status == "paid" else "Invoice"
+    title = i18n.t("doc.credit") if status == "refunded" else i18n.t("doc.receipt") if status == "paid" else i18n.t("doc.invoice")
     sign = -1 if status == "refunded" else 1
     cfg = billing.settings()
     lines = []
@@ -223,11 +234,7 @@ def _doc_model(invoice: dict, request: Optional[Request], for_pdf: bool, base: s
             "qty": 1,
             "amount": billing.fils_fixed(sign * int(invoice.get("total_fils") or invoice.get("amount_fils") or 0)),
         })
-    method = invoice.get("paid_method") or ""
-    if method == "card" and invoice.get("card_last4"):
-        method_label = f"Visa ending {invoice['card_last4']}"
-    else:
-        method_label = {"cash": "Cash", "bank_transfer": "Bank transfer", "other": "Other", "card": "Card"}.get(method, method or "—")
+    receipt = billing.receipt_details(invoice)
     if not base:
         base = str(request.base_url).rstrip("/") if request is not None else _public_base()
     else:
@@ -244,24 +251,26 @@ def _doc_model(invoice: dict, request: Optional[Request], for_pdf: bool, base: s
         "lines": lines,
         "amount": billing.fils_fixed(total),
         "subtotal": billing.fils_fixed(sub),
-        "issued": _long_date(invoice.get("issued_at") or invoice.get("created_at")),
-        "due": _long_date(invoice.get("due_at")),
-        "paid_on": _long_date(invoice.get("paid_at")),
-        "method": method_label,
+        "issued": _doc_date(invoice.get("issued_at") or invoice.get("created_at")),
+        "due": _doc_date(invoice.get("due_at")),
+        "paid_on": _doc_date(invoice.get("paid_at")),
+        "method": receipt["paid_with"],
+        "receipt": receipt,
         "reference": invoice.get("provider_ref") or "—",
         "related": invoice.get("related_number") or "",
-        "second_label": "Paid on" if status == "paid" else "Due",
-        "second_value": _long_date(invoice.get("paid_at")) if status == "paid" else _long_date(invoice.get("due_at")),
-        "total_label": "Total paid" if status == "paid" else "Amount due" if status == "unpaid" else "Total",
+        "second_label": i18n.t("doc.paidOn") if status == "paid" else i18n.t("doc.dueLabel"),
+        "second_value": _doc_date(invoice.get("paid_at")) if status == "paid" else _doc_date(invoice.get("due_at")),
+        "total_label": i18n.t("doc.totalPaid") if status == "paid" else i18n.t("doc.amountDue") if status == "unpaid" else i18n.t("doc.total"),
         "pay_url": f"{base}/pay/{number}?t={quote(token)}",
         "pay_host": request.url.netloc if request is not None else base.split("://", 1)[-1],
         "seller": {
             "name": cfg.get("seller_name") or "",
             "cr": cfg.get("seller_cr") or "",
             "address": cfg.get("seller_address") or "",
-            "billing_email": cfg.get("billing_email") or "",
-            "support_email": cfg.get("support_email") or "",
+            "billing_email": cfg.get("billing_email") or db.default_contact_email("billing"),
+            "support_email": cfg.get("support_email") or db.default_contact_email("support"),
         },
+        "asset_root": _STATIC_DIR.as_uri() if for_pdf else "/static",
     }
 
 
@@ -765,11 +774,13 @@ def install(app: FastAPI, templates) -> None:
         if status not in _PAY_FILTERS:
             status = "all"
         query = request.query_params.get("q") or ""
+        from . import payments as pay
         rows = billing.list_invoices(status, query)
+        attempts = pay.admin_attempt_rows(query)
         restaurants = db.get_all_restaurants(limit=500)
         return templates.TemplateResponse("admin/payments.html", _shell(
             request, user, "payments",
-            invoices=rows, kpis=billing.payment_kpis(), status_key=status, query=query,
+            invoices=rows, attempts=attempts, kpis=billing.payment_kpis(), status_key=status, query=query,
             pay_filters=_PAY_FILTERS, restaurants=restaurants, today=(datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d"),
             email_enabled=True,
         ))
@@ -974,20 +985,42 @@ def install(app: FastAPI, templates) -> None:
 
     @app.get("/pay/{number}", response_class=HTMLResponse)
     async def pay_invoice(number: str, request: Request):
+        from . import payments as pay
+        from . import myfatoorah_service as mf
         invoice = billing.get_invoice(number)
         token = request.query_params.get("t") or ""
         expected = (invoice or {}).get("pay_token") or ""
-        if not invoice or not token or len(token) != len(expected) or not hmac.compare_digest(token, expected):
+        owner = auth.get_current_restaurant(request)
+        owner_ok = owner and invoice and int(owner.get("sub") or 0) == int(invoice["restaurant_id"])
+        token_ok = invoice and token and len(token) == len(expected) and hmac.compare_digest(token, expected)
+        if not invoice or (not token_ok and not owner_ok):
             raise HTTPException(status_code=404, detail="Not found")
         status = invoice.get("status") or ""
         title = "Receipt" if status == "paid" else "Credit note" if status == "refunded" else "Invoice"
         sign = -1 if status == "refunded" else 1
+        checkout_intent = ""
+        guest = not owner_ok
+        if status == "unpaid":
+            intent = pay.create_checkout_intent(int(invoice["restaurant_id"]), "invoice", invoice_number=number)
+            checkout_intent = intent["intent_id"]
         response = templates.TemplateResponse("pay.html", {
             "request": request,
             "invoice": invoice,
             "title": title,
             "amount": billing.fils_fixed(sign * int(invoice.get("total_fils") or 0)),
             "due": _long_date(invoice.get("due_at")) if status == "unpaid" else "",
+            "checkout_intent": checkout_intent,
+            "pay_token": token if guest else "",
+            "guest_pay": guest,
+            "payment_config": mf.get_payment_config(),
+            "pay_bootstrap": {
+                "intent_id": checkout_intent,
+                "config": mf.get_payment_config(),
+                "guest": guest,
+                "number": number,
+                "token": token if guest else "",
+                "messages": pay.checkout_messages(),
+            },
         })
         response.headers["X-Robots-Tag"] = "noindex"
         return response

@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 {% from "partials/restaurant_logo.html" import logo_slot %}
+{% from "partials/static_asset.html" import href as static_asset %}
 {% block title %}{{ t('cash.title') }} · {{ restaurant.name }} · Trings{% endblock %}
 {% block shell_nav %}{% endblock %}
 {% block shell_footer %}{% endblock %}
 {% block head %}
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="stylesheet" href="/static/css/restaurant-logo.css?v={{ static_version('css/restaurant-logo.css') if static_version is defined else '1' }}">
+<link rel="stylesheet" href="{{ static_asset('css/restaurant-logo.css') }}">
 <style>
 :root {
   --ink: #111111; --ink-2: #1c1c1e;
@@ -286,7 +287,7 @@ html[dir="rtl"] .toast .bar-time { transform-origin: right; }
 <div class="toast" id="toast" hidden role="status"><span id="toastText"></span><button type="button" id="toastUndo">{{ t('cash.undo') }}</button><i class="bar-time"></i></div>
 {% endblock %}
 {% block scripts %}
-<script src="/static/js/restaurant-logo.js?v={{ static_version('js/restaurant-logo.js') if static_version is defined else '1' }}" defer></script>
+<script src="{{ static_asset('js/restaurant-logo.js') }}" defer></script>
 <script>
 window.PAIGER_I18N = {{ {
   "typeNumber": t("cash.typeNumber"),
@@ -344,5 +345,5 @@ window.PAIGER_CASHIER = {{ {
   "avgSeconds": avg_seconds|default("", true)
 }|tojson }};
 </script>
-<script src="/static/js/cashier-page.js?v={{ static_version('js/cashier-page.js') }}"></script>
+<script src="{{ static_asset('js/cashier-page.js') }}"></script>
 {% endblock %}

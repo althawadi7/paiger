@@ -220,6 +220,7 @@ def init_db():
         """,
     )
     _ensure_billing()
+    _fix_card_brands()
 
 
 _IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -354,6 +355,11 @@ def _parse_dt(value: Any) -> Optional[datetime]:
 
 def access_state(restaurant: Optional[Dict[str, Any]]) -> str:
     """trialing, active, or expired. Legacy accounts stay active. Nothing is blocked yet."""
+    return effective_status(restaurant) if restaurant else "expired"
+
+
+def effective_status(restaurant: Optional[Dict[str, Any]]) -> str:
+    """Owner-facing subscription state including past_due grace before expiry."""
     if not restaurant:
         return "expired"
     status = (restaurant.get("subscription_status") or "legacy").strip()
@@ -362,7 +368,16 @@ def access_state(restaurant: Optional[Dict[str, Any]]) -> str:
         if ends and ends <= datetime.now():
             return "expired"
         return "trialing"
-    if status in ("past_due", "expired"):
+    if status == "past_due":
+        try:
+            max_retry = int(get_platform_setting("renewal_retry_days", "3"))
+        except ValueError:
+            max_retry = 3
+        retries = int(restaurant.get("renewal_retry_count") or 0)
+        if retries >= max_retry:
+            return "expired"
+        return "past_due"
+    if status == "expired":
         return "expired"
     return "active"
 
@@ -613,6 +628,15 @@ def ensure_index(table: str, name: str, ddl: str) -> None:
         conn.close()
 
 
+def default_contact_email(kind: str) -> str:
+    """Seed / fallback for billing_email and support_email: env first, then an address on DOMAIN."""
+    explicit = os.getenv("BILLING_EMAIL" if kind == "billing" else "SUPPORT_EMAIL") or os.getenv("SUPER_ADMIN_EMAIL")
+    if explicit and explicit.strip():
+        return explicit.strip()
+    domain = (os.getenv("DOMAIN") or "").strip()
+    return f"{kind}@{domain}" if domain else ""
+
+
 def get_platform_setting(key: str, default: str = "") -> str:
     conn = get_db_connection()
     try:
@@ -640,6 +664,35 @@ def _copy_deprecated_point_price() -> None:
                 WHERE (price_fils IS NULL OR price_fils = 0)
                   AND point_price_fils IS NOT NULL AND point_price_fils > 0
                   AND deleted_at IS NULL
+                """
+            )
+            conn.commit()
+    finally:
+        conn.close()
+
+
+def _fix_card_brands() -> None:
+    """Normalise saved card brands and fill invoice brands from the matching saved card."""
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE saved_cards SET brand = CASE
+                    WHEN UPPER(brand) LIKE '%%MASTER%%' THEN 'Mastercard'
+                    WHEN UPPER(brand) LIKE '%%VISA%%' THEN 'Visa'
+                    WHEN UPPER(brand) LIKE '%%AMEX%%' OR UPPER(brand) LIKE '%%AMERICAN%%' THEN 'Amex'
+                    ELSE brand END
+                WHERE brand IS NOT NULL
+                """
+            )
+            cur.execute(
+                """
+                UPDATE invoices i
+                JOIN saved_cards s ON s.restaurant_id = i.restaurant_id AND s.last4 = i.card_last4
+                SET i.card_brand = s.brand
+                WHERE i.paid_method = 'card' AND i.card_last4 IS NOT NULL
+                  AND (i.card_brand IS NULL OR i.card_brand = '') AND s.brand IS NOT NULL AND s.brand <> ''
                 """
             )
             conn.commit()
@@ -676,6 +729,91 @@ def _ensure_billing() -> None:
     ensure_column("invoices", "pack_id", "INT NULL")
     ensure_column("invoices", "points", "INT NULL")
     ensure_index("invoices", "uq_invoice_number", "ALTER TABLE invoices ADD UNIQUE KEY uq_invoice_number (number)")
+    ensure_column("invoices", "gateway", "VARCHAR(24) NULL")
+    ensure_column("invoices", "gateway_method", "VARCHAR(32) NULL")
+    ensure_column("invoices", "mf_payment_id", "VARCHAR(64) NULL")
+    ensure_column("invoices", "card_brand", "VARCHAR(32) NULL")
+    ensure_column("restaurants", "auto_renew_enabled", "TINYINT(1) NOT NULL DEFAULT 1")
+    ensure_column("restaurants", "auto_topup_enabled", "TINYINT(1) NOT NULL DEFAULT 0")
+    ensure_column("restaurants", "renewal_retry_count", "INT NOT NULL DEFAULT 0")
+    ensure_column("restaurants", "scheduled_plan_code", "VARCHAR(40) NULL")
+    ensure_column("restaurants", "scheduled_plan_at", "DATE NULL")
+    ensure_table(
+        "checkout_intents",
+        """
+        CREATE TABLE checkout_intents (
+            id VARCHAR(48) PRIMARY KEY,
+            restaurant_id INT NOT NULL,
+            purpose VARCHAR(20) NOT NULL,
+            amount_fils INT NOT NULL,
+            invoice_number VARCHAR(32) NOT NULL,
+            ref_plan_code VARCHAR(40) NULL,
+            ref_pack_id INT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'pending',
+            save_card_requested TINYINT(1) NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL,
+            expires_at DATETIME NOT NULL,
+            INDEX idx_chk_rest (restaurant_id, created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """,
+    )
+    ensure_column("checkout_intents", "mf_session_id", "VARCHAR(80) NULL")
+    ensure_column("checkout_intents", "mf_session_key_enc", "TEXT NULL")
+    ensure_table(
+        "saved_cards",
+        """
+        CREATE TABLE saved_cards (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            restaurant_id INT NOT NULL,
+            token_enc TEXT NOT NULL,
+            brand VARCHAR(32) NULL,
+            last4 VARCHAR(4) NULL,
+            exp_month TINYINT NULL,
+            exp_year SMALLINT NULL,
+            is_default TINYINT(1) NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL,
+            INDEX idx_card_rest (restaurant_id, is_default)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """,
+    )
+    ensure_table(
+        "gateway_settlements",
+        """
+        CREATE TABLE gateway_settlements (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            restaurant_id INT NOT NULL,
+            intent_id VARCHAR(48) NULL,
+            mf_payment_id VARCHAR(64) NOT NULL,
+            mf_invoice_id VARCHAR(64) NULL,
+            invoice_number VARCHAR(32) NULL,
+            status VARCHAR(24) NOT NULL,
+            method VARCHAR(32) NULL,
+            amount_fils INT NOT NULL DEFAULT 0,
+            settled_at DATETIME NULL,
+            created_at DATETIME NOT NULL,
+            UNIQUE KEY uq_mf_payment (mf_payment_id),
+            INDEX idx_settle_inv (invoice_number)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """,
+    )
+    ensure_table(
+        "payment_attempts",
+        """
+        CREATE TABLE payment_attempts (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            restaurant_id INT NOT NULL,
+            intent_id VARCHAR(48) NULL,
+            gateway VARCHAR(24) NOT NULL DEFAULT 'myfatoorah',
+            mf_payment_id VARCHAR(64) NULL,
+            status VARCHAR(20) NOT NULL,
+            method VARCHAR(32) NULL,
+            error_message TEXT NULL,
+            amount_fils INT NOT NULL DEFAULT 0,
+            created_at DATETIME NOT NULL,
+            INDEX idx_pay_attempt_rest (restaurant_id, created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        """,
+    )
     ensure_table(
         "point_wallets",
         """
@@ -753,8 +891,8 @@ def _ensure_billing() -> None:
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
         """,
     )
-    support = (os.getenv("SUPPORT_EMAIL") or os.getenv("SUPER_ADMIN_EMAIL") or "support@paiger.app").strip()
-    billing = (os.getenv("SUPER_ADMIN_EMAIL") or support).strip()
+    support = default_contact_email("support")
+    billing = default_contact_email("billing")
     defaults = {
         "trial_days": "3",
         "points_empty_rule": "block",

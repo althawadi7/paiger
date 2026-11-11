@@ -2,7 +2,8 @@
 </div>
 <div class="toast{% if flash_error %} err{% endif %}" id="toast" data-hold="{% if undo is defined and undo %}8{% else %}2.5{% endif %}" {% if not flash %}hidden{% endif %} role="status"><span>{{ flash }}</span>{% if undo is defined and undo %}<span aria-hidden="true">·</span><form method="post" action="{{ undo.action }}"><input type="hidden" name="csrf" value="{{ csrf }}"><button type="submit">{{ t('admin.undo') }}</button></form>{% endif %}</div>
 {% include "partials/confirm.html" %}
-<script src="/static/js/confirm.js?v={{ static_version('js/confirm.js') if static_version is defined else '1' }}"></script>
-<script src="/static/js/admin.js?v={{ static_version('js/admin.js') if static_version is defined else '1' }}"></script>
+{% from "partials/static_asset.html" import href as static_asset %}
+<script src="{{ static_asset('js/confirm.js') }}"></script>
+<script src="{{ static_asset('js/admin.js') }}"></script>
 </body>
 </html>

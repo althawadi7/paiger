@@ -3,7 +3,7 @@ import json
 import logging
 import re
 import secrets
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional
 from zoneinfo import ZoneInfo
 
@@ -22,6 +22,110 @@ def bhd(fils: Optional[int]) -> str:
 
 def fils_fixed(fils: Optional[int]) -> str:
     return f"{int(fils or 0) / 1000:.3f}"
+
+
+WALLETS = ("Apple Pay", "Google Pay", "BenefitPay")
+PLAN_RANK = {"points": 0, "monthly": 1, "yearly": 2}
+
+
+def as_date(value: Any) -> Optional[date]:
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    parsed = db._parse_dt(value) if value else None
+    return parsed.date() if parsed else None
+
+
+def date_label(value: Any) -> str:
+    """'11 Dec 2026' / '11 ديسمبر 2026' in the active language."""
+    when = as_date(value)
+    if not when:
+        return ""
+    months = i18n.t("pay.monthNames").split(",")
+    month = months[when.month - 1] if len(months) == 12 else str(when.month)
+    return f"{when.day} {month} {when.year}"
+
+
+def plan_display_name(code: str) -> str:
+    plan = plan_row(code) or {}
+    return str(plan.get("name_ar" if i18n.current_lang() == "ar" else "name_en") or plan.get("name_en") or code)
+
+
+def scheduled_change(rest: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    code = (rest.get("scheduled_plan_code") or "").strip()
+    at = as_date(rest.get("scheduled_plan_at"))
+    if not code or not at:
+        return None
+    return {
+        "code": code,
+        "at": at,
+        "label": i18n.t("dash.switchesTo").replace("{plan}", plan_display_name(code)).replace("{date}", date_label(at)),
+    }
+
+
+def plan_status_texts(rest: Dict[str, Any]) -> Dict[str, Any]:
+    """Paid-until, auto-renew and scheduled-change lines shared by the owner page and super admin."""
+    until = as_date(rest.get("manual_plan_until"))
+    auto = bool(int(rest.get("auto_renew_enabled") if rest.get("auto_renew_enabled") is not None else 1))
+    change = scheduled_change(rest)
+    return {
+        "until": until,
+        "until_label": i18n.t("dash.activeUntil").replace("{date}", date_label(until)) if until else "",
+        "auto_renew": auto,
+        "auto_renew_label": i18n.t("dash.autoRenewOn") if auto else i18n.t("dash.autoRenewOff"),
+        "scheduled": change,
+        "scheduled_label": change["label"] if change else "",
+    }
+
+
+def card_brand(brand: str = "", method: str = "", number: str = "") -> str:
+    """Display brand from gateway card brand / payment method, then the BIN of the masked number."""
+    text = f"{brand} {method}".upper()
+    if "APPLE" in text:
+        return "Apple Pay"
+    if "GOOGLE" in text:
+        return "Google Pay"
+    if "BENEFIT" in text:
+        return "BenefitPay"
+    named = (brand or "").upper()
+    if "MASTER" in named:
+        return "Mastercard"
+    if "VISA" in named:
+        return "Visa"
+    if "AMEX" in named or "AMERICAN" in named:
+        return "Amex"
+    digits = re.sub(r"\D", "", number or "")
+    if digits[:1] == "4":
+        return "Visa"
+    if len(digits) >= 2 and (51 <= int(digits[:2]) <= 55 or (len(digits) >= 4 and 2221 <= int(digits[:4]) <= 2720)):
+        return "Mastercard"
+    if digits[:2] in ("34", "37"):
+        return "Amex"
+    upper_method = (method or "").upper()
+    if upper_method in ("VISA", "MASTER", "MASTERCARD", "AMEX"):
+        return {"VISA": "Visa", "AMEX": "Amex"}.get(upper_method, "Mastercard")
+    return ""
+
+
+def card_short_label(card: Dict[str, Any]) -> str:
+    """'Mastercard ••0008' for a saved card row."""
+    brand = str(card.get("brand") or "")
+    last4 = str(card.get("last4") or "")
+    if brand in WALLETS or not last4:
+        return brand or i18n.t("receipt.card")
+    return f"{brand or i18n.t('receipt.card')} ••{last4}"
+
+
+def payment_label(brand: str, last4: str, fallback: str = "") -> str:
+    """'Mastercard ending 0008' / wallet name, in the active language."""
+    brand = (brand or "").strip()
+    last4 = (last4 or "").strip()
+    if brand in WALLETS:
+        return brand
+    if last4:
+        return i18n.t("receipt.cardEnding").replace("{brand}", brand or i18n.t("receipt.card")).replace("{last4}", last4)
+    return brand or fallback
 
 
 def parse_bhd(value: str) -> int:
@@ -345,6 +449,17 @@ def _plan_texts(row: Dict[str, Any], wallet: Optional[Dict[str, Any]]) -> Dict[s
     return {"plan_name": name, "plan_label": f"{name} · {pts}"}
 
 
+def _admin_plan_status(row: Dict[str, Any], state: str) -> Dict[str, Any]:
+    texts = plan_status_texts(row)
+    paid = state in ("active", "past_due") and not _on_trial(row)
+    return {
+        "until_label": texts["until_label"] if paid else "",
+        "auto_renew": texts["auto_renew"],
+        "auto_renew_label": texts["auto_renew_label"] if paid and (row.get("plan_code") or "") in ("monthly", "yearly") else "",
+        "scheduled_label": texts["scheduled_label"],
+    }
+
+
 def _restaurant_row(row: Dict[str, Any], state: str, wallet: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     renew = row.get("manual_plan_until") or row.get("trial_ends_at")
     when = owner_board._as_bahrain(renew) if not hasattr(renew, "year") or isinstance(renew, datetime) else None
@@ -362,6 +477,7 @@ def _restaurant_row(row: Dict[str, Any], state: str, wallet: Optional[Dict[str, 
         "status": state,
         "plan_code": row.get("plan_code") or "",
         **_plan_texts(row, wallet),
+        **_admin_plan_status(row, state),
         "renew": label,
         "orders_30d": int(row.get("orders_30d") or 0),
         "joined": owner_board._as_bahrain(row.get("created_at")).strftime("%d %b %Y") if row.get("created_at") else "",
@@ -403,8 +519,14 @@ def restaurant_detail(restaurant_id: int) -> Optional[Dict[str, Any]]:
             orders_30 = int((cur.fetchone() or {}).get("n") or 0)
             cur.execute("SELECT balance, mode FROM point_wallets WHERE restaurant_id=%s", (restaurant_id,))
             wallet = cur.fetchone()
+            cur.execute(
+                "SELECT brand, last4 FROM saved_cards WHERE restaurant_id=%s ORDER BY is_default DESC, id DESC LIMIT 1",
+                (restaurant_id,),
+            )
+            card = cur.fetchone()
     finally:
         conn.close()
+    card_label = card_short_label(card) if card else "none"
     state = restaurant_status(raw)
     shown = owner_board._as_bahrain(raw.get("manual_plan_until") or raw.get("trial_ends_at"))
     if hasattr(raw.get("manual_plan_until"), "isoformat") and not isinstance(raw.get("manual_plan_until"), datetime):
@@ -421,10 +543,11 @@ def restaurant_detail(restaurant_id: int) -> Optional[Dict[str, Any]]:
         "status": state,
         "plan_code": raw.get("plan_code") or "",
         **_plan_texts(raw, wallet),
+        **_admin_plan_status(raw, state),
         "renew": renew,
         "orders_30d": orders_30,
         "points": None if not wallet else int(wallet["balance"]),
-        "card": "none",
+        "card": card_label,
         "suspended": bool(raw.get("suspended_at")),
         "initial": (raw.get("name") or "P")[:1],
         "history": history,
@@ -817,6 +940,64 @@ def get_invoice(number: str) -> Optional[Dict[str, Any]]:
     return row
 
 
+def invoice_plan_code(invoice: Dict[str, Any]) -> str:
+    lines = invoice.get("line_items")
+    if lines is None:
+        try:
+            lines = json.loads(invoice.get("lines") or "[]")
+        except json.JSONDecodeError:
+            lines = []
+    for line in lines or []:
+        if isinstance(line, dict) and line.get("plan_code"):
+            return str(line["plan_code"]).strip()
+    return ""
+
+
+def _topup_balance_after(invoice_id: int, restaurant_id: int) -> Optional[int]:
+    conn = db.get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id FROM point_ledger WHERE ref_invoice_id=%s AND kind='topup' ORDER BY id LIMIT 1",
+                (invoice_id,),
+            )
+            entry = cur.fetchone()
+            if not entry:
+                return None
+            cur.execute(
+                "SELECT COALESCE(SUM(delta), 0) AS n FROM point_ledger WHERE restaurant_id=%s AND id<=%s",
+                (restaurant_id, entry["id"]),
+            )
+            return int((cur.fetchone() or {}).get("n") or 0)
+    finally:
+        conn.close()
+
+
+def receipt_details(invoice: Dict[str, Any]) -> Dict[str, Any]:
+    """Receipt rows shared by the email and the PDF, in the active language."""
+    is_topup = (invoice.get("kind") or "") == "topup"
+    plan_label = ""
+    if not is_topup and (invoice.get("kind") or "") in ("subscription", "renewal", "manual"):
+        plan = plan_row(invoice_plan_code(invoice)) or {}
+        plan_label = str(plan.get("name_ar" if i18n.current_lang() == "ar" else "name_en") or plan.get("name_en") or "")
+    balance = None
+    if is_topup and invoice.get("id"):
+        balance = _topup_balance_after(int(invoice["id"]), int(invoice["restaurant_id"]))
+    method = invoice.get("paid_method") or ""
+    if method == "card":
+        paid_with = payment_label(str(invoice.get("card_brand") or ""), str(invoice.get("card_last4") or ""), i18n.t("receipt.card"))
+    else:
+        keys = {"cash": "receipt.cash", "bank_transfer": "receipt.bank", "other": "receipt.other"}
+        paid_with = i18n.t(keys[method]) if method in keys else (method or "—")
+    return {
+        "is_topup": is_topup,
+        "plan_label": plan_label,
+        "points_added": f"{int(invoice.get('points') or 0):,}" if is_topup else "",
+        "points_balance": f"{balance:,}" if balance is not None else "",
+        "paid_with": paid_with,
+    }
+
+
 def list_invoices(status: str, query: str) -> List[Dict[str, Any]]:
     conn = db.get_db_connection()
     try:
@@ -898,45 +1079,95 @@ def mark_paid(number: str, method: str, reference: str, admin_id: int) -> str:
     conn = db.get_db_connection()
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT * FROM invoices WHERE number=%s FOR UPDATE", (number,))
-            row = cur.fetchone()
-            if not row:
-                raise ValueError("missing")
-            if row.get("status") == "paid":
-                raise ValueError("already")
-            if row.get("status") != "unpaid":
-                raise ValueError("state")
-            cur.execute(
-                """
-                UPDATE invoices
-                SET status='paid', paid_at=%s, paid_method=%s, provider_ref=%s
-                WHERE id=%s
-                """,
-                (datetime.now(), method, (reference or "")[:120] or None, row["id"]),
+            apply_paid_invoice(
+                cur,
+                number,
+                method=method,
+                reference=reference,
+                admin_id=admin_id,
             )
-            if row.get("kind") == "topup":
-                cur.execute(
-                    "SELECT id FROM point_ledger WHERE ref_invoice_id=%s AND kind='topup' LIMIT 1",
-                    (row["id"],),
-                )
-                if not cur.fetchone():
-                    points = int(row.get("points") or 0)
-                    if points:
-                        _ledger(cur, int(row["restaurant_id"]), points, row.get("description") or "Top up", "topup", row["id"], admin_id)
-            if row.get("kind") in ("subscription", "manual") and row.get("period_end"):
-                cur.execute(
-                    """
-                    UPDATE restaurants
-                    SET subscription_status='active', manual_plan_until=%s
-                    WHERE id=%s
-                    """,
-                    (row["period_end"], row["restaurant_id"]),
-                )
             conn.commit()
     finally:
         conn.close()
     _queue_receipt_email(number)
     return "paid"
+
+
+def apply_paid_invoice(
+    cur,
+    number: str,
+    *,
+    method: str,
+    reference: str = "",
+    admin_id: Optional[int] = None,
+    gateway: str = "",
+    gateway_method: str = "",
+    mf_payment_id: str = "",
+    card_last4: str = "",
+    card_brand: str = "",
+) -> Dict[str, Any]:
+    """Mark invoice paid once and apply subscription / points side effects (caller commits)."""
+    cur.execute("SELECT * FROM invoices WHERE number=%s FOR UPDATE", (number,))
+    row = cur.fetchone()
+    if not row:
+        raise ValueError("missing")
+    if row.get("status") == "paid":
+        raise ValueError("already")
+    if row.get("status") != "unpaid":
+        raise ValueError("state")
+    now = datetime.now()
+    cur.execute(
+        """
+        UPDATE invoices
+        SET status='paid', paid_at=%s, paid_method=%s, provider_ref=%s,
+            gateway=%s, gateway_method=%s, mf_payment_id=%s, card_last4=%s, card_brand=%s
+        WHERE id=%s
+        """,
+        (
+            now,
+            method,
+            (reference or "")[:120] or None,
+            (gateway or "")[:24] or None,
+            (gateway_method or "")[:32] or None,
+            (mf_payment_id or "")[:64] or None,
+            (card_last4 or "")[:4] or None,
+            (card_brand or "")[:32] or None,
+            row["id"],
+        ),
+    )
+    if row.get("kind") == "topup":
+        cur.execute(
+            "SELECT id FROM point_ledger WHERE ref_invoice_id=%s AND kind='topup' LIMIT 1",
+            (row["id"],),
+        )
+        if not cur.fetchone():
+            points = int(row.get("points") or 0)
+            if points:
+                _ledger(cur, int(row["restaurant_id"]), points, row.get("description") or "Top up", "topup", row["id"], admin_id)
+    plan_code = None
+    try:
+        for line in json.loads(row.get("lines") or "[]"):
+            if line.get("plan_code"):
+                plan_code = str(line["plan_code"]).strip()
+                break
+    except json.JSONDecodeError:
+        plan_code = None
+    period_end = row.get("period_end")
+    if row.get("kind") in ("subscription", "renewal", "manual") and period_end:
+        sets = [
+            "subscription_status='active'", "manual_plan_until=%s", "trial_ends_at=NULL", "renewal_retry_count=0",
+            "scheduled_plan_code=NULL", "scheduled_plan_at=NULL",
+        ]
+        args: List[Any] = [period_end]
+        if plan_code in ("monthly", "yearly", "points"):
+            sets.append("plan_code=%s")
+            args.append(plan_code)
+        args.append(row["restaurant_id"])
+        cur.execute(
+            f"UPDATE restaurants SET {', '.join(sets)} WHERE id=%s",
+            tuple(args),
+        )
+    return {"number": number, "restaurant_id": int(row["restaurant_id"]), "invoice_id": int(row["id"])}
 
 
 def owner_documents(restaurant_id: int) -> List[Dict[str, Any]]:

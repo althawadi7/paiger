@@ -16,7 +16,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from urllib.parse import quote
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect, HTTPException, Request, Form, Depends, status
 from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse, FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -35,8 +35,12 @@ from . import cashier_gate
 from . import owner_board
 from . import billing
 from . import viewing
+from . import myfatoorah_service as mf
+from . import payments as pay
 
 logger = logging.getLogger("pager")
+_RESULT_POLL_MS = int(os.getenv("PAYMENT_RESULT_POLL_MS", "3000"))
+_RESULT_POLL_MAX_MS = int(os.getenv("PAYMENT_RESULT_POLL_MAX_MS", "60000"))
 
 BASE_DIR = Path(__file__).parent
 _enable_docs = os.getenv("ENABLE_DOCS") == "1"
@@ -92,11 +96,16 @@ def restaurant_brand(restaurant: Optional[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 def static_version(name: str) -> str:
-    path = BASE_DIR / "static" / name
-    try:
-        return str(path.stat().st_mtime_ns)
-    except OSError:
-        return "0"
+    """Deploy-wide cache bust id (same as build_version)."""
+    return _APP_BUILD
+
+
+def static_url(rel: str) -> str:
+    """Local JS/CSS (and other static) with ?v=build for CDN revalidation."""
+    path = (rel or "").lstrip("/")
+    if path.startswith("static/"):
+        path = path[7:]
+    return f"/static/{path}?v={_APP_BUILD}"
 
 
 def _git_revision() -> str:
@@ -166,6 +175,8 @@ def app_build() -> str:
 
 templates.env.globals["restaurant_brand"] = restaurant_brand
 templates.env.globals["static_version"] = static_version
+templates.env.globals["build_version"] = _APP_BUILD
+templates.env.globals["static_url"] = static_url
 
 
 @app.middleware("http")
@@ -187,7 +198,9 @@ async def admin_robots_header(request: Request, call_next):
     path = request.url.path
     if path == "/admin" or path.startswith("/admin/") or path.startswith("/pay/"):
         response.headers["X-Robots-Tag"] = "noindex"
-    if path == "/static/js/cashier-page.js" or (path.startswith("/r/") and path.rstrip("/").endswith("/cashier")):
+    if path.startswith("/static/js/") or path.startswith("/static/css/"):
+        response.headers["Cache-Control"] = "no-cache, must-revalidate"
+    elif path == "/static/js/cashier-page.js" or (path.startswith("/r/") and path.rstrip("/").endswith("/cashier")):
         response.headers["Cache-Control"] = "no-cache"
     return response
 
@@ -206,6 +219,37 @@ async def refresh_cashier_devices(request: Request, call_next):
             continue
         if cashier_gate.valid_device(restaurant_id, value):
             _stamp_cashier_cookie(response, request, restaurant_id, value)
+    return response
+
+
+_MYFATOORAH_SCRIPT = "https://demo.myfatoorah.com https://portal.myfatoorah.com"
+_MYFATOORAH_API = "https://apitest.myfatoorah.com https://api.myfatoorah.com"
+_MYFATOORAH_EXTRA = "https://www.myfatoorah.com"
+_WALLETS = "https://applepay.cdn-apple.com https://pay.google.com"
+
+
+@app.middleware("http")
+async def payment_csp_report_only(request: Request, call_next):
+    """Report-Only CSP for checkout pages — not enforced (Cloudflare may also emit reports)."""
+    response = await call_next(request)
+    path = request.url.path
+    if path.startswith("/dashboard") or path.startswith("/pay/") or path.startswith("/payment/"):
+        script = (
+            f"'self' 'unsafe-inline' https://fonts.googleapis.com "
+            f"https://static.cloudflareinsights.com {_MYFATOORAH_SCRIPT} {_WALLETS}"
+        )
+        connect = (
+            f"'self' https://cloudflareinsights.com {_MYFATOORAH_API} "
+            f"{_MYFATOORAH_SCRIPT} {_MYFATOORAH_EXTRA} {_WALLETS}"
+        )
+        frame = f"'self' {_MYFATOORAH_SCRIPT} {_MYFATOORAH_API} {_MYFATOORAH_EXTRA} {_WALLETS}"
+        policy = (
+            f"default-src 'self'; script-src {script}; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            f"font-src 'self' https://fonts.gstatic.com https://applepay.cdn-apple.com; img-src 'self' data: https:; "
+            f"connect-src {connect}; frame-src {frame}; child-src {frame}"
+        )
+        if "Content-Security-Policy-Report-Only" not in response.headers:
+            response.headers["Content-Security-Policy-Report-Only"] = policy
     return response
 
 
@@ -1123,8 +1167,8 @@ def _present_order(row: Dict[str, Any], prep_limit: int) -> Dict[str, Any]:
     }
 
 
-def _subscription_view(rest: Dict[str, Any]) -> Dict[str, Any]:
-    state = db.access_state(rest)
+def _subscription_view(rest: Dict[str, Any], requested_plan: str = "") -> Dict[str, Any]:
+    state = db.effective_status(rest)
     code = (rest.get("plan_code") or "monthly").strip()
     if code not in ("monthly", "yearly", "points"):
         code = "monthly"
@@ -1147,6 +1191,11 @@ def _subscription_view(rest: Dict[str, Any]) -> Dict[str, Any]:
         title, tag, tag_class = current.get(name_key) or code, i18n.t("dash.activeTag"), "active"
     ends = owner_board._as_bahrain(rest.get("trial_ends_at"))
     ends_label = ends.strftime("%d %b %Y") if ends else "—"
+    cards = pay.list_cards(int(rest["id"]))
+    status = billing.plan_status_texts(rest)
+    paid_end = pay.paid_period_end(rest)
+    periodic = state == "active" and code in ("monthly", "yearly")
+    change = status["scheduled"]
     facts = []
     if state in ("trialing", "expired"):
         facts.append({"label": i18n.t("dash.trialEnds"), "value": ends_label})
@@ -1154,17 +1203,77 @@ def _subscription_view(rest: Dict[str, Any]) -> Dict[str, Any]:
         facts.append({"label": i18n.t("dash.amount"), "value": "BHD " + owner_board.fils_label(current.get("price_fils"))})
     else:
         facts.append({"label": i18n.t("dash.amount"), "value": "BHD " + owner_board.fils_label(current.get("price_fils"))})
-        facts.append({"label": i18n.t("dash.nextCharge"), "value": "—"})
-    if state == "active":
-        selected = owner_board.fils_label(current.get("price_fils"))
-    else:
-        selected = owner_board.fils_label((by_code.get("monthly") or {}).get("price_fils"))
+        if change and change["code"] not in ("monthly", "yearly"):
+            next_charge = "—"
+        elif not status["auto_renew"]:
+            next_charge = i18n.t("dash.autoRenewOff")
+        elif status["until"]:
+            card_text = billing.card_short_label(cards[0]) if cards else i18n.t("dash.noCardShort")
+            next_charge = f"{billing.date_label(status['until'])} · {card_text}"
+        else:
+            next_charge = "—"
+        facts.append({"label": i18n.t("dash.nextCharge"), "value": next_charge})
+    ends_soon = ""
+    if periodic and status["until"]:
+        days_left = (status["until"] - owner_board.bahrain_now().date()).days
+        if days_left <= 0:
+            ends_soon = i18n.t("dash.endsToday")
+        elif days_left == 1:
+            ends_soon = i18n.t("dash.endsTomorrow")
+        elif days_left <= 7:
+            ends_soon = i18n.t("dash.endsIn").replace("{n}", str(days_left))
+    must_pick_plan = state in ("trialing", "expired", "past_due")
+    preselected_checkout = ""
+    checkout_summary_name = ""
+    checkout_summary_price = ""
+    requested = next((plan for plan in catalog if plan.get("code") == requested_plan), None)
+    if requested:
+        must_pick_plan = False
+        preselected_checkout = requested_plan
+        checkout_summary_name = requested.get(name_key) or requested_plan
+        checkout_summary_price = owner_board.fils_label(requested.get("price_fils"))
     packs = owner_board.point_packs()
     for pack in packs:
         pack["price_label"] = owner_board.fils_label(pack.get("price_fils"))
     invoices = billing.owner_documents(int(rest["id"]))
     wallet = billing.wallet(int(rest["id"])) if code == "points" else {"balance": 0}
+    prefs = pay.billing_preferences(int(rest["id"]))
+    history = pay.payment_history(int(rest["id"]))
+    mf_cfg = mf.get_payment_config()
+    paid_end_label = billing.date_label(paid_end)
+    plan_checkout = []
+    for plan in catalog:
+        mode = pay.plan_change_mode(rest, str(plan.get("code") or ""))
+        name = (plan.get("name_ar") if lang_key == "ar" else plan.get("name_en")) or plan.get("code")
+        summary_name = name
+        if mode == "extend":
+            ahead_key = "dash.sumAheadYear" if plan.get("code") == "yearly" else "dash.sumAheadMonth"
+            summary_name = i18n.t(ahead_key).replace("{plan}", str(name))
+            note = i18n.t("dash.extendsTo").replace("{date}", billing.date_label(pay.plan_period_end(plan, paid_end)))
+        elif mode == "upgrade":
+            note = i18n.t("dash.startsOn").replace("{date}", paid_end_label)
+        elif mode == "schedule":
+            note = i18n.t("dash.switchesOn").replace("{date}", paid_end_label)
+        else:
+            note = ""
+        plan_checkout.append({
+            "code": plan.get("code"),
+            "name": name,
+            "summary_name": summary_name,
+            "price_label": plan.get("price_label"),
+            "price_fils": int(plan.get("price_fils") or 0),
+            "mode": mode,
+            "note": note,
+        })
+    extend_label = ""
+    if periodic and paid_end:
+        extend_label = i18n.t("dash.payAheadYear") if code == "yearly" else i18n.t("dash.payAheadMonth")
     return {
+        "plan_until_label": status["until_label"] if periodic else "",
+        "plan_ends_soon": ends_soon,
+        "plan_change_label": status["scheduled_label"] if state == "active" else "",
+        "extend_label": extend_label,
+        "current_locked": state == "active",
         "plans": catalog,
         "packs": packs,
         "invoices": invoices,
@@ -1175,9 +1284,34 @@ def _subscription_view(rest: Dict[str, Any]) -> Dict[str, Any]:
         "plan_code": code,
         "sub_state": state,
         "point_price": owner_board.fils_label((by_code.get("points") or {}).get("price_fils")),
-        "selected_price": selected,
+        "must_pick_plan": must_pick_plan,
+        "preselected_checkout": preselected_checkout,
+        "checkout_summary_name": checkout_summary_name,
+        "checkout_summary_price": checkout_summary_price,
+        "plan_checkout": plan_checkout,
         "points_balance": int(wallet["balance"]),
+        "saved_cards": cards,
+        "billing_prefs": prefs,
+        "payment_history": history,
+        "payment_config": mf_cfg,
+        "past_due": state == "past_due",
+        "checkout_bootstrap": {
+            "config": mf_cfg,
+            "test_mode": bool(mf_cfg.get("is_test")),
+            "plans": plan_checkout,
+            "selected": preselected_checkout,
+            "must_pick": must_pick_plan,
+            "current": code if state == "active" else "",
+            "messages": {
+                "empty_plan": "—",
+                "pick_plan": i18n.t("dash.paymentPickPlan") if state != "active" else i18n.t("dash.chooseToContinue"),
+                "no_charge": i18n.t("dash.noChargeNow"),
+                "schedule_failed": i18n.t("dash.scheduleFailed"),
+                **pay.checkout_messages(),
+            },
+        },
     }
+
 
 
 def _overview_stats(rest: Dict[str, Any]) -> Dict[str, Any]:
@@ -1216,7 +1350,7 @@ def _render_dashboard(request: Request, rest: Dict[str, Any], section: str, **ex
         "page": 1,
         "pages": 1,
     }
-    ctx.update(_subscription_view(rest))
+    ctx.update(_subscription_view(rest, request.query_params.get("plan") or ""))
     ctx.update(extra)
     minutes = int((ctx.get("form") or {}).get("prep_minutes") or 6)
     choices = [3, 5, 6, 8, 10, 15]
@@ -2524,179 +2658,338 @@ async def websocket_cashier_room(websocket: WebSocket, slug: str):
     await _cashier_socket_loop(websocket)
 
 # ========================================================
-#  MYFATOORAH EMBEDDED & IN-APP PAYMENT ROUTERS
+#  MYFATOORAH / BILLING CHECKOUT
 # ========================================================
-from . import myfatoorah_service as mf
+class CheckoutIntentDto(BaseModel):
+    purpose: str
+    plan_code: Optional[str] = None
+    pack_id: Optional[int] = None
+    invoice_number: Optional[str] = None
 
-class ProcessPaymentDto(BaseModel):
-    order_id: str
-    amount: float
-    session_id: Optional[str] = None
-    payment_method_id: Optional[int] = None
+
+class SessionIntentDto(BaseModel):
+    intent_id: str
     save_card: bool = False
-    customer_name: Optional[str] = "Customer"
-    customer_phone: Optional[str] = "97333000000"
-    customer_email: Optional[str] = "billing@pager.rahapp.com"
 
-class ChargeTokenDto(BaseModel):
-    order_id: str
-    amount: float
-    token: str
-    security_code: Optional[str] = None
-    customer_name: Optional[str] = "Customer"
-    customer_phone: Optional[str] = "97333000000"
 
-def _require_restaurant_user(request: Request) -> Dict[str, Any]:
+class ProcessIntentDto(BaseModel):
+    intent_id: str
+    session_id: str
+    payment_data: str = ""
+    redirection_url: str = ""
+
+
+class ChargeCardDto(BaseModel):
+    intent_id: str
+    card_id: int
+
+
+class BillingPrefsDto(BaseModel):
+    auto_renew: Optional[bool] = None
+    auto_topup: Optional[bool] = None
+
+
+def _require_owner_payment(request: Request) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     user = auth.get_current_restaurant(request)
-    if not user:
+    admin = auth.get_current_super_admin(request)
+    if admin:
+        raise HTTPException(status_code=400, detail="Use restaurant session")
+    if not user or not user.get("sub"):
         raise HTTPException(status_code=401, detail="Unauthorized")
-    return user
+    rest = db.get_restaurant_by_id(int(user["sub"]))
+    if not rest:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    ip = _client_ip(request)
+    if not _rate_ok(f"pay:{rest['id']}:{ip}", 40, 300):
+        raise HTTPException(status_code=429, detail="Too many requests")
+    return user, rest
+
+
+@app.get("/.well-known/apple-developer-merchantid-domain-association")
+async def apple_pay_association():
+    blob = pay.apple_association_bytes()
+    if not blob:
+        raise HTTPException(status_code=404, detail="Not configured")
+    return Response(content=blob, media_type="text/plain")
 
 
 @app.get("/api/payment/myfatoorah/config")
-async def api_myfatoorah_config():
-    """Returns configuration for website / app checkout."""
+@app.get("/api/billing/checkout/config")
+async def api_myfatoorah_config(request: Request):
+    _require_owner_payment(request)
     return mf.get_payment_config()
 
-@app.post("/api/payment/myfatoorah/session")
-async def api_myfatoorah_session(request: Request, amount: float = 1.0, customer_identifier: Optional[str] = None):
-    """Initiates an embedded session for in-page payment without external redirect."""
-    _require_restaurant_user(request)
+
+@app.post("/api/billing/checkout/intent")
+async def api_checkout_intent(req: CheckoutIntentDto, request: Request):
+    _, rest = _require_owner_payment(request)
     try:
-        session_data = await mf.initiate_session(amount=amount, customer_identifier=customer_identifier)
-        return {"ok": True, "session": session_data}
-    except Exception as ex:
-        raise HTTPException(status_code=400, detail=str(ex))
+        return {"ok": True, "intent": pay.create_checkout_intent(
+            int(rest["id"]),
+            req.purpose,
+            plan_code=req.plan_code,
+            pack_id=req.pack_id,
+            invoice_number=req.invoice_number,
+        )}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+def _gateway_error(exc: Exception) -> HTTPException:
+    logger.warning("MyFatoorah checkout error: %s", exc)
+    return HTTPException(status_code=502, detail=str(exc) or "Payment gateway error")
+
+
+@app.post("/api/billing/checkout/session")
+async def api_checkout_session(req: SessionIntentDto, request: Request):
+    _, rest = _require_owner_payment(request)
+    try:
+        data = await pay.session_data_for_intent(
+            req.intent_id,
+            int(rest["id"]),
+            save_card=req.save_card,
+            base_url=get_public_base_url(request),
+            language=i18n.get_lang(request),
+        )
+        return {"ok": True, **data}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise _gateway_error(exc)
+
 
 @app.post("/api/payment/myfatoorah/process")
-async def api_myfatoorah_process(req: ProcessPaymentDto, request: Request):
-    """Processes payment after client-side session submission."""
-    _require_restaurant_user(request)
-    base_url = get_public_base_url(request)
-    callback_url = f"{base_url}/payment/myfatoorah/return"
-    error_url = f"{base_url}/payment/myfatoorah/return"
-
+@app.post("/api/billing/checkout/process")
+async def api_checkout_process(req: ProcessIntentDto, request: Request):
+    _, rest = _require_owner_payment(request)
     try:
-        data = await mf.execute_payment(
-            amount=req.amount,
-            customer_name=req.customer_name or "Customer",
-            customer_email=req.customer_email or "billing@pager.rahapp.com",
-            customer_phone=req.customer_phone or "97333000000",
-            order_id=req.order_id,
+        return await pay.process_embedded_payment(
+            req.intent_id,
+            int(rest["id"]),
             session_id=req.session_id,
-            payment_method_id=req.payment_method_id,
-            callback_url=callback_url,
-            error_url=error_url,
-            save_token=req.save_card
+            payment_data=req.payment_data,
+            redirection_url=req.redirection_url,
         )
-        return {
-            "ok": True,
-            "invoice_id": data.get("InvoiceId"),
-            "redirect_url": data.get("PaymentURL"),
-            "data": data
-        }
-    except Exception as ex:
-        return {"ok": False, "error": str(ex)}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise _gateway_error(exc)
 
-@app.post("/api/payment/myfatoorah/charge-token")
-async def api_myfatoorah_charge_token(req: ChargeTokenDto, request: Request):
-    """Charges saved card token directly with zero redirection."""
-    _require_restaurant_user(request)
-    base_url = get_public_base_url(request)
-    callback_url = f"{base_url}/payment/myfatoorah/return"
-    error_url = f"{base_url}/payment/myfatoorah/return"
 
+@app.post("/api/billing/checkout/charge-card")
+async def api_checkout_charge_card(req: ChargeCardDto, request: Request):
+    _, rest = _require_owner_payment(request)
     try:
-        data = await mf.direct_charge_saved_card(
-            amount=req.amount,
-            token=req.token,
-            order_id=req.order_id,
-            customer_name=req.customer_name or "Customer",
-            customer_phone=req.customer_phone or "97333000000",
-            callback_url=callback_url,
-            error_url=error_url,
-            security_code=req.security_code
+        return await pay.charge_saved_card(
+            req.card_id,
+            int(rest["id"]),
+            req.intent_id,
+            rest,
+            get_public_base_url(request),
         )
-        return {"ok": True, "data": data}
-    except Exception as ex:
-        return {"ok": False, "error": str(ex)}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
 
-@app.get("/checkout/{order_id}", response_class=HTMLResponse)
-async def page_embedded_checkout(order_id: str, request: Request, amount: float = 5.0):
-    """In-page embedded payment demo without redirect."""
-    if not auth.get_current_restaurant(request):
+
+@app.get("/api/billing/cards")
+async def api_billing_cards(request: Request):
+    _, rest = _require_owner_payment(request)
+    return {"cards": pay.list_cards(int(rest["id"])), "prefs": pay.billing_preferences(int(rest["id"]))}
+
+
+@app.delete("/api/billing/cards/{card_id}")
+async def api_billing_card_delete(card_id: int, request: Request):
+    _, rest = _require_owner_payment(request)
+    try:
+        pay.remove_card(int(rest["id"]), card_id)
+        return {"ok": True}
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Not found")
+
+
+@app.post("/api/billing/cards/{card_id}/default")
+async def api_billing_card_default(card_id: int, request: Request):
+    _, rest = _require_owner_payment(request)
+    try:
+        pay.set_default_card(int(rest["id"]), card_id)
+        return {"ok": True}
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Not found")
+
+
+class PayLinkSessionDto(BaseModel):
+    number: str
+    token: str
+    intent_id: str
+
+
+class PayLinkProcessDto(PayLinkSessionDto):
+    session_id: str
+    payment_data: str = ""
+    redirection_url: str = ""
+
+
+def _rate_pay_link(request: Request, key: str) -> None:
+    if not _rate_ok(f"paylink:{key}:{_client_ip(request)}", 30, 300):
+        raise HTTPException(status_code=429, detail="Too many requests")
+
+
+@app.post("/api/billing/pay-link/session")
+async def api_pay_link_session(req: PayLinkSessionDto, request: Request):
+    _rate_pay_link(request, req.number)
+    try:
+        invoice = pay.verify_pay_link(req.number, req.token, req.intent_id)
+        data = await pay.session_data_for_intent(
+            req.intent_id,
+            int(invoice["restaurant_id"]),
+            save_card=False,
+            base_url=get_public_base_url(request),
+            language=i18n.get_lang(request),
+        )
+        return {"ok": True, **data}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise _gateway_error(exc)
+
+
+@app.post("/api/billing/pay-link/process")
+async def api_pay_link_process(req: PayLinkProcessDto, request: Request):
+    _rate_pay_link(request, req.number)
+    try:
+        invoice = pay.verify_pay_link(req.number, req.token, req.intent_id, pending=False)
+        return await pay.process_embedded_payment(
+            req.intent_id,
+            int(invoice["restaurant_id"]),
+            session_id=req.session_id,
+            payment_data=req.payment_data,
+            redirection_url=req.redirection_url,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise _gateway_error(exc)
+
+
+@app.post("/api/billing/preferences")
+async def api_billing_preferences(req: BillingPrefsDto, request: Request):
+    _, rest = _require_owner_payment(request)
+    pay.update_preferences(int(rest["id"]), auto_renew=req.auto_renew, auto_topup=req.auto_topup)
+    return {"ok": True, "prefs": pay.billing_preferences(int(rest["id"]))}
+
+
+class PlanChangeDto(BaseModel):
+    plan_code: str
+
+
+@app.post("/api/billing/plan-change")
+async def api_billing_plan_change(req: PlanChangeDto, request: Request):
+    _, rest = _require_owner_payment(request)
+    try:
+        return {"ok": True, "change": pay.schedule_plan_change(int(rest["id"]), (req.plan_code or "").strip())}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.post("/api/billing/plan-change/cancel")
+async def api_billing_plan_change_cancel(request: Request):
+    _, rest = _require_owner_payment(request)
+    pay.cancel_plan_change(int(rest["id"]))
+    return {"ok": True}
+
+
+@app.get("/dashboard/checkout", response_class=HTMLResponse)
+async def dashboard_checkout_page(request: Request, intent: str = ""):
+    rest = _owner_restaurant(request)
+    if not rest:
         return _login_redirect(request)
+    if not intent:
+        raise HTTPException(status_code=400, detail="intent")
+    try:
+        row = pay.get_intent(intent, int(rest["id"]))
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Not found")
     cfg = mf.get_payment_config()
-    session_data = await mf.initiate_session(amount=amount, customer_identifier=f"ORDER_{order_id}")
     return templates.TemplateResponse(
-        "payment_checkout.html",
+        "billing_checkout.html",
         {
             "request": request,
-            "order_id": order_id,
-            "amount": amount,
+            "restaurant": rest,
+            "intent_id": intent,
+            "amount_label": billing.fils_fixed(row["amount_fils"]),
+            "invoice_number": row.get("invoice_number") or "",
+            "purpose": row.get("purpose") or "",
             "payment_config": cfg,
-            "session_data": session_data
-        }
+            "csrf": _dash_csrf(int(rest["id"])),
+            "billing_checkout_bootstrap": {"intent_id": intent, "config": cfg, "messages": pay.checkout_messages()},
+        },
     )
+
+
+@app.get("/checkout/{order_id}", response_class=HTMLResponse)
+async def page_embedded_checkout_demo(order_id: str, request: Request):
+    """Super-admin test checkout only."""
+    admin = auth.get_current_super_admin(request)
+    if not admin or mf.MYFATOORAH_ENV != "test":
+        raise HTTPException(status_code=404, detail="Not found")
+    raise HTTPException(status_code=404, detail="Use /dashboard/checkout")
+
 
 @app.api_route("/payment/myfatoorah/return", methods=["GET", "POST"], response_class=HTMLResponse)
 async def page_myfatoorah_return(request: Request, paymentId: Optional[str] = None):
-    """Handles return verification from 3DS / OTP hop."""
-    pid = paymentId or request.query_params.get("paymentId")
-    is_success = False
-    details = {}
+    pid = paymentId or request.query_params.get("paymentId") or request.query_params.get("paymentid") or ""
+    intent = request.query_params.get("intent") or ""
+    result = await pay.resolve_result(pid, intent, "return")
+    owner = _owner_restaurant(request)
+    response = templates.TemplateResponse(
+        "payment_return.html",
+        {
+            "request": request,
+            "state": result["state"],
+            "reason": result["reason"],
+            "view": pay.result_view(intent, int(owner["id"]) if owner else None),
+            "poll": {
+                "url": "/api/payment/myfatoorah/result",
+                "payment_id": pid,
+                "intent": intent,
+                "interval_ms": _RESULT_POLL_MS,
+                "max_ms": _RESULT_POLL_MAX_MS,
+            },
+        },
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
-    if pid:
-        try:
-            status_data = await mf.get_payment_status(pid)
-            inv_status = (status_data.get("InvoiceStatus") or "").lower()
-            if inv_status in ("paid", "success"):
-                is_success = True
-                details = status_data
-        except Exception:
-            pass
 
-    return HTMLResponse(content=f"""
-    <!DOCTYPE html>
-    <html lang="ar" dir="rtl">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{'تم الدفع بنجاح' if is_success else 'فشلت عملية الدفع'}</title>
-        <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@600;800&display=swap" rel="stylesheet">
-        <style>
-            body {{ background: #0f172a; color: #f8fafc; font-family: 'Readex Pro', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }}
-            .card {{ background: #1e293b; border-radius: 20px; padding: 40px; text-align: center; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }}
-            .icon {{ font-size: 50px; margin-bottom: 16px; }}
-            .btn {{ display: inline-block; margin-top: 24px; padding: 12px 24px; background: #C05621; color: #fff; text-decoration: none; border-radius: 12px; font-weight: 700; }}
-        </style>
-    </head>
-    <body>
-        <div class="card">
-            <div class="icon">{'تم' if is_success else 'تعذر'}</div>
-            <h2>{'تمت عملية الدفع بنجاح.' if is_success else 'فشلت عملية الدفع'}</h2>
-            <p style="color: #94a3b8; font-size: 14px; margin-top: 8px;">معرف العملية: {pid or 'غير متوفر'}</p>
-            <a href="/" class="btn">العودة للرئيسية</a>
-        </div>
-    </body>
-    </html>
-    """)
+@app.get("/api/payment/myfatoorah/result")
+async def api_myfatoorah_result(paymentId: str = "", intent: str = ""):
+    result = await pay.resolve_result(paymentId, intent, "poll")
+    return {"state": result["state"]}
+
 
 @app.post("/api/payment/myfatoorah/webhook")
 async def webhook_myfatoorah(request: Request):
-    """MyFatoorah V2 Webhook Verification with HMAC-SHA256 signature."""
     raw_body = await request.body()
     signature = request.headers.get("myfatoorah-signature") or request.headers.get("X-MyFatoorah-Signature") or ""
-
     if not mf.verify_webhook_signature(raw_body, signature):
         raise HTTPException(status_code=400, detail="Invalid webhook signature")
-
-    payload = await request.json()
-    event = payload.get("Event")
-    data = payload.get("Data", {})
-
-    logger.info("MyFatoorah Webhook received: %s, Data: %s", event, data)
-    return {"status": "success", "event": event}
+    try:
+        payload = json.loads(raw_body.decode("utf-8"))
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+    data = payload.get("Data") or payload.get("data") or {}
+    tx = data.get("Transaction") or {}
+    pid = str(tx.get("PaymentId") or data.get("PaymentId") or "")
+    if pid:
+        try:
+            await pay.settle_payment(pid, "webhook")
+        except ValueError:
+            logger.warning("Webhook settlement skipped for %s", pid)
+        except Exception:
+            logger.exception("Webhook settlement failed for %s", pid)
+    return {"status": "success"}
 
 
 from . import admin_panel

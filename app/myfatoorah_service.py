@@ -22,12 +22,29 @@ load_dotenv(ENV_FILE)
 
 logger = logging.getLogger("myfatoorah")
 
-# Configuration from environment
-MYFATOORAH_PAYMENT_MODE = os.getenv("MYFATOORAH_PAYMENT_MODE", "live").lower()
-is_test = MYFATOORAH_PAYMENT_MODE == "test"
+# Configuration from environment (MYFATOORAH_ENV=test|live; legacy MYFATOORAH_PAYMENT_MODE still supported)
+_env_raw = (os.getenv("MYFATOORAH_ENV") or os.getenv("MYFATOORAH_PAYMENT_MODE") or "live").strip().lower()
+MYFATOORAH_ENV = "test" if _env_raw == "test" else "live"
+is_test = MYFATOORAH_ENV == "test"
+MYFATOORAH_PAYMENT_MODE = MYFATOORAH_ENV
 
-API_URL = os.getenv("MYFATOORAH_TEST_API_URL" if is_test else "MYFATOORAH_API_URL", "https://api.myfatoorah.com").rstrip("/")
-API_KEY = os.getenv("MYFATOORAH_TEST_API_KEY" if is_test else "MYFATOORAH_API_KEY", "").strip()
+_DEFAULT_TEST = "https://apitest.myfatoorah.com"
+_DEFAULT_LIVE = "https://api.myfatoorah.com"
+_DEFAULT_SCRIPT_TEST = "https://demo.myfatoorah.com/sessions/v1/session.js"
+_DEFAULT_SCRIPT_LIVE = "https://portal.myfatoorah.com/sessions/v1/session.js"
+API_URL = (
+    os.getenv("MYFATOORAH_TEST_API_URL" if is_test else "MYFATOORAH_API_URL", _DEFAULT_TEST if is_test else _DEFAULT_LIVE)
+).rstrip("/")
+SESSION_SCRIPT_URL = (
+    os.getenv(
+        "MYFATOORAH_TEST_SESSION_SCRIPT_URL" if is_test else "MYFATOORAH_SESSION_SCRIPT_URL",
+        _DEFAULT_SCRIPT_TEST if is_test else _DEFAULT_SCRIPT_LIVE,
+    )
+).strip()
+API_KEY = (
+    os.getenv("MYFATOORAH_TEST_API_KEY" if is_test else "MYFATOORAH_API_KEY", "")
+    or os.getenv("MYFATOORAH_API_KEY", "")
+).strip()
 WEBHOOK_SECRET = os.getenv("MYFATOORAH_WEBHOOK_SECRET", "").strip()
 CURRENCY = os.getenv("MYFATOORAH_CURRENCY", "BHD").upper()
 COUNTRY_ISO = os.getenv("MYFATOORAH_COUNTRY_ISO", "BHR").upper()
@@ -43,123 +60,112 @@ def get_payment_config() -> Dict[str, Any]:
         "gateway": "myfatoorah",
         "currency": CURRENCY,
         "country": COUNTRY_ISO,
-        "mode": MYFATOORAH_PAYMENT_MODE,
+        "mode": MYFATOORAH_ENV,
         "is_test": is_test,
         "api_base": API_URL,
-        "session_script_url": f"{API_URL}/payment/v1/session.js",
+        "session_script_url": SESSION_SCRIPT_URL,
     }
 
-async def initiate_session(amount: float, currency: Optional[str] = None, customer_identifier: Optional[str] = None) -> Dict[str, Any]:
-    """
-    Creates an embedded session for in-page payment without external redirect.
-    Call MyFatoorah /v3/sessions to obtain SessionId and CountryCode.
-    """
-    cur = currency or CURRENCY
+def _api_error(data: Dict[str, Any], fallback: str) -> str:
+    errors = data.get("ValidationErrors") or []
+    if errors and isinstance(errors, list):
+        parts = [f"{e.get('Name')}: {e.get('Error')}" for e in errors if isinstance(e, dict)]
+        if parts:
+            return "; ".join(parts)
+    return str(data.get("Message") or fallback)
+
+
+def _customer(name: str, email: str, reference: str) -> Dict[str, Any]:
+    out: Dict[str, Any] = {"Reference": reference}
+    if name:
+        out["Name"] = name[:100]
+    if email:
+        out["Email"] = email[:100]
+    return out
+
+
+async def initiate_session(
+    *,
+    amount: float,
+    external_identifier: str,
+    customer_reference: str,
+    customer_name: str = "",
+    customer_email: str = "",
+    redirection_url: str = "",
+    save_token: bool = False,
+    language: str = "EN",
+    currency: Optional[str] = None,
+) -> Dict[str, Any]:
+    """POST /v3/sessions (COMPLETE_PAYMENT). Returns Data incl. SessionId and EncryptionKey."""
     payload: Dict[str, Any] = {
+        "PaymentMode": "COMPLETE_PAYMENT",
         "Order": {
             "Amount": round(float(amount), 3),
-            "Currency": cur
-        }
+            "Currency": currency or CURRENCY,
+            "ExternalIdentifier": external_identifier,
+        },
+        "Customer": _customer(customer_name, customer_email, customer_reference),
+        "SaveCardOptions": {"SaveToken": bool(save_token)},
+        "Language": "AR" if (language or "").upper() == "AR" else "EN",
     }
-    if customer_identifier:
-        payload["CustomerIdentifier"] = customer_identifier
+    if redirection_url:
+        payload["IntegrationUrls"] = {"Redirection": redirection_url}
 
     async with httpx.AsyncClient(timeout=15.0) as client:
         resp = await client.post(f"{API_URL}/v3/sessions", headers=HEADERS, json=payload)
         data = resp.json()
         if not data.get("IsSuccess"):
-            logger.error(f"MyFatoorah initiate_session error: {data}")
-            raise Exception(data.get("Message") or "Failed to initiate MyFatoorah session")
-        return data.get("Data", {})
+            logger.error("MyFatoorah initiate_session error: %s", data)
+            raise Exception(_api_error(data, "Failed to initiate MyFatoorah session"))
+        return data.get("Data") or {}
 
-async def execute_payment(
-    *,
-    amount: float,
-    currency: Optional[str] = None,
-    customer_name: str,
-    customer_email: str,
-    customer_phone: str,
-    order_id: str,
-    session_id: Optional[str] = None,
-    payment_method_id: Optional[int] = None,
-    callback_url: str,
-    error_url: str,
-    save_token: bool = False,
-    customer_identifier: Optional[str] = None
-) -> Dict[str, Any]:
-    """
-    Executes payment using embedded session or payment method.
-    """
-    cur = currency or CURRENCY
-    phone_clean = "".join(filter(str.isdigit, customer_phone or ""))
-    phone_number = phone_clean[-8:] if len(phone_clean) >= 8 else phone_clean
 
-    payload: Dict[str, Any] = {
-        "PaymentMethodId": payment_method_id or 0,
-        "CustomerName": customer_name or "Valued Customer",
-        "DisplayCurrencyIso": cur,
-        "MobileCountryCode": "+973",
-        "CustomerMobile": phone_number or "33000000",
-        "CustomerEmail": customer_email or "billing@pager.rahapp.com",
-        "InvoiceValue": round(amount, 3),
-        "CallBackUrl": callback_url,
-        "ErrorUrl": error_url,
-        "CustomerReference": order_id,
-        "SaveToken": save_token,
-    }
+def decrypt_payment_data(encrypted: str, encryption_key: str) -> Dict[str, Any]:
+    """Decrypts the embedded callback `paymentData` (AES-128-CBC, key = IV = first 16 key bytes)."""
+    from cryptography.hazmat.primitives import padding
+    from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-    if session_id:
-        payload["SessionId"] = session_id
+    key = (encryption_key or "").encode("utf-8")[:16].ljust(16, b"\0")
+    raw = base64.b64decode(encrypted or "")
+    decryptor = Cipher(algorithms.AES(key), modes.CBC(key)).decryptor()
+    padded = decryptor.update(raw) + decryptor.finalize()
+    unpadder = padding.PKCS7(128).unpadder()
+    plain = unpadder.update(padded) + unpadder.finalize()
+    return json.loads(plain.decode("utf-8"))
 
-    if customer_identifier:
-        payload["CustomerIdentifier"] = customer_identifier
 
-    async with httpx.AsyncClient(timeout=20.0) as client:
-        resp = await client.post(f"{API_URL}/v3/payments", headers=HEADERS, json=payload)
-        data = resp.json()
-        if not data.get("IsSuccess"):
-            logger.error(f"MyFatoorah execute_payment error: {data}")
-            raise Exception(data.get("Message") or "Payment execution failed")
-        return data.get("Data", {})
-
-async def direct_charge_saved_card(
+async def charge_token(
     *,
     amount: float,
     token: str,
-    order_id: str,
-    customer_name: str,
-    customer_phone: str,
-    callback_url: str,
-    error_url: str,
-    security_code: Optional[str] = None
+    external_identifier: str,
+    customer_reference: str,
+    customer_name: str = "",
+    customer_email: str = "",
+    redirection_url: str = "",
+    currency: Optional[str] = None,
 ) -> Dict[str, Any]:
-    """
-    Direct payment using saved card token (Tokenization).
-    """
-    payload = {
-        "InvoiceValue": round(amount, 3),
-        "DisplayCurrencyIso": CURRENCY,
-        "CustomerName": customer_name,
-        "CustomerMobile": "".join(filter(str.isdigit, customer_phone))[-8:] or "33000000",
-        "MobileCountryCode": "+973",
-        "CallBackUrl": callback_url,
-        "ErrorUrl": error_url,
-        "CustomerReference": order_id,
-        "SourceInfo": {
-            "PaymentType": "Token",
-            "Token": token
-        }
+    """POST /v3/payments with a saved card token."""
+    payload: Dict[str, Any] = {
+        "PaymentMethod": "CARD",
+        "Order": {
+            "Amount": round(float(amount), 3),
+            "Currency": currency or CURRENCY,
+            "ExternalIdentifier": external_identifier,
+        },
+        "SourceOfFund": {"Token": token},
+        "Customer": _customer(customer_name, customer_email, customer_reference),
     }
-    if security_code:
-        payload["SourceInfo"]["Cvv"] = security_code
+    if redirection_url:
+        payload["IntegrationUrls"] = {"Redirection": redirection_url}
 
     async with httpx.AsyncClient(timeout=20.0) as client:
         resp = await client.post(f"{API_URL}/v3/payments", headers=HEADERS, json=payload)
         data = resp.json()
         if not data.get("IsSuccess"):
-            logger.error(f"MyFatoorah direct_charge_saved_card error: {data}")
-            raise Exception(data.get("Message") or "Token payment failed")
-        return data.get("Data", {})
+            logger.error("MyFatoorah charge_token error: %s", data)
+            raise Exception(_api_error(data, "Token payment failed"))
+        return data.get("Data") or {}
 
 async def get_payment_status(payment_id: str) -> Dict[str, Any]:
     """
@@ -169,9 +175,9 @@ async def get_payment_status(payment_id: str) -> Dict[str, Any]:
         resp = await client.get(f"{API_URL}/v3/payments/{payment_id}", headers=HEADERS)
         data = resp.json()
         if not data.get("IsSuccess"):
-            logger.error(f"MyFatoorah get_payment_status error: {data}")
-            raise Exception(data.get("Message") or "Failed to verify payment status")
-        return data.get("Data", {})
+            logger.error("MyFatoorah get_payment_status error: %s", data)
+            raise Exception(_api_error(data, "Failed to verify payment status"))
+        return data.get("Data") or {}
 
 def verify_webhook_signature(payload_bytes: bytes, received_signature: str) -> bool:
     """

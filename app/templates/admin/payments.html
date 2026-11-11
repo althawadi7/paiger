@@ -51,6 +51,25 @@
       </table>
     </div>
   </div>
+  <h2 class="h3" style="margin:24px 0 12px">{{ t('admin.gatewayLog') if t is defined else 'Gateway attempts' }}</h2>
+  <div class="card table-scroll">
+    <table class="t">
+      <thead><tr><th>{{ t('admin.cDate') }}</th><th>{{ t('admin.cRest') }}</th><th>Gateway</th><th>{{ t('admin.cRef') }}</th><th>Method</th><th>{{ t('admin.cStatus') }}</th><th>Error</th></tr></thead>
+      <tbody>
+        {% for row in attempts or [] %}
+        <tr>
+          <td class="sub">{{ row.created_at }}</td>
+          <td>{{ row.restaurant_name }}</td>
+          <td>{{ row.gateway }}</td>
+          <td class="mono">{{ row.mf_payment_id or '—' }}</td>
+          <td>{{ row.method or '—' }}</td>
+          <td>{{ row.status }}</td>
+          <td class="sub">{{ row.error_message or '—' }}</td>
+        </tr>
+        {% else %}<tr><td colspan="7">{{ t('admin.none') }}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
 </section>
 <div class="modal" id="paidModal" hidden role="dialog" aria-modal="true">
   <div class="backdrop" data-close></div>

@@ -23,8 +23,8 @@
           <tr class="click" data-open="{{ row.id }}" tabindex="-1">
             <td><div class="rcell"><span class="rlogo">{{ row.initial }}</span><div><b>{{ row.name }}</b><span>/r/{{ row.slug }}</span></div></div></td>
             <td><span class="pill {{ row.status }}">{{ t('admin.st.' + row.status) }}</span></td>
-            <td>{{ row.plan_label }}</td>
-            <td class="sub">{{ row.renew }}</td>
+            <td>{{ row.plan_label }}{% if row.scheduled_label %}<br><span class="sub">{{ row.scheduled_label }}</span>{% endif %}</td>
+            <td class="sub">{{ row.until_label or row.renew }}{% if row.auto_renew_label %}<br>{{ row.auto_renew_label }}{% endif %}</td>
             <td class="r"><span class="num">{{ row.orders_30d }}</span></td>
             <td class="sub">{{ row.joined }}</td>
           </tr>
@@ -102,7 +102,8 @@
     monthly: {{ t('admin.pl.monthly')|tojson }}, yearly: {{ t('admin.pl.yearly')|tojson }},
     handTitle: {{ t('admin.handoff')|tojson }}, pin: {{ t('admin.cashierPin')|tojson }},
     link: {{ t('admin.customerLink')|tojson }}, loginEmail: {{ t('admin.loginEmail')|tojson }},
-    onePass: {{ t('admin.oneTimePass')|tojson }}, copy: {{ t('admin.copy')|tojson }}, copied: {{ t('admin.copied')|tojson }}
+    onePass: {{ t('admin.oneTimePass')|tojson }}, copy: {{ t('admin.copy')|tojson }}, copied: {{ t('admin.copied')|tojson }},
+    autoRenew: {{ t('admin.dAutoRenew')|tojson }}, change: {{ t('admin.dPlanChange')|tojson }}
   };
   var handoff = {{ handoff|tojson if handoff is defined and handoff else 'null' }};
   function el(tag, attrs, text) {
@@ -141,10 +142,12 @@
     body.appendChild(el("div")).appendChild(pill);
     var facts = el("div", { class: "facts" });
     facts.appendChild(field(labels.plan, d.plan_name || "—"));
-    facts.appendChild(field(labels.renew, d.renew));
+    facts.appendChild(field(labels.renew, d.until_label || d.renew));
+    if (d.auto_renew_label) facts.appendChild(field(labels.autoRenew, d.auto_renew_label));
+    if (d.scheduled_label) facts.appendChild(field(labels.change, d.scheduled_label));
     facts.appendChild(field(labels.owner, d.email));
     facts.appendChild(field(labels.phone, d.phone));
-    facts.appendChild(field(labels.card, labels.none));
+    facts.appendChild(field(labels.card, d.card && d.card !== "none" ? d.card : labels.none));
     facts.appendChild(field(d.points == null ? labels.orders : labels.balance, d.points == null ? String(d.orders_30d) : String(d.points)));
     body.appendChild(facts);
     var h = el("h4", {}, labels.manage); body.appendChild(h);

@@ -1,117 +1,69 @@
-# 💳 دليل تكامل بوابة ماي فاتورة (MyFatoorah) للدفع المباشر وحفظ البطاقات (Paiger Web & Backend)
+# 💳 دليل تكامل ماي فاتورة (MyFatoorah Embedded Payment v3) — Trings
 
-> **المشروع:** بيجر دَورك (`/var/www/pager`) — خادم FastAPI وموقع الويب  
-> **الهدف:** توفير دفع إلكتروني مباشر داخل الموقع (In-App / Embedded) بدون تحويل خارجي (No Outside URL Redirect) مع دعم حفظ البطاقات (Save Card / Tokenization) وApple Pay وبنفت والبطاقات البنكية.
-
----
-
-## 1. فكرة العمل (How It Works Without Redirect)
-
-بدلاً من تحويل العميل إلى رابط خارجي (`PaymentURL` التابع لماي فاتورة)، يتم استخدام **Embedded Payment Session (`session.js`)**:
-1. المتصفح أو التطبيق يطلب جلسة دفع مشفرة من السيرفر عبر: `POST /api/payment/myfatoorah/session`.
-2. السيرفر يتصل بـ MyFatoorah API (`/v3/sessions`) ويرجع `SessionId`.
-3. مكتبة ماي فاتورة في الموقع تعرض حقول البطاقة / Apple Pay مباشرة داخل الصفحة بداخل حاوية مخصصة (`<div id="mf-form"></div>`).
-4. عند الضغط على زر "دفع":
-   - تقوم الدالة `myFatoorah.submit()` بتشفير البطاقة وإرجاع Session موثقة.
-   - يرسل الموقع الطلب للباك إند: `POST /api/payment/myfatoorah/process`.
-   - يقوم الباك إند بتنفيذ الخصم فوراً عبر `/v3/payments`.
-   - في حال اختيار العميل "حفظ البطاقة" (`save_card: true`)، يتم حفظ توكن البطاقة لاستخدامه لاحقاً بنقرة واحدة!
+> **المشروع:** `/var/www/pager` — FastAPI
+> **الوضع:** Embedded v3 (Unified Session) بنمط `COMPLETE_PAYMENT`، بدون تحويل خارجي، مع حفظ البطاقة (Token).
 
 ---
 
-## 2. نقاط النهاية المتوفرة في السيرفر (API Endpoints)
+## 1. طريقة العمل
 
-| المسار (Path) | الطريقة (Method) | الوظيفة |
+1. الصفحة تنشئ **intent** على السيرفر (`POST /api/billing/checkout/intent`) — المبلغ يُحسب على السيرفر فقط.
+2. `POST /api/billing/checkout/session` → السيرفر يستدعي `POST /v3/sessions` مع:
+   - `PaymentMode: COMPLETE_PAYMENT`، `Order.Amount/Currency`، `Order.ExternalIdentifier = intent_id`
+   - `Customer.Reference = rest_{id}`، `SaveCardOptions.SaveToken` حسب خيار "حفظ البطاقة"
+   - يحفظ `SessionId` و `EncryptionKey` (مشفّر) على الـ intent، ويرجع للمتصفح `SessionId` فقط.
+3. المتصفح: `myfatoorah.init({ sessionId, containerId: "mf-form", callback, shouldHandlePaymentUrl: true, eventListener, subscribedEvents, settings })`
+   — زر الدفع خاص بنا (`useCustomButton: true`) ويستدعي `myfatoorah.submitCardPayment()`. ماي فاتورة تعرض صفحة 3DS بنفسها.
+4. `callback(response)` → `POST /api/payment/myfatoorah/process` بـ `{ intent_id, session_id, payment_data, redirection_url }`.
+5. السيرفر: يتحقق أن `session_id` يخص الـ intent، يفك `paymentData` بالـ `EncryptionKey` لاستخراج `PaymentId`،
+   ثم **يتحقق دائماً** عبر `GET /v3/payments/{id}` (الحالة، المبلغ بعملة العرض، `ExternalIdentifier`) قبل التسوية.
+   أي اختلاف في المبلغ أو الـ intent = لا تسوية.
+
+الكود: `app/myfatoorah_service.py` · `app/payments.py` · `app/static/js/mf-embedded.js` (مشترك) ·
+`subscription-checkout.js` / `billing-checkout-page.js` / `pay-invoice.js`.
+
+---
+
+## 2. السكربت والروابط
+
+| البيئة | `session.js` | API |
 |---|---|---|
-| `/api/payment/myfatoorah/config` | `GET` | إرجاع إعدادات الدفع وعنوان سكريبت `session.js` والعملة |
-| `/api/payment/myfatoorah/session` | `POST` | بدء جلسة دفع مشفرة والحصول على `SessionId` لعرض الحقول |
-| `/api/payment/myfatoorah/process` | `POST` | تنفيذ الدفع النهائي وربط العملية وتفعيل ميزة حفظ البطاقة |
-| `/api/payment/myfatoorah/charge-token` | `POST` | الخصم المباشر من بطاقة محفوظة مسبقاً (Token) دون إدخال البيانات |
-| `/api/payment/myfatoorah/webhook` | `POST` | استقبال إشعارات الدفع والتحقق من التوقيع الرقمي (HMAC-SHA256) |
-| `/payment/myfatoorah/return` | `GET/POST` | صفحة التحقق عند العودة من خطوة التحقق البنكي (3DS / OTP) |
-| `/checkout/{order_id}` | `GET` | صفحة ويب تجريبية متكاملة للدفع المباشر وحفظ البطاقات |
+| test | `https://demo.myfatoorah.com/sessions/v1/session.js` | `https://apitest.myfatoorah.com` |
+| live (BH/KW/OM/JO) | `https://portal.myfatoorah.com/sessions/v1/session.js` | `https://api.myfatoorah.com` |
+
+تُختار حسب `MYFATOORAH_ENV` (override: `MYFATOORAH_TEST_SESSION_SCRIPT_URL` / `MYFATOORAH_SESSION_SCRIPT_URL`).
+الكائن العام في المتصفح هو `window.myfatoorah` (أحرف صغيرة).
 
 ---
 
-## 3. مثال الاندماج في الواجهة الأمامية للموقع (Frontend Integration)
+## 3. نقاط النهاية
 
-### أ) تضمين مكتبة ماي فاتورة:
-```html
-<script src="https://api.myfatoorah.com/payment/v1/session.js"></script>
-```
-
-### ب) إضافة حاوية الدفع:
-```html
-<div id="mf-form"></div>
-<button id="btn-pay" onclick="payNow()">تأكيد ودفع</button>
-```
-
-### ج) كود الجافاسكريبت (JavaScript):
-```javascript
-// 1. جلب SessionId من السيرفر
-const res = await fetch('/api/payment/myfatoorah/session?amount=5.0', { method: 'POST' });
-const { session } = await res.json();
-
-// 2. تهيئة النموذج المباشر
-myFatoorah.init({
-    countryCode: "BHR",
-    sessionId: session.SessionId,
-    cardViewId: "mf-form",
-    style: {
-        direction: "rtl",
-        cardHeight: 180,
-        input: {
-            color: "#ffffff",
-            fontSize: "15px",
-            fontFamily: "'Readex Pro', sans-serif"
-        }
-    }
-});
-
-// 3. تنفيذ الدفع عند الضغط
-function payNow() {
-    myFatoorah.submit().then(async (response) => {
-        const payRes = await fetch('/api/payment/myfatoorah/process', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                order_id: "ORDER_123",
-                amount: 5.0,
-                session_id: response.sessionId,
-                save_card: true
-            })
-        });
-        const result = await payRes.json();
-        if (result.ok) {
-            window.location.href = result.redirect_url || '/payment/success';
-        }
-    }).catch(err => {
-        alert('خطأ في بيانات البطاقة');
-    });
-}
-```
+| المسار | الوظيفة |
+|---|---|
+| `POST /api/billing/checkout/intent` | إنشاء/إعادة استخدام intent + فاتورة غير مدفوعة |
+| `POST /api/billing/checkout/session` | جلسة v3 للـ intent (`save_card`) |
+| `POST /api/payment/myfatoorah/process` | تسوية نتيجة الـ callback (يوجد alias: `/api/billing/checkout/process`) |
+| `POST /api/billing/pay-link/session` · `/process` | نفس التدفق لرابط دفع الفاتورة (ضيف) |
+| `POST /api/billing/checkout/charge-card` | خصم بطاقة محفوظة: `POST /v3/payments` بـ `SourceOfFund.Token` |
+| `POST /api/payment/myfatoorah/webhook` | Webhook (HMAC-SHA256) → نفس التسوية |
+| `GET /payment/myfatoorah/return?paymentId=&intent=` | صفحة النتيجة (تسوية idempotent) |
 
 ---
 
-## 4. الدفع بنقرة واحدة بالبطاقة المحفوظة (One-Click Token Payment)
+## 4. واجهة الدفع
 
-عندما يكون لدى العميل بطاقة محفوظة مسبقاً (`Token`)، لا داعي لطلب رقم البطاقة نهائياً:
-```javascript
-await fetch('/api/payment/myfatoorah/charge-token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        order_id: "ORDER_123",
-        amount: 5.0,
-        token: "TKN_xxxx_xxxx",
-        security_code: "123" // اختياري حسب إعدادات الحساب
-    })
-});
-```
+- صندوق البطاقة `.mf-box` يبقى ظاهراً دائماً: skeleton أثناء التحميل حتى `VIEW_READY`،
+  وعند أي فشل تظهر الرسالة تحته مع زر **حاول مرة أخرى** (جلسة جديدة لنفس الـ intent).
+- في وضع test تظهر رسالة السيرفر/البوابة الفعلية بجانب الرسالة العامة، وكل خطوة تُسجَّل في `console`.
 
 ---
 
-## 5. تجربة الصفحة المباشرة الآن
+## 5. بطاقات الاختبار (demo)
 
-يمكنك فتح وتجربة واجهة الدفع المباشرة مباشرة عبر الرابط:
-`https://pager.rahapp.com/checkout/TEST_1001?amount=5.0`
+| النتيجة | البطاقة | الانتهاء | CVV |
+|---|---|---|---|
+| ناجح (3DS → اختر `(Y)`) | `5123450000000008` | 01/39 | 100 |
+| مرفوض بسبب 3DS (اختر `(N)`) | `5123450000000008` | 01/39 | 100 |
+| مرفوض (`BLOCKED`) | `345678901234564` | 04/37 | 1000 |
+
+الاسم: أي اسم من جزأين مثل `test test`.

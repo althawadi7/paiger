@@ -1,3 +1,4 @@
+{% from "partials/static_asset.html" import href as static_asset %}
 {% if restaurant_brand is defined %}
   {% set brand = restaurant_brand(restaurant) %}
 {% else %}
@@ -13,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/css/restaurant-logo.css?v={{ static_version('css/restaurant-logo.css') if static_version is defined else '1' }}">
+<link rel="stylesheet" href="{{ static_asset('css/restaurant-logo.css') }}">
 <style>
 :root { --ink:#111111; --grey:#5f6368; --grey-2:#8e8e93; --line:#e6e6e8; --paper-2:#f6f6f7; --paper-3:#ececee; --brand: {{ brand.brand }}; --brand-ink: {{ brand.brand_ink }};
   --sans:"IBM Plex Sans","IBM Plex Sans Arabic",-apple-system,"Segoe UI",sans-serif; --ar:"IBM Plex Sans Arabic","IBM Plex Sans",sans-serif; }
@@ -260,6 +261,6 @@ html[lang="ar"] .panel h1 { font-family:var(--sans); font-weight:600; }
   render();
 })();
 </script>
-<script src="/static/js/restaurant-logo.js?v={{ static_version('js/restaurant-logo.js') if static_version is defined else '1' }}" defer></script>
+<script src="{{ static_asset('js/restaurant-logo.js') }}" defer></script>
 </body>
 </html>

@@ -58,6 +58,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .btn:active { transform: translateY(1px) scale(.99); }
 .btn-primary { background: var(--brand); color: var(--on-ink); font-weight: 600; }
 .btn-primary:hover { background: var(--brand-hover); }
+.btn-primary:disabled { background: color-mix(in srgb, var(--brand) 42%, var(--paper-2)); cursor: not-allowed; }
 .btn-outline { color: var(--ink); box-shadow: 0 0 0 1.5px var(--line) inset; }
 .btn-outline:hover { box-shadow: 0 0 0 1.5px var(--brand) inset; color: var(--brand); }
 .btn-white { background: #fff; color: var(--ink); }
@@ -87,6 +88,30 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; a
 footer nav { display: flex; flex-wrap: wrap; gap: 8px 24px; }
 footer a { text-decoration: none; }
 footer a:hover { color: #fff; }
+
+/* Embedded payment box (mf-embedded.js): calm line while idle, skeleton until VIEW_READY. */
+.mf-box { position: relative; min-height: 230px; padding: 12px; border-radius: 14px; background: var(--paper); box-shadow: 0 0 0 1px var(--line) inset; overflow: hidden; }
+.mf-skeleton { display: grid; gap: 12px; }
+.mf-skeleton span { display: block; height: 44px; border-radius: 10px; background: linear-gradient(90deg, var(--paper-2) 25%, var(--paper-3) 37%, var(--paper-2) 63%); background-size: 400% 100%; animation: mf-shimmer 1.4s ease infinite; }
+.mf-skeleton .mf-sk-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.mf-skeleton .mf-sk-short { width: 55%; }
+.mf-box[data-state="error"] .mf-skeleton span { animation: none; opacity: .55; }
+.mf-idle { display: none; margin: 0; font-size: 14px; color: var(--grey); text-align: center; }
+.mf-box[data-state="idle"] { min-height: 0; display: flex; align-items: center; justify-content: center; padding: 28px 16px; }
+.mf-box[data-state="idle"] .mf-idle { display: block; }
+.mf-box[data-state="idle"] .mf-skeleton,
+.mf-box[data-state="ready"] .mf-skeleton,
+.mf-box[data-state="paying"] .mf-skeleton { display: none; }
+.mf-box[data-state="loading"] .mf-mount { position: absolute; inset: 12px; opacity: 0; pointer-events: none; }
+.mf-box[data-state="idle"] .mf-mount,
+.mf-box[data-state="error"] .mf-mount { display: none; }
+.mf-box[data-state="paying"] .mf-mount { opacity: .6; pointer-events: none; }
+.mf-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; }
+.mf-status .mf-hint { flex: 1 1 100%; font-size: 13.5px; color: var(--grey); }
+.mf-status .pay-err { flex: 1 1 220px; margin: 0; font-size: 13.5px; color: #b42318; }
+.mf-retry { min-height: 36px; padding: 0 14px; border-radius: 10px; font: inherit; font-size: 14px; font-weight: 600; color: var(--ink); background: var(--paper); border: 0; box-shadow: 0 0 0 1.5px var(--line) inset; cursor: pointer; }
+.mf-retry:hover { box-shadow: 0 0 0 1.5px var(--ink) inset; }
+@keyframes mf-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
 
 @media (max-width: 860px) {
   .nav-links, .login-link { display: none; }
