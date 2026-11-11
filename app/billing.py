@@ -884,32 +884,50 @@ def create_invoice(
     admin_id: Optional[int] = None,
     pack_id: Optional[int] = None,
     points: Optional[int] = None,
-    notify: bool = True,
 ) -> str:
-    total = sum(int(line.get("amount_fils") or 0) for line in lines)
-    token = secrets.token_urlsafe(32)
     conn = db.get_db_connection()
     try:
         with conn.cursor() as cur:
-            number = _next_number(cur)
-            cur.execute(
-                """
-                INSERT INTO invoices (
-                    restaurant_id, description, amount_fils, status, number, `lines`,
-                    subtotal_fils, total_fils, currency, issued_at, due_at, kind,
-                    pay_token, period_end, pack_id, points, created_at
-                ) VALUES (%s, %s, %s, 'unpaid', %s, %s, %s, %s, 'BHD', %s, %s, %s, %s, %s, %s, %s, %s)
-                """,
-                (
-                    restaurant_id, description[:255], total, number, json.dumps(lines, ensure_ascii=False),
-                    total, total, datetime.now(), due_at, kind, token, period_end, pack_id, points, datetime.now(),
-                ),
+            number = insert_invoice(
+                cur, restaurant_id, kind, description, lines, due_at,
+                period_end=period_end, pack_id=pack_id, points=points,
             )
             conn.commit()
     finally:
         conn.close()
-    if notify:
-        _queue_invoice_email(number)
+    _queue_invoice_email(number)
+    return number
+
+
+def insert_invoice(
+    cur,
+    restaurant_id: int,
+    kind: str,
+    description: str,
+    lines: List[Dict[str, Any]],
+    due_at: datetime,
+    *,
+    period_end=None,
+    pack_id: Optional[int] = None,
+    points: Optional[int] = None,
+) -> str:
+    """Unpaid invoice inside the caller's transaction (caller commits); no email."""
+    total = sum(int(line.get("amount_fils") or 0) for line in lines)
+    number = _next_number(cur)
+    cur.execute(
+        """
+        INSERT INTO invoices (
+            restaurant_id, description, amount_fils, status, number, `lines`,
+            subtotal_fils, total_fils, currency, issued_at, due_at, kind,
+            pay_token, period_end, pack_id, points, created_at
+        ) VALUES (%s, %s, %s, 'unpaid', %s, %s, %s, %s, 'BHD', %s, %s, %s, %s, %s, %s, %s, %s)
+        """,
+        (
+            restaurant_id, description[:255], total, number, json.dumps(lines, ensure_ascii=False),
+            total, total, datetime.now(), due_at, kind, secrets.token_urlsafe(32), period_end, pack_id, points,
+            datetime.now(),
+        ),
+    )
     return number
 
 
@@ -1115,7 +1133,7 @@ def apply_paid_invoice(
         raise ValueError("missing")
     if row.get("status") == "paid":
         raise ValueError("already")
-    if row.get("status") != "unpaid":
+    if row.get("status") not in ("unpaid", "void"):
         raise ValueError("state")
     now = datetime.now()
     cur.execute(
@@ -1207,7 +1225,7 @@ def owner_documents(restaurant_id: int) -> List[Dict[str, Any]]:
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT * FROM invoices WHERE restaurant_id=%s
+                SELECT * FROM invoices WHERE restaurant_id=%s AND status<>'void'
                 ORDER BY (status='unpaid') DESC, id DESC
                 """,
                 (restaurant_id,),

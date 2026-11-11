@@ -141,26 +141,25 @@ def _restaurant_row(restaurant_id: int) -> Dict[str, Any]:
 def _pending_intent(
     restaurant_id: int, purpose: str, plan_code: str, price_fils: int, pack_id: Optional[int] = None
 ) -> Optional[Dict[str, Any]]:
-    """Reuse an open checkout for the same plan/pack so reopening the page doesn't issue another invoice."""
+    """Reuse an open owner checkout for the same plan/pack instead of starting another one."""
     kind = "topup" if purpose == "topup" else "subscription"
     conn = db.get_db_connection()
     try:
         with conn.cursor() as cur:
             cur.execute(
                 """
-                SELECT ci.id, ci.invoice_number, ci.amount_fils, ci.expires_at
-                FROM checkout_intents ci
-                JOIN invoices i ON i.number = ci.invoice_number
-                WHERE ci.restaurant_id=%s AND ci.purpose=%s AND ci.ref_plan_code=%s AND ci.ref_pack_id <=> %s
-                  AND ci.status='pending' AND ci.expires_at > %s AND ci.amount_fils=%s
-                  AND i.status='unpaid' AND i.kind=%s
-                ORDER BY ci.created_at DESC LIMIT 1
+                SELECT id, invoice_number, amount_fils, expires_at, invoice_draft
+                FROM checkout_intents
+                WHERE restaurant_id=%s AND purpose=%s AND ref_plan_code=%s AND ref_pack_id <=> %s
+                  AND status='pending' AND expires_at > %s AND amount_fils=%s AND invoice_number=''
+                ORDER BY created_at DESC LIMIT 5
                 """,
-                (restaurant_id, purpose, plan_code, pack_id, datetime.now(), price_fils, kind),
+                (restaurant_id, purpose, plan_code, pack_id, datetime.now(), price_fils),
             )
-            row = cur.fetchone()
+            rows = list(cur.fetchall())
     finally:
         conn.close()
+    row = next((r for r in rows if (json.loads(r.get("invoice_draft") or "{}") or {}).get("kind") == kind), None)
     if not row:
         return None
     expires = db._parse_dt(row["expires_at"]) or datetime.now()
@@ -198,9 +197,11 @@ def create_checkout_intent(
     pack_id: Optional[int] = None,
     invoice_number: Optional[str] = None,
     kind_override: Optional[str] = None,
-    notify: bool = True,
+    issue_invoice: bool = False,
 ) -> Dict[str, Any]:
-    """Server-side amount only; creates unpaid invoice when needed.
+    """Server-side amount only. The invoice is created when the payment settles, so an
+    abandoned checkout leaves nothing in the owner's invoice list; issue_invoice=True
+    bills now (renewals the owner has to pay by hand).
 
     A top-up with plan_code="points" also moves the restaurant to pay-per-order once paid.
     """
@@ -210,7 +211,8 @@ def create_checkout_intent(
     rest = _restaurant_row(restaurant_id)
     plans = billing._plans_by_code()
     intent_id = _new_intent_id()
-    expires = datetime.now() + timedelta(hours=2)
+    expires = datetime.now() + timedelta(hours=24)
+    draft: Optional[Dict[str, Any]] = None
 
     if purpose == "subscribe":
         code = (plan_code or "").strip()
@@ -230,20 +232,18 @@ def create_checkout_intent(
                 return reusable
         period_end = plan_period_end(plan, start)
         name = plan.get("name_en") or code
-        number = billing.create_invoice(
-            restaurant_id,
-            kind=kind_override or "subscription",
-            description=f"Trings {name}",
-            lines=[{
+        draft = {
+            "kind": kind_override or "subscription",
+            "description": f"Trings {name}",
+            "lines": [{
                 "description": f"Trings {name}",
                 "detail": f"Until {period_end.isoformat()}",
                 "qty": 1,
                 "amount_fils": price,
                 "plan_code": code,
             }],
-            due_at=datetime.now() + timedelta(days=1),
-            period_end=period_end,
-        )
+            "period_end": period_end.isoformat(),
+        }
         amount_fils = price
         ref_plan = code
         ref_pack = None
@@ -271,16 +271,13 @@ def create_checkout_intent(
         line: Dict[str, Any] = {"description": f"{pts} points", "detail": "", "qty": 1, "amount_fils": price}
         if switching:
             line["plan_code"] = "points"
-        number = billing.create_invoice(
-            restaurant_id,
-            kind="topup",
-            description=f"Trings points · {pts}",
-            lines=[line],
-            due_at=datetime.now() + timedelta(days=1),
-            pack_id=ref_pack,
-            points=pts,
-            notify=notify,
-        )
+        draft = {
+            "kind": "topup",
+            "description": f"Trings points · {pts}",
+            "lines": [line],
+            "pack_id": ref_pack,
+            "points": pts,
+        }
         amount_fils = price
     else:
         number = (invoice_number or "").strip()
@@ -293,17 +290,35 @@ def create_checkout_intent(
         ref_plan = None
         ref_pack = None
 
+    if draft and issue_invoice:
+        number = billing.create_invoice(
+            restaurant_id,
+            kind=draft["kind"],
+            description=draft["description"],
+            lines=draft["lines"],
+            due_at=datetime.now() + timedelta(days=1),
+            period_end=draft.get("period_end"),
+            pack_id=draft.get("pack_id"),
+            points=draft.get("points"),
+        )
+        draft = None
+    elif draft:
+        number = ""
     conn = db.get_db_connection()
     try:
         with conn.cursor() as cur:
             cur.execute(
                 """
                 INSERT INTO checkout_intents (
-                    id, restaurant_id, purpose, amount_fils, invoice_number,
+                    id, restaurant_id, purpose, amount_fils, invoice_number, invoice_draft,
                     ref_plan_code, ref_pack_id, status, save_card_requested, created_at, expires_at
-                ) VALUES (%s,%s,%s,%s,%s,%s,%s,'pending',0,%s,%s)
+                ) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'pending',0,%s,%s)
                 """,
-                (intent_id, restaurant_id, purpose, amount_fils, number, ref_plan, ref_pack, datetime.now(), expires),
+                (
+                    intent_id, restaurant_id, purpose, amount_fils, number,
+                    json.dumps(draft, ensure_ascii=False) if draft else None,
+                    ref_plan, ref_pack, datetime.now(), expires,
+                ),
             )
             conn.commit()
     finally:
@@ -367,8 +382,13 @@ async def session_data_for_intent(
     save_card: bool,
     base_url: str,
     language: str = "en",
+    tokenize: bool = False,
 ) -> Dict[str, Any]:
-    """Creates a COMPLETE_PAYMENT session for the intent's server-side amount."""
+    """Creates a COMPLETE_PAYMENT session for the intent's server-side amount.
+
+    tokenize asks MyFatoorah for a card token regardless of the checkbox; the token is
+    stored only if save_card_requested is still on when the payment settles.
+    """
     row = get_intent(intent_id, restaurant_id)
     rest = _restaurant_row(restaurant_id)
     amount_fils = int(row["amount_fils"])
@@ -379,7 +399,7 @@ async def session_data_for_intent(
         customer_name=str(rest.get("name") or ""),
         customer_email=str(rest.get("email") or ""),
         redirection_url=_return_url(base_url, intent_id),
-        save_token=save_card,
+        save_token=tokenize or save_card,
         language=language,
     )
     session_id = str(session.get("SessionId") or "")
@@ -406,6 +426,24 @@ async def session_data_for_intent(
         "amount_bhd": billing.fils_fixed(amount_fils),
         "session": {"SessionId": session_id, "SessionExpiry": session.get("SessionExpiry")},
     }
+
+
+def set_save_card(intent_id: str, restaurant_id: int, save_card: bool) -> None:
+    get_intent(intent_id, restaurant_id)
+    _store_save_flag(intent_id, save_card)
+
+
+def _store_save_flag(intent_id: str, save_card: bool) -> None:
+    conn = db.get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE checkout_intents SET save_card_requested=%s WHERE id=%s AND status='pending'",
+                (1 if save_card else 0, intent_id),
+            )
+            conn.commit()
+    finally:
+        conn.close()
 
 
 def _record_attempt(
@@ -529,6 +567,29 @@ def _save_card_if_needed(restaurant_id: int, data: Dict[str, Any], save_requeste
     return True
 
 
+def _invoice_from_draft(cur, intent: Dict[str, Any]) -> str:
+    """The checkout's invoice, created only now that the payment settled (caller commits)."""
+    try:
+        draft = json.loads(intent.get("invoice_draft") or "null")
+    except json.JSONDecodeError:
+        draft = None
+    if not draft or not draft.get("lines"):
+        raise ValueError("intent")
+    number = billing.insert_invoice(
+        cur,
+        int(intent["restaurant_id"]),
+        draft.get("kind") or "subscription",
+        draft.get("description") or "Trings",
+        draft["lines"],
+        datetime.now(),
+        period_end=draft.get("period_end"),
+        pack_id=draft.get("pack_id"),
+        points=draft.get("points"),
+    )
+    cur.execute("UPDATE checkout_intents SET invoice_number=%s WHERE id=%s", (number, intent["id"]))
+    return number
+
+
 async def settle_payment(
     payment_id: str,
     source: str,
@@ -605,6 +666,8 @@ async def settle_payment(
             if locked and not paid and (locked.get("status") or "") == "failed":
                 conn.commit()
                 return {"status": "failed", "invoice_number": invoice_number, "error": error}
+            if paid and not invoice_number:
+                invoice_number = _invoice_from_draft(cur, intent)
 
             cur.execute(
                 """
@@ -619,7 +682,7 @@ async def settle_payment(
                     intent_id,
                     pid,
                     mf_invoice_id[:64] or None,
-                    invoice_number,
+                    invoice_number or None,
                     status_label,
                     method or None,
                     amount_fils,
@@ -679,11 +742,14 @@ async def process_embedded_payment(
     session_id: str,
     payment_data: str = "",
     redirection_url: str = "",
+    save_card: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """Settles the result of the embedded `myfatoorah.init` callback (COMPLETE_PAYMENT)."""
     row = _intent_row(intent_id, restaurant_id)
     if not session_id or session_id != (row.get("mf_session_id") or ""):
         raise ValueError("session")
+    if save_card is not None:
+        _store_save_flag(intent_id, save_card)
     pid = ""
     key_enc = row.get("mf_session_key_enc") or ""
     if payment_data and key_enc:
@@ -757,16 +823,16 @@ def result_view(intent_id: str, viewer_restaurant_id: Optional[int]) -> Dict[str
         conn.close()
     if not intent:
         return view
-    invoice = billing.get_invoice(intent.get("invoice_number") or "")
-    if not invoice:
-        return view
-    number = invoice.get("number") or ""
     purpose = intent.get("purpose") or ""
     if purpose == "subscribe" and intent.get("ref_plan_code"):
         view["retry_url"] = "/dashboard/subscription?plan=" + quote(str(intent["ref_plan_code"]))
     elif purpose == "topup" and intent.get("ref_pack_id"):
         view["retry_url"] = f"/dashboard/subscription?plan=points&pack={int(intent['ref_pack_id'])}"
-    elif purpose == "invoice" and number:
+    invoice = billing.get_invoice(intent.get("invoice_number") or "")
+    if not invoice:
+        return view
+    number = invoice.get("number") or ""
+    if purpose == "invoice" and number:
         token = invoice.get("pay_token") or ""
         view["retry_url"] = f"/pay/{quote(number)}" + (f"?t={quote(token)}" if token else "")
     if (invoice.get("status") or "") != "paid":
@@ -1014,12 +1080,14 @@ def _server_base_url() -> str:
     return f"https://{base}" if base else f"http://127.0.0.1:{(os.getenv('PORT') or '8035').strip()}"
 
 
-def create_renewal_intent(restaurant_id: int) -> Dict[str, Any]:
+def create_renewal_intent(restaurant_id: int, *, issue_invoice: bool = False) -> Dict[str, Any]:
     rest = _restaurant_row(restaurant_id)
     code = (rest.get("plan_code") or "monthly").strip()
     if code not in ("monthly", "yearly"):
         raise ValueError("plan")
-    return create_checkout_intent(restaurant_id, "subscribe", plan_code=code, kind_override="renewal")
+    return create_checkout_intent(
+        restaurant_id, "subscribe", plan_code=code, kind_override="renewal", issue_invoice=issue_invoice
+    )
 
 
 async def run_auto_renewals() -> List[Dict[str, Any]]:
@@ -1055,12 +1123,12 @@ async def run_auto_renewals() -> List[Dict[str, Any]]:
     async def _one(rest: Dict[str, Any]) -> Dict[str, Any]:
         rid = int(rest["id"])
         if not int(rest.get("auto_renew_enabled") if rest.get("auto_renew_enabled") is not None else 1):
-            intent = create_renewal_intent(rid)
+            intent = create_renewal_intent(rid, issue_invoice=True)
             billing_mail.on_unpaid_invoice(intent["invoice_number"])
             return {"restaurant_id": rid, "status": "invoice_only"}
         card = _default_card(rid)
         if not card:
-            intent = create_renewal_intent(rid)
+            intent = create_renewal_intent(rid, issue_invoice=True)
             billing_mail.on_unpaid_invoice(intent["invoice_number"])
             return {"restaurant_id": rid, "status": "no_card"}
         try:
@@ -1179,7 +1247,7 @@ async def auto_topup(restaurant_id: int) -> Dict[str, Any]:
         return {"restaurant_id": restaurant_id, "status": "recent"}
     amount = int(pack.get("price_fils") or 0)
     try:
-        intent = create_checkout_intent(restaurant_id, "topup", pack_id=int(pack["id"]), notify=False)
+        intent = create_checkout_intent(restaurant_id, "topup", pack_id=int(pack["id"]))
         out = await charge_saved_card(int(card["id"]), restaurant_id, intent["intent_id"], rest, _server_base_url())
         if (out.get("settlement") or {}).get("status") in ("paid", "already"):
             return {"restaurant_id": restaurant_id, "status": "paid"}

@@ -67,7 +67,7 @@ html[lang="ar"] .ph h1 { font-family: var(--sans); font-weight: 600; letter-spac
 .pill.active { background: var(--ready-soft); color: var(--ready-deep); }
 .pill.trialing { background: var(--warn-soft); color: var(--warn); }
 .pill.past_due, .pill.failed { background: var(--error-soft); color: var(--error); }
-.pill.expired, .pill.suspended { background: var(--paper-3); color: var(--grey); }
+.pill.expired, .pill.suspended, .pill.void { background: var(--paper-3); color: var(--grey); }
 .pill.legacy { background: var(--ink); color: #fff; }
 .pill.paid { background: var(--ready-soft); color: var(--ready-deep); }
 .pill.unpaid { background: var(--warn-soft); color: var(--warn); }

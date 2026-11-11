@@ -198,7 +198,16 @@ html[dir="rtl"] .plan .price { justify-content: flex-end; }
 .pay-form .sub { font-size: 13px; color: var(--grey); margin-bottom: 12px; }
 .pay-err { font-size: 13.5px; color: var(--error); }
 .save-card { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: 13px; color: var(--grey); }
-.save-card input { accent-color: var(--brand); }
+.save-card input { accent-color: #1C1B1F; }
+.auto-pref input[type="checkbox"] { accent-color: #1C1B1F; }
+.saved-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.saved-row > span:first-child { font-weight: 500; }
+.saved-row .btn { margin-inline-start: auto; }
+.saved-row .btn:disabled { opacity: .45; cursor: not-allowed; }
+.saved-row .lock-hint { font-size: 12.5px; color: var(--grey); }
+.pill.inv-paid { background: var(--ready-soft); color: var(--ready-deep); }
+.pill.inv-unpaid { background: color-mix(in srgb, var(--trings-brand) 12%, transparent); color: var(--trings-brand); }
+.pill.inv-void, .pill.inv-refunded { background: var(--paper-3); color: var(--grey); }
 .box { padding: 20px; }
 .box h3 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
 .pack-picker { margin-top: 18px; }
@@ -213,6 +222,9 @@ html[dir="rtl"] .plan .price { justify-content: flex-end; }
 .pack .pp { margin-top: 8px; font-size: 15px; font-weight: 600; color: var(--ink); direction: ltr; unicode-bidi: isolate; }
 .pack .per { font-size: 12.5px; color: var(--grey); }
 .pack .plan-badge { margin-bottom: 6px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--trings-brand) 12%, transparent); color: var(--trings-brand); }
+.auto-pref { margin-top: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; font-size: 14px; }
+.auto-pref .sub { flex-basis: 100%; margin: 0; font-size: 13px; color: var(--grey); }
+.auto-pref label:has(input:disabled) { color: var(--grey); }
 .topup-pack { display: inline-flex; align-items: center; gap: 8px; }
 .topup-pack .in { height: 36px; min-width: 160px; border: 0; border-radius: 10px; background: var(--paper-2); padding: 0 10px; font: inherit; }
 .topup-pack .in:disabled { opacity: .55; }

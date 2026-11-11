@@ -1183,6 +1183,15 @@ def _pack_options(packs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     ]
 
 
+def _card_locked_hint(code: str, cards: List[Dict[str, Any]], prefs: Dict[str, Any]) -> str:
+    """Why the only saved card can't be removed (auto top-up / auto-renew charges it), else ''."""
+    if len(cards) != 1:
+        return ""
+    if code == "points":
+        return i18n.t("dash.cardLockedTopup") if prefs.get("auto_topup_enabled") else ""
+    return i18n.t("dash.cardLockedRenew") if prefs.get("auto_renew_enabled") else ""
+
+
 def _subscription_view(rest: Dict[str, Any], requested_plan: str = "", requested_pack: str = "") -> Dict[str, Any]:
     state = db.effective_status(rest)
     code = (rest.get("plan_code") or "monthly").strip()
@@ -1292,9 +1301,6 @@ def _subscription_view(rest: Dict[str, Any], requested_plan: str = "", requested
     if periodic and paid_end:
         extend_label = i18n.t("dash.payAheadYear") if code == "yearly" else i18n.t("dash.payAheadMonth")
     can_buy_points = code == "points" and state == "active" and bool(pack_options)
-    show_topup_prefs = bool(pack_options) and (
-        code == "points" or (status["scheduled"] or {}).get("code") == "points" or prefs["auto_topup_enabled"]
-    )
     return {
         "plan_until_label": status["until_label"] if periodic else "",
         "plan_ends_soon": ends_soon,
@@ -1304,7 +1310,8 @@ def _subscription_view(rest: Dict[str, Any], requested_plan: str = "", requested
         "plans": catalog,
         "packs": pack_options,
         "buy_points": can_buy_points,
-        "show_topup_prefs": show_topup_prefs,
+        "auto_charge_card": billing.card_short_label(cards[0]) if cards else "",
+        "card_locked_hint": _card_locked_hint(code, cards, prefs),
         "auto_topup_pack_id": prefs["auto_topup_pack_id"] or (smallest or {}).get("id"),
         "auto_topup_failed": prefs["auto_topup_failed"] and prefs["auto_topup_enabled"],
         "invoices": invoices,
@@ -1333,7 +1340,6 @@ def _subscription_view(rest: Dict[str, Any], requested_plan: str = "", requested
             "current": code if state == "active" else "",
             "packs": pack_options,
             "pack": (chosen_pack or {}).get("id"),
-            "auto_topup": prefs["auto_topup_enabled"],
             "messages": {
                 "empty_plan": "—",
                 "pack_summary": i18n.t("dash.packSummary"),
@@ -2713,6 +2719,7 @@ class ProcessIntentDto(BaseModel):
     session_id: str
     payment_data: str = ""
     redirection_url: str = ""
+    save_card: Optional[bool] = None
 
 
 class ChargeCardDto(BaseModel):
@@ -2787,12 +2794,23 @@ async def api_checkout_session(req: SessionIntentDto, request: Request):
             save_card=req.save_card,
             base_url=get_public_base_url(request),
             language=i18n.get_lang(request),
+            tokenize=True,
         )
         return {"ok": True, **data}
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
         raise _gateway_error(exc)
+
+
+@app.post("/api/billing/checkout/save-card")
+async def api_checkout_save_card(req: SessionIntentDto, request: Request):
+    _, rest = _require_owner_payment(request)
+    try:
+        pay.set_save_card(req.intent_id, int(rest["id"]), req.save_card)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    return {"ok": True}
 
 
 @app.post("/api/payment/myfatoorah/process")
@@ -2806,6 +2824,7 @@ async def api_checkout_process(req: ProcessIntentDto, request: Request):
             session_id=req.session_id,
             payment_data=req.payment_data,
             redirection_url=req.redirection_url,
+            save_card=req.save_card,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
@@ -2839,6 +2858,9 @@ async def api_billing_cards(request: Request):
 @app.delete("/api/billing/cards/{card_id}")
 async def api_billing_card_delete(card_id: int, request: Request):
     _, rest = _require_owner_payment(request)
+    plan = (rest.get("plan_code") or "monthly").strip()
+    if _card_locked_hint(plan, pay.list_cards(int(rest["id"])), pay.billing_preferences(int(rest["id"]))):
+        raise HTTPException(status_code=409, detail="card in use")
     try:
         pay.remove_card(int(rest["id"]), card_id)
         return {"ok": True}

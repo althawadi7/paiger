@@ -183,22 +183,27 @@
           <div class="sum"><div><span>{{ t('dash.plan') }}</span><span id="summaryPlanName">{% if checkout_summary_name %}{{ checkout_summary_name }}{% else %}—{% endif %}</span></div><p class="muted" id="summaryNote" hidden></p><div class="tot"><span>{{ t('dash.due') }}</span><b id="summaryDueAmount">{% if checkout_summary_price %}BHD {{ checkout_summary_price }}{% else %}—{% endif %}</b></div></div>
           <button class="btn btn-primary pay" type="button" id="subscribePay" disabled>{{ t('dash.pay') }}</button>
           <button class="btn btn-ink pay" type="button" id="schedulePlanBtn" hidden>{{ t('dash.scheduleChange') }}</button>
-          <label class="save-card" id="saveCardRow"><input type="checkbox" id="saveCardSub" checked> <span id="saveCardText">{{ t('dash.saveCard') }}</span></label>
+          <label class="save-card" id="saveCardRow" hidden><input type="checkbox" id="saveCardSub" checked> <span id="saveCardText">{{ t('dash.saveCard') }}</span></label>
           <p class="secure">{{ t('dash.secure') }}</p>
         </div>
       </div>
       <h2 class="h3">{{ t('dash.cards') }}</h2>
       <div class="card" style="padding:14px">
-        <div id="cardList">{% for card in saved_cards %}<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee"><span>{{ card.brand }} ·••• {{ card.last4 }}{% if card.is_default %} ★{% endif %}</span><button type="button" class="btn btn-quiet btn-sm" data-rm-card="{{ card.id }}">{{ t('dash.remove') }}</button></div>{% else %}<p class="sub">{{ t('dash.noCards') }}</p>{% endfor %}</div>
-        <div style="margin-top:12px;display:flex;gap:16px;flex-wrap:wrap;font-size:14px">
-          <label><input type="checkbox" id="prefRenew" {% if billing_prefs.auto_renew_enabled %}checked{% endif %}> {{ t('dash.autoRenew') }}</label>
-          {% if show_topup_prefs %}<label><input type="checkbox" id="prefTopup" {% if billing_prefs.auto_topup_enabled %}checked{% endif %}> {{ t('dash.autoTopupLow') }}</label>
-          <label class="topup-pack">{{ t('dash.autoTopupPack') }} <select id="prefTopupPack" class="in"{% if not billing_prefs.auto_topup_enabled %} disabled{% endif %}>{% for pack in packs %}<option value="{{ pack.id }}"{% if pack.id == auto_topup_pack_id %} selected{% endif %}>{{ '{:,}'.format(pack.points) }} · BHD {{ pack.price_label }}</option>{% endfor %}</select></label>{% endif %}
+        <div id="cardList">{% for card in saved_cards %}<div class="saved-row"><span dir="ltr">{{ card.brand }} ••{{ card.last4 }}</span>{% if card.is_default %}<span class="pill">{{ t('dash.defaultCard') }}</span>{% endif %}{% if card_locked_hint %}<span class="lock-hint">{{ card_locked_hint }}</span>{% endif %}<button type="button" class="btn btn-quiet btn-sm" data-rm-card="{{ card.id }}" data-card-name="{{ card.brand }} ••{{ card.last4 }}"{% if card_locked_hint %} disabled title="{{ card_locked_hint }}"{% endif %}>{{ t('dash.remove') }}</button></div>{% else %}<p class="sub">{{ t('dash.noCards') }}</p>{% endfor %}</div>
+        <div class="auto-pref">
+          {% if plan_code == 'points' %}
+          <label><input type="checkbox" id="prefTopup"{% if billing_prefs.auto_topup_enabled and saved_cards %} checked{% endif %}{% if not saved_cards %} disabled{% endif %}> {{ t('dash.autoTopupLow') }}</label>
+          {% if packs %}<label class="topup-pack">{{ t('dash.autoTopupPack') }} <select id="prefTopupPack" class="in"{% if not (billing_prefs.auto_topup_enabled and saved_cards) %} disabled{% endif %}>{% for pack in packs %}<option value="{{ pack.id }}"{% if pack.id == auto_topup_pack_id %} selected{% endif %}>{{ '{:,}'.format(pack.points) }} · BHD {{ pack.price_label }}</option>{% endfor %}</select></label>{% endif %}
+          <p class="sub">{% if saved_cards %}{{ t('dash.chargesCard').replace('{card}', auto_charge_card) }}{% else %}{{ t('dash.noCardTopup') }}{% endif %}</p>
+          {% else %}
+          <label><input type="checkbox" id="prefRenew"{% if billing_prefs.auto_renew_enabled and saved_cards %} checked{% endif %}{% if not saved_cards %} disabled{% endif %}> {{ t('dash.autoRenew') }}</label>
+          {% if saved_cards %}<p class="sub">{{ t('dash.chargesCard').replace('{card}', auto_charge_card) }}</p>{% else %}<p class="sub">{{ t('dash.noCardRenew') }}</p>{% endif %}
+          {% endif %}
         </div>
       </div>
       <h2 class="h3">{{ t('dash.invoices') }}</h2>
       <div class="card"><div class="table-scroll"><table class="t"><thead><tr><th>{{ t('dash.iDate') }}</th><th>{{ t('dash.iDesc') }}</th><th>{{ t('dash.iAmount') }}</th><th>{{ t('dash.iStatus') }}</th><th></th></tr></thead><tbody>
-        {% for inv in invoices %}<tr><td>{{ inv.created_at }}{% if inv.status == 'unpaid' and inv.due %}<br><span class="sub">{{ t('dash.dueOn') }} {{ inv.due }}</span>{% endif %}</td><td>{{ inv.description }}</td><td class="num">{{ inv.amount_label }}</td><td>{{ inv.status }}</td><td>{% if inv.number %}<a class="btn btn-quiet btn-sm" href="/dashboard/invoices/{{ inv.number }}.pdf">{{ inv.doc }}</a>{% endif %}{% if inv.pay %} <a href="{{ inv.pay }}">{{ t('dash.pay') }}</a>{% endif %}</td></tr>{% else %}<tr><td colspan="5" class="sub">{{ t('dash.noInv') }}</td></tr>{% endfor %}
+        {% for inv in invoices %}<tr><td>{{ inv.created_at }}{% if inv.status == 'unpaid' and inv.due %}<br><span class="sub">{{ t('dash.dueOn') }} {{ inv.due }}</span>{% endif %}</td><td>{{ inv.description }}</td><td class="num">{{ inv.amount_label }}</td><td><span class="pill inv-{{ inv.status }}">{{ t('dash.st.' + inv.status) }}</span></td><td>{% if inv.number %}<a class="btn btn-quiet btn-sm" href="/dashboard/invoices/{{ inv.number }}.pdf">{{ inv.doc }}</a>{% endif %}{% if inv.pay %} <a href="{{ inv.pay }}">{{ t('dash.pay') }}</a>{% endif %}</td></tr>{% else %}<tr><td colspan="5" class="sub">{{ t('dash.noInv') }}</td></tr>{% endfor %}
       </tbody></table></div></div>
     </section>
     {% else %}
@@ -419,10 +424,21 @@
     postPrefs(pt.checked && ptPack ? { auto_topup: true, auto_topup_pack_id: Number(ptPack.value) } : { auto_topup: pt.checked });
   });
   if (ptPack) ptPack.addEventListener("change", function () { postPrefs({ auto_topup_pack_id: Number(ptPack.value) }); });
+  var cardAsk = {};
+  try { cardAsk = JSON.parse((document.getElementById("confirmAsks") || {}).textContent || "{}").card || {}; } catch (e) { cardAsk = {}; }
   document.querySelectorAll("[data-rm-card]").forEach(function (btn) {
     btn.addEventListener("click", function () {
+      if (btn.disabled) return;
       var id = btn.getAttribute("data-rm-card");
-      fetch("/api/billing/cards/" + id, { method: "DELETE", credentials: "same-origin" }).then(function () { location.reload(); });
+      var ask = {
+        title: cardAsk.title, ok: cardAsk.ok, tone: cardAsk.tone,
+        text: (cardAsk.text || "").replace("{name}", btn.getAttribute("data-card-name") || "")
+      };
+      var confirmed = window.paigerConfirm ? window.paigerConfirm(ask) : Promise.resolve(window.confirm(ask.text));
+      confirmed.then(function (yes) {
+        if (!yes) return;
+        fetch("/api/billing/cards/" + id, { method: "DELETE", credentials: "same-origin" }).then(function () { location.reload(); });
+      });
     });
   });
   var pin = {{ (pin or "")|tojson }};

@@ -221,6 +221,7 @@ def init_db():
     )
     _ensure_billing()
     _fix_card_brands()
+    _void_stray_checkout_invoices()
 
 
 _IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
@@ -671,6 +672,38 @@ def _copy_deprecated_point_price() -> None:
         conn.close()
 
 
+def _void_stray_checkout_invoices() -> None:
+    """Invoices opened by checkouts that were never paid, incl. the old per-order plan bug.
+
+    Voided, not deleted, so numbering stays intact; reminders only look at 'unpaid'.
+    """
+    conn = get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE invoices i
+                LEFT JOIN checkout_intents ci ON ci.invoice_number = i.number
+                SET i.status = 'void'
+                WHERE i.status = 'unpaid' AND (
+                    (i.kind = 'subscription' AND i.`lines` LIKE '%%"plan_code": "points"%%')
+                    OR (i.kind IN ('subscription', 'topup') AND ci.purpose IN ('subscribe', 'topup') AND ci.status <> 'completed')
+                )
+                """
+            )
+            cur.execute(
+                """
+                UPDATE checkout_intents ci
+                JOIN invoices i ON i.number = ci.invoice_number
+                SET ci.status = 'void'
+                WHERE i.status = 'void' AND ci.status = 'pending'
+                """
+            )
+            conn.commit()
+    finally:
+        conn.close()
+
+
 def _fix_card_brands() -> None:
     """Normalise saved card brands and fill invoice brands from the matching saved card."""
     conn = get_db_connection()
@@ -762,6 +795,7 @@ def _ensure_billing() -> None:
     )
     ensure_column("checkout_intents", "mf_session_id", "VARCHAR(80) NULL")
     ensure_column("checkout_intents", "mf_session_key_enc", "TEXT NULL")
+    ensure_column("checkout_intents", "invoice_draft", "LONGTEXT NULL")
     ensure_table(
         "saved_cards",
         """

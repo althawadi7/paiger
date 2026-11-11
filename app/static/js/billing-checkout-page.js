@@ -45,6 +45,7 @@
         session_id: result.session_id,
         payment_data: result.payment_data,
         redirection_url: result.redirection_url,
+        save_card: saveCard ? saveCard.checked : false,
       };
     },
     onPaid: function (out) {
@@ -56,6 +57,14 @@
     },
   });
   if (!checkout) return;
-  if (saveCard) saveCard.addEventListener("change", checkout.start);
+  if (saveCard) {
+    saveCard.addEventListener("change", function () {
+      TringsMF.postJson("/api/billing/checkout/save-card", { intent_id: intentId, save_card: saveCard.checked }).catch(
+        function (err) {
+          console.error(TAG, "save-card", err && (err.detail || err.message), err);
+        }
+      );
+    });
+  }
   checkout.start();
 })();

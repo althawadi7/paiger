@@ -21,7 +21,6 @@
   var selectedPack = boot.pack || null;
   var loadedKey = "";
   var intents = {};
-  var saveMode = "";
 
   var summaryPlan = document.getElementById("summaryPlanName");
   var summaryNote = document.getElementById("summaryNote");
@@ -66,11 +65,8 @@
   }
 
   function syncSaveRow(plan) {
-    var mode = isPacks(plan) ? "topup" : "renew";
-    if (mode === saveMode) return;
-    saveMode = mode;
-    if (saveCardText) saveCardText.textContent = mode === "topup" ? messages.save_topup : messages.save_renew;
-    if (saveCard) saveCard.checked = mode === "topup" ? !!boot.auto_topup : true;
+    if (saveCardRow) saveCardRow.hidden = !plan || isSchedule(plan);
+    if (saveCardText) saveCardText.textContent = isPacks(plan) ? messages.save_topup : messages.save_renew;
   }
 
   function updateSummary() {
@@ -93,7 +89,6 @@
     }
     if (summaryDue) summaryDue.textContent = due;
     if (payBtn) payBtn.hidden = schedule;
-    if (saveCardRow) saveCardRow.hidden = schedule;
     if (scheduleBtn) scheduleBtn.hidden = !schedule;
     if (packPicker) packPicker.hidden = !isPacks(plan);
     syncSaveRow(plan);
@@ -176,6 +171,7 @@
         session_id: result.session_id,
         payment_data: result.payment_data,
         redirection_url: result.redirection_url,
+        save_card: saveCard ? saveCard.checked : false,
       };
     },
     onPaid: function (out, ctx) {
@@ -332,8 +328,13 @@
 
   if (saveCard) {
     saveCard.addEventListener("change", function () {
-      var plan = planByCode(selectedCode);
-      if (plan && !isSchedule(plan) && checkoutKey() === loadedKey) checkout.start();
+      var intentId = intents[checkoutKey()];
+      if (!intentId) return;
+      TringsMF.postJson("/api/billing/checkout/save-card", { intent_id: intentId, save_card: saveCard.checked }).catch(
+        function (err) {
+          console.error(TAG, "save-card", err && (err.detail || err.message), err);
+        }
+      );
     });
   }
 
