@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<title>Admin · Paiger</title>
+<title>Admin · Trings</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /* =====================================================================
-   PAIGER · Super admin: Overview, Restaurants (+ drawer), Plans, Payments, Settings
+   TINGS · Super admin: Overview, Restaurants (+ drawer), Plans, Payments, Settings
    Dark sidebar = admin. Restaurant dashboard uses a white sidebar.
    ===================================================================== */
 :root {
@@ -18,7 +18,7 @@
   --paper: #ffffff; --paper-2: #f6f6f7; --paper-3: #ececee;
   --ready: #22c55e; --ready-deep: #15803d; --ready-soft: #e7f8ee;
   --warn: #b45309; --warn-soft: #fdf2e3; --error: #b42318; --error-soft: #fdecea;
-  --display: "Fraunces", Georgia, serif;
+  --display: "Outfit", "IBM Plex Sans", -apple-system, sans-serif;
   --sans: "IBM Plex Sans", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", sans-serif;
   --ease: cubic-bezier(.2, .7, .2, 1);
 }
@@ -38,7 +38,7 @@ a { color: inherit; }
 .shell { min-height: 100svh; display: grid; grid-template-columns: 236px minmax(0, 1fr); }
 .side { position: sticky; top: 0; height: 100svh; background: var(--ink); color: #fff; padding: 18px 12px; display: flex; flex-direction: column; gap: 2px; }
 .wm { display: flex; align-items: center; gap: 10px; padding: 6px 10px 22px; }
-.wm b { font-family: "Fraunces", serif; font-weight: 600; font-size: 19px; }
+.wm b { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-weight: 600; font-size: 19px; }
 .wm span { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .12em; color: var(--grey-2); padding: 2px 7px; border-radius: 6px; box-shadow: 0 0 0 1px var(--ink-3) inset; }
 .nav a { display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 12px; border-radius: 11px; color: #a1a1a6; text-decoration: none; font-weight: 500; }
 .nav a:hover { color: #fff; background: var(--ink-2); }
@@ -132,7 +132,7 @@ table.t { width: 100%; border-collapse: collapse; font-size: 14px; }
 .t .sub { color: var(--grey); font-size: 13px; }
 .t .r { text-align: end; }
 .rcell { display: flex; align-items: center; gap: 10px; }
-.rlogo { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; color: #fff; font-family: "Fraunces", serif; font-weight: 600; font-size: 15px; flex: none; }
+.rlogo { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; color: #fff; font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-weight: 600; font-size: 15px; flex: none; }
 .rcell b { display: block; font-weight: 600; } .rcell span { font-size: 12.5px; color: var(--grey); direction: ltr; unicode-bidi: isolate; }
 .lowpts { color: var(--warn); font-weight: 600; }
 .tfoot { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; font-size: 13px; color: var(--grey); border-top: 1px solid var(--line); }
@@ -177,7 +177,7 @@ textarea.in { height: 72px; padding: 10px 12px; resize: vertical; width: 100%; }
 .plan h3 { font-size: 17px; font-weight: 600; }
 .plan .price { margin-top: 6px; display: flex; align-items: baseline; gap: 6px; direction: ltr; justify-content: flex-start; }
 html[dir="rtl"] .plan .price { justify-content: flex-end; }
-.plan .price b { font-family: "Fraunces", serif; font-size: 32px; font-weight: 500; line-height: 1; }
+.plan .price b { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-size: 32px; font-weight: 500; line-height: 1; }
 .plan .price span { font-size: 13px; color: var(--grey); }
 .plan .meta { font-size: 13px; color: var(--grey); margin-top: 6px; }
 .plan .row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
@@ -254,7 +254,7 @@ html[dir="rtl"] .money .in { padding-inline-start: 12px; padding-inline-end: 52p
 
 <div class="shell">
   <aside class="side" id="side">
-    <div class="wm"><b>Paiger</b><span>ADMIN</span></div>
+    <div class="wm"><b>Trings</b><span>ADMIN</span></div>
     <nav class="nav">
       <a href="#overview" data-view="overview" aria-current="page"><svg><use href="#i-home"/></svg><span data-t="nOverview">Overview</span></a>
       <a href="#restaurants" data-view="restaurants"><svg><use href="#i-store"/></svg><span data-t="nRest">Restaurants</span><span class="cnt num" style="font-family:inherit">38</span></a>
@@ -270,7 +270,7 @@ html[dir="rtl"] .money .in { padding-inline-start: 12px; padding-inline-end: 52p
   </aside>
 
   <main class="main">
-    <div class="topbar"><button class="btn btn-quiet" id="menuBtn" type="button" aria-label="Menu"><svg><use href="#i-menu"/></svg></button><b>Paiger Admin</b></div>
+    <div class="topbar"><button class="btn btn-quiet" id="menuBtn" type="button" aria-label="Menu"><svg><use href="#i-menu"/></svg></button><b>Trings Admin</b></div>
 
     <!-- ================= OVERVIEW ================= -->
     <section id="vOverview">
@@ -299,7 +299,7 @@ html[dir="rtl"] .money .in { padding-inline-start: 12px; padding-inline-end: 52p
 
     <!-- ================= RESTAURANTS ================= -->
     <section id="vRestaurants" hidden>
-      <div class="ph"><div><h1 data-t="nRest">Restaurants</h1><p data-t="restSub">Every account on Paiger. Click one to manage it.</p></div><button class="btn btn-line" type="button"><svg><use href="#i-dl"/></svg><span data-t="export">Export CSV</span></button></div>
+      <div class="ph"><div><h1 data-t="nRest">Restaurants</h1><p data-t="restSub">Every account on Trings. Click one to manage it.</p></div><button class="btn btn-line" type="button"><svg><use href="#i-dl"/></svg><span data-t="export">Export CSV</span></button></div>
       <div class="card">
         <div class="filters">
           <div class="seg" id="statusSeg" role="group"></div>
@@ -430,7 +430,7 @@ html[dir="rtl"] .money .in { padding-inline-start: 12px; padding-inline-end: 52p
       attn: "Needs attention", mixTitle: "Restaurants by status", mixSub: "38 total",
       a1: "Burger Lab: renewal failed", a1s: "Card declined, retry 2 of 3", a2: "3 trials end in 24 hours", a2s: "Mocha Corner, Shawarma Way, Bean & Co", a3: "Saj Street: 12 points left", a3s: "Prepaid, will stop at zero", a4: "Grill Point: no orders for 7 days", a4s: "Active monthly plan", view: "View",
       stAll: "All", stActive: "Active", stTrialing: "Trial", stPast_due: "Payment failed", stExpired: "Trial ended", stSuspended: "Suspended", stLegacy: "Legacy",
-      restSub: "Every account on Paiger. Click one to manage it.", export: "Export CSV", searchRest: "Search name, slug or email",
+      restSub: "Every account on Trings. Click one to manage it.", export: "Export CSV", searchRest: "Search name, slug or email",
       cRest: "Restaurant", cStatus: "Status", cPlan: "Plan", cRenew: "Trial end / renews", cOrders30: "Orders (30d)", cJoined: "Joined", showing: (a, b) => `${a} of ${b} restaurants`,
       plMonthly: "Monthly", plYearly: "Yearly", plPoints: "Per order", plTrial: "Free trial", plNone: "None", pts: (n) => `${n} pts`,
       dPlan: "Plan", dStatus: "Status", dRenew: "Renews / trial end", dOwner: "Owner", dPhone: "Mobile", dCard: "Saved card", dOrders: "Orders (30 days)", dBalance: "Points balance", none: "None",
@@ -463,7 +463,7 @@ html[dir="rtl"] .money .in { padding-inline-start: 12px; padding-inline-end: 52p
       attn: "يحتاج انتباهك", mixTitle: "المطاعم حسب الحالة", mixSub: "٣٨ مطعم",
       a1: "Burger Lab: فشل التجديد", a1s: "البطاقة انرفضت، المحاولة ٢ من ٣", a2: "٣ تجارب تخلص خلال ٢٤ ساعة", a2s: "Mocha Corner، Shawarma Way، Bean & Co", a3: "Saj Street: باقي ١٢ نقطة", a3s: "دفع مقدم، بيوقف عند الصفر", a4: "Grill Point: ما في طلبات من ٧ أيام", a4s: "باقة شهرية فعّالة", view: "عرض",
       stAll: "الكل", stActive: "فعّال", stTrialing: "تجربة", stPast_due: "فشل الدفع", stExpired: "خلصت التجربة", stSuspended: "موقوف", stLegacy: "قديم",
-      restSub: "كل الحسابات في Paiger. اضغط على أي مطعم عشان تديره.", export: "تصدير CSV", searchRest: "ابحث بالاسم أو الرابط أو الإيميل",
+      restSub: "كل الحسابات في Trings. اضغط على أي مطعم عشان تديره.", export: "تصدير CSV", searchRest: "ابحث بالاسم أو الرابط أو الإيميل",
       cRest: "المطعم", cStatus: "الحالة", cPlan: "الباقة", cRenew: "نهاية التجربة / التجديد", cOrders30: "الطلبات (٣٠ يوم)", cJoined: "التسجيل", showing: (a, b) => `${a} من ${b} مطعم`,
       plMonthly: "شهري", plYearly: "سنوي", plPoints: "لكل طلب", plTrial: "تجربة مجانية", plNone: "بدون", pts: (n) => `${n} نقطة`,
       dPlan: "الباقة", dStatus: "الحالة", dRenew: "التجديد / نهاية التجربة", dOwner: "المالك", dPhone: "الجوال", dCard: "البطاقة المحفوظة", dOrders: "الطلبات (٣٠ يوم)", dBalance: "رصيد النقاط", none: "ما في",

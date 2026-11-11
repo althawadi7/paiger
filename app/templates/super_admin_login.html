@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#111111">
-<title>{{ t('admin.title') }} · Paiger</title>
-<link rel="icon" href="/static/favicon.png">
+<title>{{ t('admin.title') }} · Trings</title>
+<link rel="icon" href="/static/brand/favicon.ico" sizes="any">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
   --ink: #111111; --ink-2: #1c1c1e; --ink-3: #2a2a2d; --grey: #5f6368; --grey-2: #8e8e93; --line: #e6e6e8;
@@ -30,7 +30,7 @@ a { color: inherit; }
   background: radial-gradient(1200px 600px at 50% -10%, #222225 0%, var(--ink) 60%); }
 .top { display: flex; justify-content: space-between; align-items: center; }
 .wm { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-.wm b { font-family: "Fraunces", serif; font-weight: 600; font-size: 19px; letter-spacing: -.01em; }
+.wm b { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-weight: 600; font-size: 19px; letter-spacing: -.01em; }
 .wm span { font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--grey-2); padding: 3px 8px; border-radius: 6px; box-shadow: 0 0 0 1px var(--ink-3) inset; }
 .lang { height: 38px; padding: 0 14px; border-radius: 10px; font-size: 14px; color: var(--grey-2); text-decoration: none; display: inline-flex; align-items: center; }
 .lang:hover { color: #fff; background: var(--ink-2); }
@@ -62,7 +62,7 @@ h1 { font-size: 28px; font-weight: 600; letter-spacing: -.015em; line-height: 1.
 <body>
 <div class="page">
   <header class="top">
-    <a class="wm" href="/"><b>Paiger</b><span>{{ t('admin.badge') }}</span></a>
+    <a class="wm" href="/"><img src="/static/brand/trings-logo-white.svg" alt="Trings" style="height:22px;width:auto" width="96" height="22"><span>{{ t('admin.badge') }}</span></a>
     <a class="lang" href="/lang/{{ 'en' if lang == 'ar' else 'ar' }}">{{ t('nav.langSwitch') }}</a>
   </header>
   <main class="wrap">

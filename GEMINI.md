@@ -1,4 +1,4 @@
-# Agent Rules & Guidelines (Dawrak / Paiger)
+# Agent Rules & Guidelines (Dawrak / Trings)
 
 1. **اللغة والتواصل:**
    - التحدث باللغة العربية دائماً وبشكل كامل.

@@ -1,0 +1,10 @@
+{% macro logo_slot(brand, size='38', slot_id='') %}
+<div class="r-logo r-logo--{{ size }}{% if brand.logo_url %} has-img{% endif %}"{% if slot_id %} id="{{ slot_id }}"{% endif %} data-initial="{{ brand.initial }}" style="--r-logo-brand: {{ brand.brand }}; --r-logo-ink: {{ brand.brand_ink }};">
+  <span class="r-logo__spin" hidden aria-hidden="true"></span>
+  {% if brand.logo_url %}
+  <img class="r-logo__img" src="{{ brand.logo_url }}" alt="">
+  {% else %}
+  <span class="r-logo__initial" aria-hidden="true">{{ brand.initial }}</span>
+  {% endif %}
+</div>
+{% endmacro %}

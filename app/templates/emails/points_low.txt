@@ -9,5 +9,5 @@ Top up points: {{ button_url }}
 
 Prefer not to think about it? Switch to Pay at the end of the month in your dashboard and we’ll bill only what you use.
 
-Paiger account: {{ restaurant_name }}
+Trings account: {{ restaurant_name }}
 {{ support_email }}

@@ -1,5 +1,5 @@
 """
-MyFatoorah Payment Gateway Integration Service for Paiger (FastAPI).
+MyFatoorah Payment Gateway Integration Service for Trings (FastAPI).
 Handles:
   1. Direct Embedded Payment / In-Page Session (no redirect).
   2. Apple Pay / Google Pay / Benefit / Cards.

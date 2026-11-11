@@ -171,7 +171,7 @@ def _item_label(invoice: Dict[str, Any]) -> str:
         name = str(plan.get("name_en") or "")
         if name and name.lower() in description.lower():
             return f"the {name} plan"
-    return description or "your Paiger plan"
+    return description or "your Trings plan"
 
 
 def _orders(restaurant_id: int) -> int:
@@ -318,7 +318,7 @@ def render_billing_email(kind: str, restaurant: Dict[str, Any], ref: Optional[Di
     if kind in ("invoice_new", "invoice_reminder", "payment_received"):
         number = (invoice or {}).get("number") or ref.get("number") or ""
         if number:
-            ctx["attachment_name"] = f"Paiger-Receipt-{number}.pdf" if kind == "payment_received" else f"Paiger-Invoice-{number}.pdf"
+            ctx["attachment_name"] = f"Trings-Receipt-{number}.pdf" if kind == "payment_received" else f"Trings-Invoice-{number}.pdf"
     if kind in ("invoice_new", "invoice_reminder") and ctx.get("pay_url"):
         ctx["button_url"] = ctx["pay_url"]
     html = _env.get_template(f"emails/{kind}.html").render(**ctx)
@@ -330,11 +330,11 @@ def subject_for(kind: str, ctx: Dict[str, Any]) -> str:
     number = ctx.get("number") or ""
     amount = ctx.get("amount") or ""
     if kind == "trial_ending":
-        return "Your Paiger trial ends tomorrow"
+        return "Your Trings trial ends tomorrow"
     if kind == "renewal_soon":
-        return f"Your Paiger plan renews on {ctx.get('renews_label') or ''}".strip()
+        return f"Your Trings plan renews on {ctx.get('renews_label') or ''}".strip()
     if kind == "invoice_new":
-        return f"Invoice {number} from Paiger, BHD {amount}".strip()
+        return f"Invoice {number} from Trings, BHD {amount}".strip()
     if kind == "invoice_reminder":
         if ctx.get("when") == "overdue":
             return f"Reminder: invoice {number} was due on {ctx.get('due_label') or ''}".strip()
@@ -342,10 +342,10 @@ def subject_for(kind: str, ctx: Dict[str, Any]) -> str:
     if kind == "payment_received":
         return f"Receipt {number}, thank you"
     if kind == "payment_failed":
-        return "We couldn't charge your card for Paiger"
+        return "We couldn't charge your card for Trings"
     if kind == "points_low":
-        return f"You have {ctx.get('points_left')} points left on Paiger"
-    return "Paiger"
+        return f"You have {ctx.get('points_left')} points left on Trings"
+    return "Trings"
 
 
 def _claim(restaurant_id: Optional[int], kind: str, ref_key: str, to_email: str) -> Optional[int]:
@@ -571,8 +571,8 @@ def send_admin_test(to_email: str, restaurant_name: str = "Sample") -> Dict[str,
         "total_fils": fils,
         "subtotal_fils": fils,
         "amount_fils": fils,
-        "description": f"Paiger {name}",
-        "line_items": [{"description": f"Paiger {name}", "detail": "", "qty": 1, "amount_fils": fils}],
+        "description": f"Trings {name}",
+        "line_items": [{"description": f"Trings {name}", "detail": "", "qty": 1, "amount_fils": fils}],
         "paid_method": "card",
         "issued_at": now,
         "paid_at": now,

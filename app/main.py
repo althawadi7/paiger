@@ -41,7 +41,7 @@ logger = logging.getLogger("pager")
 BASE_DIR = Path(__file__).parent
 _enable_docs = os.getenv("ENABLE_DOCS") == "1"
 app = FastAPI(
-    title="Paiger SaaS - جرس الطلبات الذكي للمطاعم",
+    title="Trings SaaS - جرس الطلبات الذكي للمطاعم",
     docs_url="/docs" if _enable_docs else None,
     redoc_url="/redoc" if _enable_docs else None,
     openapi_url="/openapi.json" if _enable_docs else None,
@@ -77,10 +77,10 @@ def _contrast_ratio(left: str, right: str) -> float:
 def restaurant_brand(restaurant: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     """Name, logo, initial and contrast ink. Same object on the customer page, cashier and print stand."""
     source = restaurant or {}
-    name = str(source.get("name") or "").strip() or "Paiger"
+    name = str(source.get("name") or "").strip() or "Trings"
     raw_logo = str(source.get("logo_url") or "").strip()
     raw_color = str(source.get("brand_color") or "").strip()
-    brand = raw_color if re.fullmatch(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})", raw_color) else "#111111"
+    brand = raw_color if re.fullmatch(r"#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})", raw_color) else "#F05A28"
     ink = "#111" if _contrast_ratio(brand, "#111111") >= _contrast_ratio(brand, "#ffffff") else "#ffffff"
     return {
         "name": name,
@@ -921,7 +921,7 @@ async def _send_welcome(email: str, name: str, slug: str, trial_ends: Any, base:
             f"Customer link: {context['customer_link']}\n"
             f"Print your QR stand: {context['print_url']}\n"
         )
-        await asyncio.to_thread(mailer.send_email, email, "Welcome to Paiger", html, text)
+        await asyncio.to_thread(mailer.send_email, email, "Welcome to Trings", html, text)
     except Exception:
         logger.exception("Could not prepare the welcome email")
 
@@ -1475,10 +1475,14 @@ async def upload_restaurant_logo(request: Request, file: UploadFile = File(...))
     except Exception:
         raise HTTPException(status_code=400, detail="PNG, JPG or WEBP only")
     width, height = image.size
-    side = min(width, height)
-    left = (width - side) // 2
-    top = (height - side) // 2
-    image = image.crop((left, top, left + side, top + side)).resize((512, 512), Image.Resampling.LANCZOS)
+    max_side = 512
+    longest = max(width, height)
+    if longest > max_side:
+        scale = max_side / float(longest)
+        image = image.resize(
+            (max(1, int(round(width * scale))), max(1, int(round(height * scale)))),
+            Image.Resampling.LANCZOS,
+        )
     if image.mode not in ("RGB", "RGBA"):
         image = image.convert("RGBA")
     _LOGO_DIR.mkdir(parents=True, exist_ok=True)
@@ -1523,6 +1527,7 @@ async def restaurant_customer_track(request: Request, slug: str, num: Optional[s
         {
             "request": request,
             "restaurant": rest,
+            "brand": restaurant_brand(rest),
             "num": num,
             "error": "لم يتم العثور على طلب نشط بهذا الرقم" if num else None
         }

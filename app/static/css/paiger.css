@@ -1,15 +1,16 @@
 /* =====================================================================
-   PAIGER design tokens: black and white
-   Ink      #111111  text, primary buttons, dark sections
-   Ink 2    #1c1c1e  dark surfaces (phone screen, cards on black)
+   Trings design tokens
+   Brand    #F05A28  primary buttons, links, accents
+   Ink      #1C1B1F  text, dark surfaces
    Paper    #ffffff  main background
-   Paper 2  #f6f6f7  alternate sections, inputs
    Grey     #5f6368  secondary text
    Line     #e6e6e8  borders and dividers
-   Ready    #22c55e  ONLY for the "order ready" state (glow, LED, badges)
+   Ready    #22c55e / #15803d  ONLY for the "order ready" state
    ===================================================================== */
 :root {
-  --ink: #111111;
+  --brand: #F05A28;
+  --brand-hover: #D94E22;
+  --ink: #1C1B1F;
   --ink-2: #1c1c1e;
   --ink-3: #2c2c2e;
   --paper: #ffffff;
@@ -25,14 +26,14 @@
   --ready-deep: #15803d;
   --ready-soft: #e7f8ee;
 
-  --display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --display: "Outfit", "IBM Plex Sans", -apple-system, sans-serif;
   --sans: "IBM Plex Sans", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", sans-serif;
   --ease: cubic-bezier(.2, .7, .2, 1);
   --wrap: 1180px;
   --gutter: clamp(16px, 4vw, 40px);
 }
 html[lang="ar"] {
-  --display: "IBM Plex Sans Arabic", "Fraunces", serif;
+  --display: "IBM Plex Sans Arabic", "Outfit", sans-serif;
   --sans: "IBM Plex Sans Arabic", "IBM Plex Sans", -apple-system, sans-serif;
 }
 
@@ -42,10 +43,11 @@ body { font-family: var(--sans); font-size: 17px; line-height: 1.6; color: var(-
 img, svg { display: block; }
 a { color: inherit; }
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
-:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; border-radius: 6px; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; border-radius: 6px; }
 .pricing :focus-visible, .feat-hero :focus-visible, footer :focus-visible { outline-color: #fff; }
 .wrap { width: min(var(--wrap), 100% - var(--gutter) * 2); margin-inline: auto; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.num { font-family: var(--display); font-variant-numeric: tabular-nums lining-nums; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
@@ -54,32 +56,33 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   transition: transform .18s var(--ease), background .2s, color .2s, box-shadow .2s;
 }
 .btn:active { transform: translateY(1px) scale(.99); }
-.btn-primary { background: var(--ink); color: var(--on-ink); }
-.btn-primary:hover { background: #333336; }
+.btn-primary { background: var(--brand); color: var(--on-ink); font-weight: 600; }
+.btn-primary:hover { background: var(--brand-hover); }
 .btn-outline { color: var(--ink); box-shadow: 0 0 0 1.5px var(--line) inset; }
-.btn-outline:hover { box-shadow: 0 0 0 1.5px var(--ink) inset; }
+.btn-outline:hover { box-shadow: 0 0 0 1.5px var(--brand) inset; color: var(--brand); }
 .btn-white { background: #fff; color: var(--ink); }
 .btn-white:hover { background: var(--paper-3); }
 
 .nav { position: sticky; top: 0; z-index: 40; background: rgba(255,255,255,.88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
 .nav .wrap { display: flex; align-items: center; gap: 28px; min-height: 72px; }
 .logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
-.logo-mark { width: 28px; height: 28px; color: var(--ink); }
-.logo-word { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 25px; letter-spacing: -.01em; line-height: 1; }
+.logo-img { height: 30px; width: auto; }
+.logo-mark { width: 28px; height: 28px; color: var(--brand); }
+.logo-word { font-family: var(--display); font-weight: 600; font-size: 25px; letter-spacing: -.01em; line-height: 1; }
 .nav-links { display: flex; gap: 26px; margin-inline-start: 18px; }
 .nav-links a { color: var(--grey); text-decoration: none; font-size: 15px; transition: color .2s; }
-.nav-links a:hover { color: var(--ink); }
+.nav-links a:hover { color: var(--brand); }
 .nav-end { margin-inline-start: auto; display: flex; align-items: center; gap: 10px; }
 .nav-end .btn { min-height: 42px; padding: 0 18px; font-size: 15px; }
 .lang { display: inline-flex; align-items: center; min-height: 42px; padding: 0 14px; border-radius: 999px; color: var(--grey); font-size: 14px; font-weight: 500; text-decoration: none; }
-.lang:hover { color: var(--ink); background: var(--paper-2); }
+.lang:hover { color: var(--brand); background: var(--paper-2); }
 .login-link { color: var(--grey); text-decoration: none; font-size: 15px; padding: 0 10px; }
-.login-link:hover { color: var(--ink); }
+.login-link:hover { color: var(--brand); }
 .menu-btn { display: none; width: 42px; height: 42px; border-radius: 12px; color: var(--ink); }
 
 footer { background: var(--ink); color: var(--on-ink-dim); }
 footer .logo { color: #fff; }
-footer .logo-mark { color: #fff; }
+footer .logo-img { height: 26px; filter: none; }
 footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px; padding-block: 36px; font-size: 14.5px; }
 footer nav { display: flex; flex-wrap: wrap; gap: 8px 24px; }
 footer a { text-decoration: none; }

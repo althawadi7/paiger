@@ -30,7 +30,7 @@ def smtp_profile() -> Dict[str, Any]:
             "user": _env("SMTP_USER"),
             "password": _env("SMTP_PASSWORD"),
             "sender": _env("SMTP_FROM"),
-            "name": _env("SMTP_FROM_NAME") or "Paiger",
+            "name": _env("SMTP_FROM_NAME") or "Trings",
             "encryption": encryption,
         }
     port = int(_env("MAIL_PORT") or "587")
@@ -43,7 +43,7 @@ def smtp_profile() -> Dict[str, Any]:
         "user": _env("MAIL_USERNAME"),
         "password": _env("MAIL_PASSWORD"),
         "sender": _env("MAIL_FROM_ADDRESS"),
-        "name": _env("MAIL_FROM_NAME") or "Paiger",
+        "name": _env("MAIL_FROM_NAME") or "Trings",
         "encryption": encryption,
     }
 
@@ -67,7 +67,7 @@ def deliver(
     profile = smtp_profile()
     message = EmailMessage()
     message["Subject"] = subject
-    message["From"] = formataddr((profile["name"] or "Paiger", profile["sender"]))
+    message["From"] = formataddr((profile["name"] or "Trings", profile["sender"]))
     message["To"] = to_email
     if reply_to:
         message["Reply-To"] = reply_to

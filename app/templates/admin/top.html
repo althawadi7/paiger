@@ -5,11 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <meta name="csrf" content="{{ csrf }}">
-<title>{{ t('admin.nOverview') if page == 'overview' else t('admin.nRest') if page == 'restaurants' else t('admin.nPlans') if page == 'plans' else t('admin.nPay') if page == 'payments' else t('admin.nSet') }} · Paiger</title>
-<link rel="icon" href="/static/favicon.png">
+<title>{{ t('admin.nOverview') if page == 'overview' else t('admin.nRest') if page == 'restaurants' else t('admin.nPlans') if page == 'plans' else t('admin.nPay') if page == 'payments' else t('admin.nSet') }} · Trings</title>
+<link rel="icon" href="/static/brand/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/css/admin.css?v={{ static_version('css/admin.css') if static_version is defined else '1' }}">
 </head>
 <body>
@@ -28,7 +29,7 @@
 </svg>
 <div class="shell">
   <aside class="side" id="side">
-    <div class="wm"><b>Paiger</b><span>ADMIN</span></div>
+    <div class="wm"><img src="/static/brand/trings-logo-white.svg" alt="Trings" style="height:22px;width:auto" width="96" height="22"><span>ADMIN</span></div>
     <nav class="nav">
       <a href="/admin" {% if page == 'overview' %}aria-current="page"{% endif %}><svg><use href="#i-home"/></svg><span>{{ t('admin.nOverview') }}</span></a>
       <a href="/admin/restaurants" {% if page == 'restaurants' %}aria-current="page"{% endif %}><svg><use href="#i-store"/></svg><span>{{ t('admin.nRest') }}</span><span class="cnt num">{{ restaurant_count }}</span></a>
@@ -43,4 +44,4 @@
     </div>
   </aside>
   <main class="main">
-    <div class="topbar"><button class="btn btn-quiet" id="menuBtn" type="button" aria-label="Menu"><svg><use href="#i-menu"/></svg></button><b>Paiger Admin</b></div>
+    <div class="topbar"><button class="btn btn-quiet" id="menuBtn" type="button" aria-label="Menu"><svg><use href="#i-menu"/></svg></button><b>Trings Admin</b></div>

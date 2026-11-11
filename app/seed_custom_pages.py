@@ -18,12 +18,12 @@ pages = [
         'slug': 'privacy-policy',
         'title': 'سياسة الخصوصية',
         'title_en': 'Privacy Policy',
-        'meta_description': 'سياسة الخصوصية وحماية بيانات المستخدمين في منصة بيجر الذكية Paiger SaaS',
+        'meta_description': 'سياسة الخصوصية وحماية بيانات المستخدمين في منصة Trings Trings SaaS',
         'sort_order': 1,
-        'content': '''# سياسة الخصوصية لمنصة بيجر الذكية (Paiger SaaS)
+        'content': '''# سياسة الخصوصية لمنصة Trings (Trings SaaS)
 **تاريخ آخر تحديث:** 1 نوفمبر 2026
 
-تلتزم منصة **بيجر (Paiger SaaS)** وتطبيقها وخدمة **Apple App Clip** التابعة لها بأعلى معايير حماية الخصوصية وأمن البيانات، والامتثال التام لإرشادات متجر تطبيقات أبل (**Apple App Store Review Guidelines - Section 5.1**). نوضح في هذه الوثيقة الشفافة ماهية البيانات التي نتعامل معها وكيفية حمايتها.
+تلتزم منصة **بيجر (Trings SaaS)** وتطبيقها وخدمة **Apple App Clip** التابعة لها بأعلى معايير حماية الخصوصية وأمن البيانات، والامتثال التام لإرشادات متجر تطبيقات أبل (**Apple App Store Review Guidelines - Section 5.1**). نوضح في هذه الوثيقة الشفافة ماهية البيانات التي نتعامل معها وكيفية حمايتها.
 
 ---
 
@@ -69,10 +69,10 @@ pages = [
 * **الدعم الفني العام:** support@rahapp.com
 * **الموقع الرسمي:** https://pager.rahapp.com''',
 
-        'content_en': '''# Privacy Policy for Paiger SaaS & App Clip
+        'content_en': '''# Privacy Policy for Trings SaaS & App Clip
 **Last Updated:** November 1, 2026
 
-**Paiger SaaS** ("we", "our", or "the Service"), including our iOS Application and **Apple App Clip**, is dedicated to safeguarding your privacy and complying fully with **Apple App Store Review Guidelines (Section 5.1 - Data Collection and Storage)**. This Privacy Policy details our transparent and privacy-first data practices.
+**Trings SaaS** ("we", "our", or "the Service"), including our iOS Application and **Apple App Clip**, is dedicated to safeguarding your privacy and complying fully with **Apple App Store Review Guidelines (Section 5.1 - Data Collection and Storage)**. This Privacy Policy details our transparent and privacy-first data practices.
 
 ---
 
@@ -120,17 +120,17 @@ For any questions regarding this Privacy Policy or data protection, please conta
         'slug': 'terms-of-service',
         'title': 'شروط الاستخدام والخدمة',
         'title_en': 'Terms of Service & EULA',
-        'meta_description': 'شروط الاستخدام واتفاقية ترخيص المستخدم النهائي (EULA) لمنصة بيجر الذكية',
+        'meta_description': 'شروط الاستخدام واتفاقية ترخيص المستخدم النهائي (EULA) لمنصة Trings',
         'sort_order': 2,
         'content': '''# شروط الاستخدام والخدمة (Terms of Service & EULA)
 **تاريخ السريان:** 1 نوفمبر 2026
 
-مرحباً بك في منصة **بيجر الذكية (Paiger SaaS)**. باستخدامك لموقعنا الإلكتروني، أو تطبيق الهاتف، أو خدمة **Apple App Clip**، فإنك توافق على الالتزام بشروط الاستخدام الموضحة أدناه واتفاقية ترخيص المستخدم النهائي القياسية لشركة أبل (**Standard Apple EULA**).
+مرحباً بك في منصة **Trings (Trings SaaS)**. باستخدامك لموقعنا الإلكتروني، أو تطبيق الهاتف، أو خدمة **Apple App Clip**، فإنك توافق على الالتزام بشروط الاستخدام الموضحة أدناه واتفاقية ترخيص المستخدم النهائي القياسية لشركة أبل (**Standard Apple EULA**).
 
 ---
 
 ### 1. وصف الخدمة
-تقدم منصة بيجر نظاماً سحابياً متكاملاً لإدارة طوابير ونداء طلبات المطاعم والمقاهي، متيحةً استبدال أجهزة النداء البلاستيكية التقليدية ببيجر رقمي فوري يظهر في جوال العميل وشاشة القفل والجزيرة التفاعلية فور مسح كود الـ QR.
+تقدم منصة Trings نظاماً سحابياً متكاملاً لإدارة طوابير ونداء طلبات المطاعم والمقاهي، متيحةً استبدال أجهزة النداء البلاستيكية التقليدية ببيجر رقمي فوري يظهر في جوال العميل وشاشة القفل والجزيرة التفاعلية فور مسح كود الـ QR.
 
 ---
 
@@ -151,7 +151,7 @@ For any questions regarding this Privacy Policy or data protection, please conta
 
 ### 4. إخلاء المسؤولية وحدود الالتزام
 * تُقدم الخدمة على أساس "كما هي" و"بحسب التوفر"، ونبذل قصارى جهدنا لضمان استمرارية الخوادم بنسبة 99.9%.
-* لا تتحمل منصة بيجر أي مسؤولية عن أي تأخير في تجهيز الطلبات ناتج عن المطاعم، أو انقطاع شبكة الإنترنت المحلية لدى المستخدم.
+* لا تتحمل منصة Trings أي مسؤولية عن أي تأخير في تجهيز الطلبات ناتج عن المطاعم، أو انقطاع شبكة الإنترنت المحلية لدى المستخدم.
 
 ---
 
@@ -168,12 +168,12 @@ For any questions regarding this Privacy Policy or data protection, please conta
         'content_en': '''# Terms of Service & End User License Agreement (EULA)
 **Effective Date:** November 1, 2026
 
-Welcome to **Paiger SaaS**. By accessing our web portals, downloading our iOS Application, or using our **Apple App Clip**, you enter into a binding agreement governed by these Terms and the **Apple Standard Licensed Application End User License Agreement (EULA)**.
+Welcome to **Trings SaaS**. By accessing our web portals, downloading our iOS Application, or using our **Apple App Clip**, you enter into a binding agreement governed by these Terms and the **Apple Standard Licensed Application End User License Agreement (EULA)**.
 
 ---
 
 ### 1. Nature of the Service
-Paiger provides an intelligent digital paging platform for cafes and food establishments, eliminating mechanical hardware pagers in favor of instant mobile notifications delivered via Web, App Clips, and iOS Dynamic Island / Live Activities.
+Trings provides an intelligent digital paging platform for cafes and food establishments, eliminating mechanical hardware pagers in favor of instant mobile notifications delivered via Web, App Clips, and iOS Dynamic Island / Live Activities.
 
 ---
 
@@ -192,8 +192,8 @@ Partner restaurants and cafes remain entirely responsible for food safety, order
 ---
 
 ### 4. Disclaimer of Warranties & Limitation of Liability
-* Paiger is provided on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind.
-* In no event shall Paiger SaaS or its operators be held liable for indirect, punitive, or consequential damages resulting from restaurant preparation delays or mobile carrier downtime.
+* Trings is provided on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind.
+* In no event shall Trings SaaS or its operators be held liable for indirect, punitive, or consequential damages resulting from restaurant preparation delays or mobile carrier downtime.
 
 ---
 
@@ -204,13 +204,13 @@ These Terms are governed by applicable trade and digital commerce laws. For cont
     },
     {
         'slug': 'about-us',
-        'title': 'عن منصة بيجر',
-        'title_en': 'About Paiger SaaS',
-        'meta_description': 'تعرف على قصة ورؤية منصة بيجر الذكية للضيافة والمطاعم',
+        'title': 'عن منصة Trings',
+        'title_en': 'About Trings SaaS',
+        'meta_description': 'تعرف على قصة ورؤية منصة Trings للضيافة والمطاعم',
         'sort_order': 3,
-        'content': '''# عن منصة بيجر الذكية (About Paiger SaaS)
+        'content': '''# عن منصة Trings (About Trings SaaS)
 
-تأسست **بيجر (Paiger SaaS)** لإعادة ابتكار تجربة استلام الطلبات في المقاهي والمطاعم وصالات الطعام السريعة، والانتقال بقطاع الضيافة من الأجهزة البلاستيكية القديمة إلى عالم التجربة الرقمية اللحظية.
+تأسست **بيجر (Trings SaaS)** لإعادة ابتكار تجربة استلام الطلبات في المقاهي والمطاعم وصالات الطعام السريعة، والانتقال بقطاع الضيافة من الأجهزة البلاستيكية القديمة إلى عالم التجربة الرقمية اللحظية.
 
 ---
 
@@ -231,9 +231,9 @@ These Terms are governed by applicable trade and digital commerce laws. For cont
 * **الموقع الرسمي:** https://pager.rahapp.com
 * **شراكات الأعمال والمطاعم:** partners@rahapp.com''',
 
-        'content_en': '''# About Paiger SaaS
+        'content_en': '''# About Trings SaaS
 
-**Paiger SaaS** is an advanced hospitality tech solution built to reinvent how modern cafes, quick-service restaurants, and food courts communicate order readiness to their guests.
+**Trings SaaS** is an advanced hospitality tech solution built to reinvent how modern cafes, quick-service restaurants, and food courts communicate order readiness to their guests.
 
 ---
 
@@ -258,11 +258,11 @@ To retire bulky, fragile, expensive hardware buzzer pagers and replace them with
         'slug': 'contact-support',
         'title': 'الدعم الفني والتواصل',
         'title_en': 'Customer Support & Help Desk',
-        'meta_description': 'تواصل مع فريق الدعم الفني والمساعدة لخدمة بيجر الذكية',
+        'meta_description': 'تواصل مع فريق الدعم الفني والمساعدة لخدمة Trings',
         'sort_order': 4,
         'content': '''# الدعم الفني والمساعدة (Help & Customer Support)
 
-فريق الدعم الفني في منصة **بيجر (Paiger SaaS)** متواجد على مدار الساعة لمساعدة أصحاب المطاعم والعملاء وضمان استقرار الخدمة وسلاسة استلام الطلبات.
+فريق الدعم الفني في منصة **بيجر (Trings SaaS)** متواجد على مدار الساعة لمساعدة أصحاب المطاعم والعملاء وضمان استقرار الخدمة وسلاسة استلام الطلبات.
 
 ---
 
@@ -291,7 +291,7 @@ To retire bulky, fragile, expensive hardware buzzer pagers and replace them with
 
         'content_en': '''# Customer Support & Help Desk
 
-The **Paiger SaaS** support team is available around the clock to support restaurant partners and end-users with seamless order notification services.
+The **Trings SaaS** support team is available around the clock to support restaurant partners and end-users with seamless order notification services.
 
 ---
 
@@ -315,7 +315,7 @@ The **Paiger SaaS** support team is available around the clock to support restau
   No. Scanning the counter QR code immediately opens the web pager or native Apple App Clip in seconds.
 * **How is the customer alerted?**  
   Their smartphone sounds an audible chime, provides haptic vibration feedback, and updates the Dynamic Island and Lock Screen.
-* **How can a restaurant join Paiger SaaS?**  
+* **How can a restaurant join Trings SaaS?**  
   Contact our onboarding team at sales@rahapp.com or log into your merchant management portal.'''
     }
 ]

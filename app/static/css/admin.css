@@ -1,13 +1,14 @@
 /* =====================================================================
-   PAIGER · Super admin: Overview, Restaurants (+ drawer), Plans, Payments, Settings
+   TINGS · Super admin: Overview, Restaurants (+ drawer), Plans, Payments, Settings
    Dark sidebar = admin. Restaurant dashboard uses a white sidebar.
    ===================================================================== */
 :root {
-  --ink: #111111; --ink-2: #1c1c1e; --ink-3: #2a2a2d; --grey: #5f6368; --grey-2: #8e8e93; --line: #e6e6e8;
+  --brand: #F05A28; --brand-hover: #D94E22;
+  --ink: #1C1B1F; --ink-2: #1c1c1e; --ink-3: #2a2a2d; --grey: #5f6368; --grey-2: #8e8e93; --line: #e6e6e8;
   --paper: #ffffff; --paper-2: #f6f6f7; --paper-3: #ececee;
   --ready: #22c55e; --ready-deep: #15803d; --ready-soft: #e7f8ee;
   --warn: #b45309; --warn-soft: #fdf2e3; --error: #b42318; --error-soft: #fdecea;
-  --display: "Fraunces", Georgia, serif;
+  --display: "Outfit", "IBM Plex Sans", -apple-system, sans-serif;
   --sans: "IBM Plex Sans", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", sans-serif;
   --ease: cubic-bezier(.2, .7, .2, 1);
 }
@@ -27,7 +28,7 @@ a { color: inherit; }
 .shell { min-height: 100svh; display: grid; grid-template-columns: 236px minmax(0, 1fr); }
 .side { position: sticky; top: 0; height: 100svh; background: var(--ink); color: #fff; padding: 18px 12px; display: flex; flex-direction: column; gap: 2px; }
 .wm { display: flex; align-items: center; gap: 10px; padding: 6px 10px 22px; }
-.wm b { font-family: "Fraunces", serif; font-weight: 600; font-size: 19px; }
+.wm b { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-weight: 600; font-size: 19px; }
 .wm span { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; letter-spacing: .12em; color: var(--grey-2); padding: 2px 7px; border-radius: 6px; box-shadow: 0 0 0 1px var(--ink-3) inset; }
 .nav a { display: flex; align-items: center; gap: 12px; height: 42px; padding: 0 12px; border-radius: 11px; color: #a1a1a6; text-decoration: none; font-weight: 500; }
 .nav a:hover { color: #fff; background: var(--ink-2); }
@@ -121,7 +122,7 @@ table.t { width: 100%; border-collapse: collapse; font-size: 14px; }
 .t .sub { color: var(--grey); font-size: 13px; }
 .t .r { text-align: end; }
 .rcell { display: flex; align-items: center; gap: 10px; }
-.rlogo { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; color: #fff; font-family: "Fraunces", serif; font-weight: 600; font-size: 15px; flex: none; }
+.rlogo { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; color: #fff; font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-weight: 600; font-size: 15px; flex: none; }
 .rcell b { display: block; font-weight: 600; } .rcell span { font-size: 12.5px; color: var(--grey); direction: ltr; unicode-bidi: isolate; }
 .lowpts { color: var(--warn); font-weight: 600; }
 .tfoot { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; font-size: 13px; color: var(--grey); border-top: 1px solid var(--line); }
@@ -167,7 +168,7 @@ textarea.in { height: 72px; padding: 10px 12px; resize: vertical; width: 100%; }
 .plan h3 { font-size: 17px; font-weight: 600; }
 .plan .price { margin-top: 6px; display: flex; align-items: baseline; gap: 6px; direction: ltr; justify-content: flex-start; }
 html[dir="rtl"] .plan .price { justify-content: flex-end; }
-.plan .price b { font-family: "Fraunces", serif; font-size: 32px; font-weight: 500; line-height: 1; }
+.plan .price b { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-size: 32px; font-weight: 500; line-height: 1; }
 .plan .price span { font-size: 13px; color: var(--grey); }
 .plan .mini { list-style: none; margin: 8px 0 0; display: grid; gap: 2px; font-size: 12.5px; color: var(--grey); }
 .plan-badge { display: inline-flex; width: auto; max-width: 100%; justify-self: start; margin-top: 6px; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--ready-soft); color: var(--ready-deep); white-space: nowrap; }

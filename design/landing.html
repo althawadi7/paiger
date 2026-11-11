@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Paiger · The pager is now their phone</title>
-<meta name="description" content="Paiger replaces restaurant buzzers with the customer's own phone. Scan a QR code, take a seat, and get rung when the order is ready. No app, no hardware.">
+<title>Trings · The pager is now their phone</title>
+<meta name="description" content="Trings replaces restaurant buzzers with the customer's own phone. Scan a QR code, take a seat, and get rung when the order is ready. No app, no hardware.">
 <meta name="theme-color" content="#ffffff">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /* =====================================================================
-   PAIGER design tokens: black and white
+   TINGS design tokens: black and white
    Ink      #111111  text, primary buttons, dark sections
    Ink 2    #1c1c1e  dark surfaces (phone screen, cards on black)
    Paper    #ffffff  main background
@@ -44,7 +44,7 @@
   --gutter: clamp(16px, 4vw, 40px);
 }
 html[lang="ar"] {
-  --display: "IBM Plex Sans Arabic", "Fraunces", serif;
+  --display: "IBM Plex Sans Arabic", "Outfit", "IBM Plex Sans", -apple-system, sans-serif;
   --sans: "IBM Plex Sans Arabic", "IBM Plex Sans", -apple-system, sans-serif;
 }
 
@@ -81,7 +81,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .nav .wrap { display: flex; align-items: center; gap: 28px; min-height: 72px; }
 .logo { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
 .logo-mark { width: 28px; height: 28px; color: var(--ink); }
-.logo-word { font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 25px; letter-spacing: -.01em; line-height: 1; }
+.logo-word { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-weight: 600; font-size: 25px; letter-spacing: -.01em; line-height: 1; }
 .nav-links { display: flex; gap: 26px; margin-inline-start: 18px; }
 .nav-links a { color: var(--grey); text-decoration: none; font-size: 15px; transition: color .2s; }
 .nav-links a:hover { color: var(--ink); }
@@ -117,10 +117,10 @@ html[lang="ar"] .hero h1 { line-height: 1.18; letter-spacing: 0; font-weight: 60
 .tablet-screen { background: var(--paper-2); color: var(--ink); border-radius: 16px; padding: 16px; display: grid; gap: 12px; }
 .t-head { display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: var(--grey); }
 .t-head b { color: var(--ink); font-weight: 600; font-size: 14px; }
-.t-display { height: 64px; border-radius: 12px; background: #fff; box-shadow: 0 0 0 1px var(--line) inset; display: flex; align-items: center; justify-content: center; font-family: "Fraunces", serif; font-size: 40px; font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: .03em; }
+.t-display { height: 64px; border-radius: 12px; background: #fff; box-shadow: 0 0 0 1px var(--line) inset; display: flex; align-items: center; justify-content: center; font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-size: 40px; font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; letter-spacing: .03em; }
 .t-display .ph { font-family: var(--sans); font-size: 14px; color: var(--grey-2); letter-spacing: 0; }
 .t-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; direction: ltr; }
-.t-pad button { height: 44px; border-radius: 10px; background: #fff; box-shadow: 0 0 0 1px var(--line) inset; font-family: "Fraunces", serif; font-size: 21px; color: var(--ink); transition: background .12s, transform .12s; }
+.t-pad button { height: 44px; border-radius: 10px; background: #fff; box-shadow: 0 0 0 1px var(--line) inset; font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-size: 21px; color: var(--ink); transition: background .12s, transform .12s; }
 .t-pad button:hover { background: var(--paper-3); }
 .t-pad button:active { transform: scale(.95); }
 .t-pad .soft { font-family: var(--sans); font-size: 13px; color: var(--grey); background: transparent; box-shadow: none; }
@@ -130,7 +130,7 @@ html[lang="ar"] .hero h1 { line-height: 1.18; letter-spacing: 0; font-weight: 60
 .t-ready { background: var(--ready-deep); color: #fff; }
 .t-actions button:disabled { opacity: .25; cursor: not-allowed; }
 .t-row { display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 12px; border-radius: 10px; background: #fff; box-shadow: 0 0 0 1px var(--line) inset; font-size: 13.5px; }
-.t-row .num { font-family: "Fraunces", serif; font-weight: 600; font-size: 18px; color: var(--ink); min-width: 34px; }
+.t-row .num { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-weight: 600; font-size: 18px; color: var(--ink); min-width: 34px; }
 .t-row .st { margin-inline-start: auto; font-size: 12.5px; padding: 3px 10px; border-radius: 999px; background: var(--paper-2); color: var(--grey); }
 .t-row.is-ready .st { background: var(--ready-soft); color: var(--ready-deep); }
 .t-empty { font-size: 13px; color: var(--grey-2); text-align: center; padding: 8px 0 2px; }
@@ -140,7 +140,7 @@ html[lang="ar"] .hero h1 { line-height: 1.18; letter-spacing: 0; font-weight: 60
 .phone { position: relative; aspect-ratio: 9 / 19.2; border-radius: 40px; background: #000; padding: 9px; box-shadow: 0 0 0 1px #2c2c2e, 0 50px 90px -34px rgba(0,0,0,.55); }
 .phone-screen { position: relative; height: 100%; border-radius: 32px; overflow: hidden; background: linear-gradient(180deg, #2a2a2d, #121214 70%); color: #fff; display: flex; flex-direction: column; align-items: center; padding: 18px 14px; }
 .island { width: 34%; height: 20px; border-radius: 20px; background: #000; margin-bottom: 18px; flex: none; }
-.lock-time { font-family: "Fraunces", serif; font-weight: 400; font-size: 50px; line-height: 1; color: #fff; letter-spacing: -.02em; direction: ltr; }
+.lock-time { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-weight: 400; font-size: 50px; line-height: 1; color: #fff; letter-spacing: -.02em; direction: ltr; }
 .lock-date { font-size: 12px; color: var(--on-ink-dim); margin-top: 4px; }
 .phone-idle { margin-top: auto; margin-bottom: 18px; text-align: center; font-size: 12.5px; color: #8e8e93; padding: 0 10px; }
 /* the Live Activity card on the lock screen */
@@ -150,7 +150,7 @@ html[lang="ar"] .hero h1 { line-height: 1.18; letter-spacing: 0; font-weight: 60
 .act-top svg { width: 18px; height: 18px; color: #fff; }
 .act-top .dot { margin-inline-start: auto; width: 7px; height: 7px; border-radius: 50%; background: #8e8e93; }
 .act-body { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 8px; gap: 8px; }
-.act-num { font-family: "Fraunces", serif; font-weight: 500; font-size: 38px; line-height: .95; color: #fff; direction: ltr; }
+.act-num { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-weight: 500; font-size: 38px; line-height: .95; color: #fff; direction: ltr; }
 .act-status { font-size: 13px; font-weight: 600; color: #fff; text-align: end; }
 .act-status small { display: block; font-weight: 400; font-size: 11px; color: var(--on-ink-dim); }
 .act-bar { margin-top: 10px; height: 4px; border-radius: 4px; background: rgba(255,255,255,.14); overflow: hidden; }
@@ -199,7 +199,7 @@ html[lang="ar"] .h2 { line-height: 1.25; letter-spacing: 0; font-weight: 600; }
 html[dir="rtl"] .step { padding: 28px 0 8px clamp(16px, 2.4vw, 32px); }
 .step + .step { padding-inline-start: clamp(16px, 2.4vw, 32px); }
 .step:last-child { border-inline-end: 0; }
-.step-n { font-family: "Fraunces", serif; font-size: 64px; line-height: 1; color: var(--ink); font-weight: 400; }
+.step-n { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-size: 64px; line-height: 1; color: var(--ink); font-weight: 400; }
 .step h3 { margin-top: 18px; font-size: 21px; font-weight: 600; color: var(--ink); line-height: 1.3; }
 .step p { margin-top: 8px; color: var(--grey); font-size: 16px; max-width: 24em; }
 
@@ -246,7 +246,7 @@ html[lang="ar"] .feat-hero h3 { font-weight: 600; line-height: 1.35; }
 .price { margin-top: 22px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; direction: ltr; justify-content: flex-start; }
 html[dir="rtl"] .price { justify-content: flex-end; }
 .price .cur { font-size: 15px; font-weight: 500; opacity: .7; }
-.price .amt { font-family: "Fraunces", serif; font-size: 54px; font-weight: 500; line-height: 1; letter-spacing: -.02em; }
+.price .amt { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-size: 54px; font-weight: 500; line-height: 1; letter-spacing: -.02em; }
 .price .per { font-size: 15px; opacity: .7; }
 .plan .save { margin-top: 8px; font-size: 14px; color: var(--on-ink-dim); min-height: 1.5em; }
 .plan.featured .save { color: var(--ready-deep); font-weight: 500; }
@@ -329,9 +329,9 @@ footer a:hover { color: #fff; }
 <!-- ============================ NAV ============================ -->
 <header class="nav" id="nav">
   <div class="wrap">
-    <a class="logo" href="#top" aria-label="Paiger home">
+    <a class="logo" href="#top" aria-label="Trings home">
       <svg class="logo-mark"><use href="#i-mark"/></svg>
-      <span class="logo-word">Paiger</span>
+      <span class="logo-word">Trings</span>
     </a>
     <nav class="nav-links" aria-label="Main">
       <a href="#how" data-i18n="nav.how">How it works</a>
@@ -356,7 +356,7 @@ footer a:hover { color: #fff; }
   <div class="wrap">
     <div>
       <h1 data-i18n="hero.title">The pager is now their phone.</h1>
-      <p class="hero-sub" data-i18n="hero.sub">Customers scan a QR code at the counter and take a seat. When the order is ready, Paiger rings their phone, even when it’s locked in their pocket. No app to download, no buzzers to buy or lose.</p>
+      <p class="hero-sub" data-i18n="hero.sub">Customers scan a QR code at the counter and take a seat. When the order is ready, Trings rings their phone, even when it’s locked in their pocket. No app to download, no buzzers to buy or lose.</p>
       <div class="hero-ctas">
         <a class="btn btn-primary" href="/signup" data-i18n="cta.trial3">Start your 3-day free trial</a>
         <a class="btn btn-outline" href="#pricing" data-i18n="cta.pricing">See pricing</a>
@@ -502,7 +502,7 @@ footer a:hover { color: #fff; }
     <h2 class="h2" data-i18n="cmp.title">Why owners switch from buzzers.</h2>
     <table class="compare">
       <thead>
-        <tr><th scope="col"><span class="sr">Topic</span></th><th scope="col" data-i18n="cmp.old">Physical buzzers</th><th scope="col" class="us">Paiger</th></tr>
+        <tr><th scope="col"><span class="sr">Topic</span></th><th scope="col" data-i18n="cmp.old">Physical buzzers</th><th scope="col" class="us">Trings</th></tr>
       </thead>
       <tbody>
         <tr><th scope="row" data-i18n="cmp.r1">Upfront cost</th><td data-i18n="cmp.r1a">Hundreds of dinars for a set</td><td class="us" data-i18n="cmp.r1b">Nothing to buy</td></tr>
@@ -596,7 +596,7 @@ footer a:hover { color: #fff; }
 
 <footer>
   <div class="wrap">
-    <a class="logo" href="#top"><svg class="logo-mark" style="width:24px;height:24px"><use href="#i-mark"/></svg><span class="logo-word" style="font-size:20px">Paiger</span></a>
+    <a class="logo" href="#top"><svg class="logo-mark" style="width:24px;height:24px"><use href="#i-mark"/></svg><span class="logo-word" style="font-size:20px">Trings</span></a>
     <nav aria-label="Footer">
       <!-- Rendered from custom_pages (title / title_en by active language) -->
       <a href="/p/about-us" data-i18n="foot.about">About</a>
@@ -604,7 +604,7 @@ footer a:hover { color: #fff; }
       <a href="/p/privacy-policy" data-i18n="foot.privacy">Privacy</a>
       <a href="/p/terms-of-service" data-i18n="foot.terms">Terms</a>
     </nav>
-    <span data-i18n="foot.copy">© 2026 Paiger</span>
+    <span data-i18n="foot.copy">© 2026 Trings</span>
   </div>
 </footer>
 
@@ -619,7 +619,7 @@ footer a:hover { color: #fff; }
       "nav.how": "طريقة العمل", "nav.features": "المزايا", "nav.pricing": "الأسعار", "nav.faq": "الأسئلة", "nav.login": "تسجيل الدخول",
       "cta.trial": "ابدأ التجربة المجانية", "cta.trial3": "ابدأ تجربتك المجانية ٣ أيام", "cta.pricing": "شوف الأسعار", "cta.startFree": "ابدأ مجاناً",
       "hero.title": "البيجر صار تلفون عميلك.",
-      "hero.sub": "العميل يمسح كود QR عند الكاونتر ويقعد. أول ما يجهز طلبه، Paiger يرنّ تلفونه، حتى لو كان مقفل في مخباه. بدون تطبيق ينزّله، وبدون أجهزة تشتريها أو تضيع.",
+      "hero.sub": "العميل يمسح كود QR عند الكاونتر ويقعد. أول ما يجهز طلبه، Trings يرنّ تلفونه، حتى لو كان مقفل في مخباه. بدون تطبيق ينزّله، وبدون أجهزة تشتريها أو تضيع.",
       "hero.note": "تجهّزه في دقايق على الآيباد اللي عندك.",
       "demo.cap": "جرّب بنفسك. أنت الكاشير.", "demo.soundOn": "الصوت شغال", "demo.soundOff": "الصوت مطفي", "demo.cashier": "الكاشير",
       "demo.enter": "رقم الطلب", "demo.clear": "مسح", "demo.issue": "إصدار بيجر", "demo.ready": "الطلب جاهز", "demo.none": "لا توجد طلبات نشطة",
@@ -662,7 +662,7 @@ footer a:hover { color: #fff; }
       "faq.q4": "شلون يشتغل الدفع لكل طلب؟", "faq.a4": "كل طلب تستخدمه ياخذ نقطة وحدة. اشحن نقاط مقدماً وبننبهك قبل ما تخلص، أو اختار تدفع على استخدامك نهاية الشهر.",
       "faq.q5": "شنو يصير بعد التجربة المجانية؟", "faq.a5": "بعد ٣ أيام، اختار باقة عشان تكمل. إعداداتك وسجل طلباتك يبقون مثل ما هم.",
       "final.title": "خلّ البيجرات في الدرج.", "final.sub": "أول ٣ أيام علينا.",
-      "foot.about": "من نحن", "foot.contact": "تواصل معنا", "foot.privacy": "الخصوصية", "foot.terms": "الشروط", "foot.copy": "© ٢٠٢٦ Paiger",
+      "foot.about": "من نحن", "foot.contact": "تواصل معنا", "foot.privacy": "الخصوصية", "foot.terms": "الشروط", "foot.copy": "© ٢٠٢٦ Trings",
     },
   };
   // Capture the English (default) text from the markup itself.

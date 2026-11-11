@@ -9,10 +9,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>{{ t('print.title') }} · {{ brand.name }} · Paiger</title>
+<title>{{ t('print.title') }} · {{ brand.name }} · Trings</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/restaurant-logo.css?v={{ static_version('css/restaurant-logo.css') if static_version is defined else '1' }}">
 <style>
 :root { --ink:#111111; --grey:#5f6368; --grey-2:#8e8e93; --line:#e6e6e8; --paper-2:#f6f6f7; --paper-3:#ececee; --brand: {{ brand.brand }}; --brand-ink: {{ brand.brand_ink }};
   --sans:"IBM Plex Sans","IBM Plex Sans Arabic",-apple-system,"Segoe UI",sans-serif; --ar:"IBM Plex Sans Arabic","IBM Plex Sans",sans-serif; }
@@ -28,7 +29,7 @@ a { color:inherit; }
 .panel { background:#fff; border-inline-end:1px solid var(--line); padding:22px 22px 28px; display:flex; flex-direction:column; gap:22px; }
 .back { display:inline-flex; align-items:center; gap:8px; font-size:14px; color:var(--grey); text-decoration:none; }
 .back:hover { color:var(--ink); }
-.panel h1 { font-family:"Fraunces",serif; font-weight:500; font-size:28px; line-height:1.15; }
+.panel h1 { font-family:"Outfit","IBM Plex Sans",sans-serif; font-weight:500; font-size:28px; line-height:1.15; }
 html[lang="ar"] .panel h1 { font-family:var(--sans); font-weight:600; }
 .panel p.sub { color:var(--grey); font-size:14.5px; margin-top:6px; line-height:1.5; }
 .grp h2 { font-size:13px; font-weight:600; color:var(--grey); margin-bottom:8px; }
@@ -71,10 +72,10 @@ html[lang="ar"] .panel h1 { font-family:var(--sans); font-weight:600; }
 .card.has-logo .copy { margin-top:0; flex:none; gap:calc(var(--u) * 1.5); }
 .card.has-logo .l-en b { font-size:calc(var(--u) * 5.2); line-height:1.1; }
 .card.has-logo .l-ar b { font-size:calc(var(--u) * 5); line-height:1.2; }
-.logo { width:var(--logo); height:var(--logo); border-radius:calc(var(--logo)*.24); background:var(--brand); color:var(--brand-ink); display:grid; place-items:center; font-family:"Fraunces",serif; font-weight:600; font-size:calc(var(--logo)*.48); box-shadow:0 0 0 calc(var(--u)*1.4) #fff; overflow:hidden; }
-.logo-box { height:var(--logo); max-width:calc(var(--logo) * 3.2); margin:0 auto; display:flex; align-items:center; justify-content:center; overflow:hidden; background:none; flex:none; min-width:0; position:static; }
-.logo-box img { max-height:100%; max-width:min(100%, calc(var(--logo) * 3.2)); width:auto; height:auto; object-fit:contain; display:block; background:none; position:static; transform:none; }
-.name { font-family:"Fraunces",serif; font-weight:600; font-size:calc(var(--u)*8); letter-spacing:-.01em; line-height:1.1; }
+.logo { width:var(--logo); height:var(--logo); border-radius:calc(var(--logo)*.24); background:var(--brand); color:var(--brand-ink); display:grid; place-items:center; font-family:"Outfit","IBM Plex Sans",sans-serif; font-weight:600; font-size:calc(var(--logo)*.48); box-shadow:0 0 0 calc(var(--u)*1.4) #fff; overflow:hidden; }
+.logo-box.r-logo--print { margin:0 auto; flex:none; min-width:0; }
+.logo-box.r-logo.has-img { max-width:calc(var(--logo) * 3.2); width:auto; min-width:var(--logo); height:var(--logo); }
+.name { font-family:"Outfit","IBM Plex Sans",sans-serif; font-weight:600; font-size:calc(var(--u)*8); letter-spacing:-.01em; line-height:1.1; }
 .qrbox { position:relative; z-index:1; margin-top:auto; padding:calc(var(--u)*3.4); border-radius:calc(var(--u)*4); box-shadow:0 0 0 calc(var(--u)*.6) var(--line); background:#fff; flex:none; }
 .qr { display:block; width:var(--qr); height:var(--qr); color:#000; }
 .copy { margin-top:auto; display:grid; gap:calc(var(--u)*2.4); width:100%; }
@@ -149,7 +150,7 @@ html[lang="ar"] .panel h1 { font-family:var(--sans); font-weight:600; }
 <template id="cardTpl">
   <div class="card{% if brand.logo_url %} has-logo{% endif %}">
     <div class="band"></div>
-    <div class="brand{% if brand.logo_url %} has-logo{% endif %}">{% if brand.logo_url %}<div class="logo-box"><img src="{{ brand.logo_url }}" alt=""></div>{% else %}<div class="logo">{{ brand.initial }}</div>{% endif %}<div class="name">{{ brand.name }}</div></div>
+    <div class="brand{% if brand.logo_url %} has-logo{% endif %}">{% if brand.logo_url %}<div class="logo-box r-logo r-logo--print has-img" data-initial="{{ brand.initial }}" style="--r-logo-brand: {{ brand.brand }}; --r-logo-ink: {{ brand.brand_ink }};"><span class="r-logo__spin" hidden aria-hidden="true"></span><img class="r-logo__img" src="{{ brand.logo_url }}" alt=""></div>{% else %}<div class="logo">{{ brand.initial }}</div>{% endif %}<div class="name">{{ brand.name }}</div></div>
     <div class="qrbox">{% if qr_svg is defined %}{{ qr_svg }}{% else %}<img class="qr" alt="QR code" src="/api/qr/stand?host=https://pager.rahapp.com/r/{{ restaurant.slug }}">{% endif %}</div>
     <div class="copy">
       <div class="l-en"><b>Scan to follow your order</b></div>
@@ -259,5 +260,6 @@ html[lang="ar"] .panel h1 { font-family:var(--sans); font-weight:600; }
   render();
 })();
 </script>
+<script src="/static/js/restaurant-logo.js?v={{ static_version('js/restaurant-logo.js') if static_version is defined else '1' }}" defer></script>
 </body>
 </html>

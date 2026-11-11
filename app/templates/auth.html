@@ -1,19 +1,22 @@
 {% extends "base.html" %}
+{% from "partials/restaurant_logo.html" import logo_slot %}
 {% set errors = errors if errors is defined else {} %}
 {% set values = values if values is defined else {} %}
 {% set screen = screen if screen is defined else "login" %}
 {% set plan = plan if plan is defined else "monthly" %}
 {% set plan_key = "auth.planYearly" if plan == "yearly" else "auth.planPoints" if plan == "points" else "auth.planMonthly" %}
-{% block title %}Paiger · {{ t('auth.suH') if screen == 'signup' else t('auth.brH') if screen == 'brand' else t('auth.fpH') if screen in ['forgot', 'sent'] else t('auth.resetH') if screen in ['reset', 'reset_bad'] else t('auth.login') }}{% endblock %}
+{% block title %}Trings · {{ t('auth.suH') if screen == 'signup' else t('auth.brH') if screen == 'brand' else t('auth.fpH') if screen in ['forgot', 'sent'] else t('auth.resetH') if screen in ['reset', 'reset_bad'] else t('auth.login') }}{% endblock %}
 {% block body_class %}auth{% endblock %}
 {% block head %}
+<link rel="stylesheet" href="/static/css/restaurant-logo.css?v={{ static_version('css/restaurant-logo.css') if static_version is defined else '1' }}">
 <style>
 :root {
   --ink: #111111; --ink-2: #1c1c1e; --grey: #5f6368; --grey-2: #8e8e93; --line: #e6e6e8;
   --paper: #ffffff; --paper-2: #f6f6f7; --paper-3: #ececee;
   --ready: #22c55e; --ready-deep: #15803d; --ready-soft: #e7f8ee;
   --error: #b42318; --error-soft: #fdecea;
-  --display: "Fraunces", Georgia, serif;
+  --brand: #F05A28; --brand-hover: #D94E22;
+  --display: "Outfit", "IBM Plex Sans", -apple-system, sans-serif;
   --sans: "IBM Plex Sans", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", sans-serif;
   --ease: cubic-bezier(.2, .7, .2, 1);
 }
@@ -24,7 +27,7 @@ body.auth { min-height: 100svh; font-family: var(--sans); color: var(--ink); bac
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .side-form .logo { display: inline-flex; align-items: center; gap: 9px; text-decoration: none; color: var(--ink); }
 .side-form .logo svg { width: 26px; height: 26px; }
-.side-form .logo span { font-family: "Fraunces", serif; font-weight: 600; font-size: 22px; }
+.side-form .logo span { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-weight: 600; font-size: 22px; }
 .side-form .lang { height: 38px; padding: 0 12px; border-radius: 999px; font-size: 14px; color: var(--grey); text-decoration: none; display: inline-flex; align-items: center; min-height: 0; font-weight: 400; }
 .side-form .lang:hover { background: var(--paper-2); color: var(--ink); }
 .form-wrap { width: 100%; max-width: 420px; margin: auto; padding-block: 40px; }
@@ -62,8 +65,8 @@ form.auth-form { margin-top: 24px; display: grid; gap: 16px; }
 .strength[data-s="3"] i { background: var(--ready-deep); }
 .btn { height: 54px; border-radius: 14px; font-size: 16.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 10px; transition: transform .1s, opacity .2s, background .15s; text-decoration: none; }
 .btn:active { transform: scale(.99); }
-.btn-primary { background: var(--ink); color: #fff; width: 100%; }
-.btn-primary:hover { background: #333336; }
+.btn-primary { background: var(--brand); color: #fff; width: 100%; font-weight: 600; }
+.btn-primary:hover { background: var(--brand-hover); }
 .btn-primary[aria-busy="true"] { opacity: .6; pointer-events: none; }
 .btn-ghost { box-shadow: 0 0 0 1.5px var(--line) inset; padding: 0 20px; color: var(--ink); background: transparent; }
 .spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; animation: spin .8s linear infinite; display: none; }
@@ -82,8 +85,7 @@ form.auth-form { margin-top: 24px; display: grid; gap: 16px; }
 .step-count { font-size: 13.5px; color: var(--grey); margin-bottom: 6px; }
 .drop { display: flex; align-items: center; gap: 16px; padding: 16px; border-radius: 16px; border: 1.5px dashed var(--line); transition: border-color .15s, background .15s; cursor: pointer; }
 .drop:hover, .drop.over { border-color: var(--ink); background: var(--paper-2); }
-.drop .thumb { width: 64px; height: 64px; border-radius: 16px; background: var(--brand, #111); color: var(--brand-ink, #fff); display: grid; place-items: center; font-family: "Fraunces", serif; font-weight: 600; font-size: 28px; overflow: hidden; flex: none; }
-.drop .thumb img { width: 100%; height: 100%; object-fit: cover; }
+.drop .r-logo { flex: none; }
 .drop b { display: block; font-weight: 600; font-size: 15px; }
 .drop span { font-size: 13.5px; color: var(--grey); }
 .drop-actions { display: flex; gap: 14px; margin-top: 8px; font-size: 14px; }
@@ -105,13 +107,12 @@ html[lang="ar"] .quote { font-weight: 600; line-height: 1.4; }
 .preview { margin: 0 auto; width: 270px; border-radius: 38px; background: #000; padding: 9px; box-shadow: 0 0 0 1px #2c2c2e, 0 40px 80px -30px rgba(0,0,0,.8); }
 .pv { border-radius: 30px; background: #fff; color: var(--ink); padding: 16px 14px 18px; min-height: 470px; }
 .pv-head { display: flex; align-items: center; gap: 10px; }
-.pv-logo { width: 36px; height: 36px; border-radius: 11px; background: var(--brand, #111); color: var(--brand-ink, #fff); display: grid; place-items: center; font-family: "Fraunces", serif; font-weight: 600; font-size: 17px; overflow: hidden; flex: none; }
-.pv-logo img { width: 100%; height: 100%; object-fit: cover; }
+.pv-head .r-logo { flex: none; }
 .pv-head b { font-size: 14px; display: block; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pv-head span { font-size: 11px; color: var(--grey); }
 .pv-ticket { margin-top: 14px; border-radius: 20px; background: var(--paper-2); padding: 16px 12px 14px; text-align: center; }
 .pv-ticket small { font-size: 11px; color: var(--grey); }
-.pv-ticket .n { font-family: "Fraunces", serif; font-size: 78px; font-weight: 500; line-height: 1; }
+.pv-ticket .n { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-size: 78px; font-weight: 500; line-height: 1; }
 .pv-pill { margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: 999px; background: #fff; font-size: 12px; font-weight: 600; box-shadow: 0 0 0 1px var(--line); }
 .pv-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--brand, #111); }
 .pv-bar { margin-top: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
@@ -139,7 +140,7 @@ html[lang="ar"] .quote { font-weight: 600; line-height: 1.4; }
 <div class="shell {{ 'brand-step' if screen == 'brand' else '' }}" id="shell" {% if screen == 'brand' %}style="--brand: {{ brand.brand }}; --brand-ink: {{ brand.brand_ink }}"{% endif %}>
   <main class="side-form">
     <div class="top">
-      <a class="logo" href="/"><svg><use href="#i-mark"/></svg><span>Paiger</span></a>
+      <a class="logo" href="/"><img src="/static/brand/trings-logo.svg" alt="Trings" style="height:28px;width:auto" width="110" height="28"></a>
       <a class="lang" href="/lang/{{ 'en' if lang == 'ar' else 'ar' }}">{{ t('nav.langSwitch') }}</a>
     </div>
 
@@ -267,7 +268,7 @@ html[lang="ar"] .quote { font-weight: 600; line-height: 1.4; }
         <div class="field">
           <label><span class="lbl">{{ t('auth.logo') }}</span><span>{{ t('auth.optional') }}</span></label>
           <label class="drop" id="drop" for="logoFile">
-            <div class="thumb" id="thumb">{% if brand.logo_url %}<img src="{{ brand.logo_url }}" alt="">{% else %}{{ brand.initial }}{% endif %}</div>
+            {{ logo_slot(brand, '64', 'thumb') }}
             <div><b id="logoLabel">{% if brand.logo_url %}{{ t('auth.replace') }}{% else %}{{ t('auth.upload') }}{% endif %}</b><span>{{ t('auth.uploadHint') }}</span></div>
             <input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
           </label>
@@ -303,7 +304,7 @@ html[lang="ar"] .quote { font-weight: 600; line-height: 1.4; }
     <div class="show" id="showPreview" {% if screen != 'brand' %}hidden{% endif %}>
       <div class="preview">
         <div class="pv">
-          <div class="pv-head"><div class="pv-logo" id="pvLogo">{% if brand and brand.logo_url %}<img src="{{ brand.logo_url }}" alt="">{% else %}{{ brand.initial if brand else 'P' }}{% endif %}</div><div><b id="pvName">{{ brand.name if brand else '' }}</b><span>{{ t('auth.pvSub') }}</span></div></div>
+          <div class="pv-head">{% if brand %}{{ logo_slot(brand, '36', 'pvLogo') }}{% else %}<div class="r-logo r-logo--36" id="pvLogo" data-initial="P" style="--r-logo-brand: #F05A28; --r-logo-ink: #fff;"><span class="r-logo__spin" hidden aria-hidden="true"></span><span class="r-logo__initial" aria-hidden="true">P</span></div>{% endif %}<div><b id="pvName">{{ brand.name if brand else '' }}</b><span>{{ t('auth.pvSub') }}</span></div></div>
           <div class="pv-ticket"><small>{{ t('auth.pvOrder') }}</small><div class="n">47</div><div class="pv-pill"><i></i><span>{{ t('auth.pvPrep') }}</span></div><div class="pv-bar"><i></i><i></i><i></i></div></div>
           <div class="pv-btn">{{ t('auth.pvBtn') }}</div>
         </div>
@@ -314,6 +315,7 @@ html[lang="ar"] .quote { font-weight: 600; line-height: 1.4; }
 </div>
 {% endblock %}
 {% block scripts %}
+{% if screen == 'brand' %}<script src="/static/js/restaurant-logo.js?v={{ static_version('js/restaurant-logo.js') if static_version is defined else '1' }}" defer></script>{% endif %}
 <script>
 (() => {
   "use strict";
@@ -434,21 +436,41 @@ html[lang="ar"] .quote { font-weight: 600; line-height: 1.4; }
       e.target.parentElement.setAttribute("aria-checked", "true");
       setBrand(e.target.value);
     });
-    let hasLogo = !!document.querySelector("#thumb img");
+    let hasLogo = !!document.querySelector("#thumb.has-img");
     function showLogoError(key) { const el = $("logoErr"); el.textContent = T[key]; el.style.display = "block"; }
     async function takeFile(file) {
       $("logoErr").style.display = "none";
       if (!file) return;
       if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) return showLogoError("eType");
       if (file.size > 2 * 1024 * 1024) return showLogoError("eSize");
-      const body = new FormData(); body.append("file", file);
-      const res = await fetch("/api/merchant/logo", { method: "POST", body, credentials: "same-origin" });
-      if (res.status === 413) return showLogoError("eSize");
-      if (!res.ok) return showLogoError("eType");
-      const data = await res.json();
-      const img = `<img src="${data.logo_url}" alt="">`;
-      $("thumb").innerHTML = img; $("pvLogo").innerHTML = img;
-      hasLogo = true; $("logoLabel").textContent = T.replace; $("logoActions").hidden = false;
+      const logoApi = window.paigerRestaurantLogo;
+      if (logoApi) {
+        logoApi.setLoading($("thumb"), true);
+        logoApi.setLoading($("pvLogo"), true);
+        logoApi.setUploadBusy($("brBtn"), true);
+      }
+      try {
+        const body = new FormData(); body.append("file", file);
+        const res = await fetch("/api/merchant/logo", { method: "POST", body, credentials: "same-origin" });
+        if (res.status === 413) return showLogoError("eSize");
+        if (!res.ok) return showLogoError("eType");
+        const data = await res.json();
+        if (logoApi) {
+          logoApi.setSlotImage($("thumb"), data.logo_url);
+          logoApi.setSlotImage($("pvLogo"), data.logo_url);
+        }
+        hasLogo = true; $("logoLabel").textContent = T.replace; $("logoActions").hidden = false;
+      } catch (e) {
+        /* keep fallback visible */
+      } finally {
+        if (logoApi) {
+          logoApi.setUploadBusy($("brBtn"), false);
+          if (!$("thumb").classList.contains("has-img")) {
+            logoApi.setLoading($("thumb"), false);
+            logoApi.setLoading($("pvLogo"), false);
+          }
+        }
+      }
     }
     $("logoFile").addEventListener("change", (e) => takeFile(e.target.files[0]));
     ["dragenter", "dragover"].forEach((ev) => $("drop").addEventListener(ev, (e) => { e.preventDefault(); $("drop").classList.add("over"); }));
@@ -457,8 +479,13 @@ html[lang="ar"] .quote { font-weight: 600; line-height: 1.4; }
     $("logoRemove").addEventListener("click", async () => {
       await fetch("/api/merchant/logo", { method: "DELETE", credentials: "same-origin" });
       hasLogo = false; $("logoFile").value = ""; $("logoActions").hidden = true; $("logoLabel").textContent = T.upload;
-      const ch = ($("pvName").textContent || "P").trim().charAt(0);
-      $("thumb").textContent = ch; $("pvLogo").textContent = ch;
+      const ch = ($("pvName").textContent || "P").trim().charAt(0) || "P";
+      $("thumb").setAttribute("data-initial", ch);
+      $("pvLogo").setAttribute("data-initial", ch);
+      if (window.paigerRestaurantLogo) {
+        window.paigerRestaurantLogo.showFallback($("thumb"));
+        window.paigerRestaurantLogo.showFallback($("pvLogo"));
+      }
     });
     $("fBrand").addEventListener("submit", () => busy($("brBtn"), true));
     const current = $("brandColor") && $("brandColor").value;

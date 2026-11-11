@@ -23,8 +23,8 @@ self.addEventListener('push', function(event) {
   var title = data.title || "طلبك جاهز للاستلام!";
   var options = {
     body: data.body || "يرجى التوجه إلى الكاونتر.",
-    icon: data.icon || "/static/img/brand-logo.png?v=dawrak",
-    badge: data.badge || "/static/img/brand-logo.png?v=dawrak",
+    icon: data.icon || "/static/brand/icon-192.png",
+    badge: data.badge || "/static/brand/icon-192.png",
     vibrate: [600, 150, 600, 150, 900, 200, 600, 150, 900],
     tag: "paiger-order-" + (data.order_id || Date.now()),
     renotify: true,
@@ -84,8 +84,8 @@ self.addEventListener('message', function(event) {
     var title = p.title || "طلبك جاهز للاستلام!";
     var options = {
       body: p.body || "يرجى التوجه إلى الكاونتر.",
-      icon: "/static/img/brand-logo.png?v=dawrak",
-      badge: "/static/img/brand-logo.png?v=dawrak",
+      icon: "/static/brand/icon-192.png",
+      badge: "/static/brand/icon-192.png",
       vibrate: [600, 150, 600, 150, 900, 200, 600, 150, 900],
       tag: "pager-local-" + Date.now(),
       renotify: true,

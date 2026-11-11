@@ -1,0 +1,83 @@
+/* Restaurant logo display: contain, white tile when image, brand tile for initial fallback */
+.r-logo {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  overflow: hidden;
+  border-radius: var(--r-logo-radius, 11px);
+  font-family: var(--display, "Outfit", "IBM Plex Sans", sans-serif);
+  font-weight: 600;
+  line-height: 1;
+}
+.r-logo.has-img {
+  background: #fff;
+  box-shadow: 0 0 0 1px #e6e6e8 inset;
+  color: var(--ink, #1c1b1f);
+}
+.r-logo:not(.has-img) {
+  background: var(--r-logo-brand, var(--brand, #f05a28));
+  color: var(--r-logo-ink, var(--brand-ink, #fff));
+}
+.r-logo__img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 10%;
+  box-sizing: border-box;
+  display: block;
+}
+.r-logo__img.is-loading {
+  opacity: 0;
+}
+.r-logo__initial {
+  font-size: inherit;
+  user-select: none;
+}
+.r-logo__spin {
+  position: absolute;
+  width: 42%;
+  height: 42%;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--ink, #1c1b1f);
+  border-right-color: rgba(28, 27, 31, 0.18);
+  animation: r-logo-spin 0.7s linear infinite;
+  pointer-events: none;
+}
+.r-logo.has-img .r-logo__spin {
+  border-top-color: var(--ink, #1c1b1f);
+}
+.r-logo.is-loading .r-logo__spin:not([hidden]) {
+  display: block;
+}
+.r-logo__spin[hidden] {
+  display: none;
+}
+@keyframes r-logo-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .r-logo__spin {
+    animation: none;
+    opacity: 0.85;
+    border-top-color: var(--ink, #1c1b1f);
+    border-right-color: var(--ink, #1c1b1f);
+  }
+}
+.r-logo--36 { width: 36px; height: 36px; font-size: 16px; --r-logo-radius: 10px; }
+.r-logo--38 { width: 38px; height: 38px; font-size: 18px; --r-logo-radius: 11px; }
+.r-logo--64 { width: 64px; height: 64px; font-size: 28px; --r-logo-radius: 16px; flex: none; }
+.r-logo--72 { width: 72px; height: 72px; font-size: 32px; --r-logo-radius: 18px; }
+.r-logo--68 { width: 68px; height: 68px; font-size: 30px; --r-logo-radius: 20px; }
+.r-logo--print {
+  width: var(--logo, 48px);
+  height: var(--logo, 48px);
+  font-size: calc(var(--logo, 48px) * 0.48);
+  --r-logo-radius: calc(var(--logo, 48px) * 0.24);
+}
+.r-logo--print.r-logo.has-img {
+  max-width: calc(var(--logo, 48px) * 3.2);
+  width: auto;
+  min-width: var(--logo, 48px);
+}

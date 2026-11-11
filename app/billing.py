@@ -540,8 +540,8 @@ def set_manual_plan(restaurant_id: int, code: str, until_date: str, admin_id: in
     return create_invoice(
         restaurant_id,
         kind="manual",
-        description=f"Paiger {name}",
-        lines=[{"description": f"Paiger {name}", "detail": f"Until {until.isoformat()}", "qty": 1, "amount_fils": price, "plan_code": code}],
+        description=f"Trings {name}",
+        lines=[{"description": f"Trings {name}", "detail": f"Until {until.isoformat()}", "qty": 1, "amount_fils": price, "plan_code": code}],
         due_at=datetime.now() + timedelta(days=7),
         period_end=until,
         admin_id=admin_id,
@@ -1035,7 +1035,7 @@ def plans_admin() -> List[Dict[str, Any]]:
     for plan in plans:
         plan["subscribers"] = counts.get(plan["code"], 0)
         plan["restaurants"] = holders.get(plan["code"], 0)
-        names = {str(plan.get("name_en") or ""), str(plan.get("name_ar") or ""), f"Paiger {plan.get('name_en') or ''}", f"Paiger {plan.get('name_ar') or ''}"}
+        names = {str(plan.get("name_en") or ""), str(plan.get("name_ar") or ""), f"Trings {plan.get('name_en') or ''}", f"Trings {plan.get('name_ar') or ''}"}
         named = any(name and name in blob for blob in blobs for name in names)
         plan["invoiced"] = plan["code"] in invoiced or named
         plan["deletable"] = plan["restaurants"] == 0 and not plan["invoiced"]

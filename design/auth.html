@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
-<title>Paiger · Sign up</title>
+<title>Trings · Sign up</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 /* =====================================================================
-   PAIGER · Auth: log in, sign up, brand setup, forgot password
+   TINGS · Auth: log in, sign up, brand setup, forgot password
    One file with four screens (prototype). Production: four templates on base.html.
    ===================================================================== */
 :root {
@@ -18,7 +18,7 @@
   --paper: #ffffff; --paper-2: #f6f6f7; --paper-3: #ececee;
   --ready: #22c55e; --ready-deep: #15803d; --ready-soft: #e7f8ee;
   --error: #b42318; --error-soft: #fdecea;
-  --display: "Fraunces", Georgia, serif;
+  --display: "Outfit", "IBM Plex Sans", -apple-system, sans-serif;
   --sans: "IBM Plex Sans", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", sans-serif;
   --ease: cubic-bezier(.2, .7, .2, 1);
 }
@@ -39,7 +39,7 @@ a { color: inherit; }
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .logo { display: inline-flex; align-items: center; gap: 9px; text-decoration: none; }
 .logo svg { width: 26px; height: 26px; }
-.logo span { font-family: "Fraunces", serif; font-weight: 600; font-size: 22px; }
+.logo span { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-weight: 600; font-size: 22px; }
 .lang { height: 38px; padding: 0 12px; border-radius: 999px; font-size: 14px; color: var(--grey); }
 .lang:hover { background: var(--paper-2); color: var(--ink); }
 .form-wrap { width: 100%; max-width: 420px; margin: auto; padding-block: 40px; }
@@ -103,7 +103,7 @@ form { margin-top: 24px; display: grid; gap: 16px; }
 .step-count { font-size: 13.5px; color: var(--grey); margin-bottom: 6px; }
 .drop { display: flex; align-items: center; gap: 16px; padding: 16px; border-radius: 16px; border: 1.5px dashed var(--line); transition: border-color .15s, background .15s; cursor: pointer; }
 .drop:hover, .drop.over { border-color: var(--ink); background: var(--paper-2); }
-.drop .thumb { width: 64px; height: 64px; border-radius: 16px; background: var(--brand, #111); color: #fff; display: grid; place-items: center; font-family: "Fraunces", serif; font-weight: 600; font-size: 28px; overflow: hidden; flex: none; }
+.drop .thumb { width: 64px; height: 64px; border-radius: 16px; background: var(--brand, #111); color: #fff; display: grid; place-items: center; font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-weight: 600; font-size: 28px; overflow: hidden; flex: none; }
 .drop .thumb img { width: 100%; height: 100%; object-fit: cover; }
 .drop b { display: block; font-weight: 600; font-size: 15px; }
 .drop span { font-size: 13.5px; color: var(--grey); }
@@ -129,13 +129,13 @@ html[lang="ar"] .quote { font-weight: 600; line-height: 1.4; }
 .preview { margin: 0 auto; width: 270px; border-radius: 38px; background: #000; padding: 9px; box-shadow: 0 0 0 1px #2c2c2e, 0 40px 80px -30px rgba(0,0,0,.8); }
 .pv { border-radius: 30px; background: #fff; color: var(--ink); padding: 16px 14px 18px; min-height: 470px; }
 .pv-head { display: flex; align-items: center; gap: 10px; }
-.pv-logo { width: 36px; height: 36px; border-radius: 11px; background: var(--brand, #111); color: var(--brand-ink, #fff); display: grid; place-items: center; font-family: "Fraunces", serif; font-weight: 600; font-size: 17px; overflow: hidden; flex: none; }
+.pv-logo { width: 36px; height: 36px; border-radius: 11px; background: var(--brand, #111); color: var(--brand-ink, #fff); display: grid; place-items: center; font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-weight: 600; font-size: 17px; overflow: hidden; flex: none; }
 .pv-logo img { width: 100%; height: 100%; object-fit: cover; }
 .pv-head b { font-size: 14px; display: block; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pv-head span { font-size: 11px; color: var(--grey); }
 .pv-ticket { margin-top: 14px; border-radius: 20px; background: var(--paper-2); padding: 16px 12px 14px; text-align: center; }
 .pv-ticket small { font-size: 11px; color: var(--grey); }
-.pv-ticket .n { font-family: "Fraunces", serif; font-size: 78px; font-weight: 500; line-height: 1; }
+.pv-ticket .n { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-size: 78px; font-weight: 500; line-height: 1; }
 .pv-pill { margin-top: 8px; display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: 999px; background: #fff; font-size: 12px; font-weight: 600; box-shadow: 0 0 0 1px var(--line); }
 .pv-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--brand, #111); }
 .pv-bar { margin-top: 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
@@ -169,7 +169,7 @@ html[lang="ar"] .quote { font-weight: 600; line-height: 1.4; }
   <!-- ======================= FORM SIDE ======================= -->
   <main class="side-form">
     <div class="top">
-      <a class="logo" href="/"><svg><use href="#i-mark"/></svg><span>Paiger</span></a>
+      <a class="logo" href="/"><svg><use href="#i-mark"/></svg><span>Trings</span></a>
       <button class="lang" id="langBtn" type="button">العربية</button>
     </div>
 
@@ -231,7 +231,7 @@ html[lang="ar"] .quote { font-weight: 600; line-height: 1.4; }
         </div>
         <button class="btn btn-primary" id="liBtn" type="submit"><span class="spin"></span><span data-t="login">Log in</span></button>
       </form>
-      <p class="switch"><span data-t="noAcc">New to Paiger?</span> <button type="button" data-go="signup" data-t="startTrial">Start a free trial</button></p>
+      <p class="switch"><span data-t="noAcc">New to Trings?</span> <button type="button" data-go="signup" data-t="startTrial">Start a free trial</button></p>
     </section>
 
     <!-- ====== FORGOT ====== -->
@@ -337,7 +337,7 @@ html[lang="ar"] .quote { font-weight: 600; line-height: 1.4; }
       password: "Password", show: "Show", hide: "Hide", ePass: "Use at least 8 characters.", ePassReq: "Enter your password.",
       phone: "Mobile number", optional: "Optional", ePhone: "Enter an 8-digit Bahrain mobile number.", suBtn: "Create account",
       legal: 'By creating an account you agree to the <a href="/p/terms-of-service">Terms</a> and <a href="/p/privacy-policy">Privacy Policy</a>.',
-      haveAcc: "Already have an account?", login: "Log in", noAcc: "New to Paiger?", startTrial: "Start a free trial",
+      haveAcc: "Already have an account?", login: "Log in", noAcc: "New to Trings?", startTrial: "Start a free trial",
       liH: "Welcome back", liSub: "Log in to open your cashier and dashboard.", forgot: "Forgot password?", eLogin: "That email and password don’t match. Check them and try again.",
       fpH: "Reset your password", fpSub: "Enter your email and we’ll send you a link to set a new password.", fpBtn: "Send reset link",
       sentH: "Check your email", sentP: "If an account exists for", sentP2: ", you’ll get a link to reset your password. It expires in 1 hour.", resend: "Send again", resent: "Sent again", backLogin: "Back to log in",
@@ -356,7 +356,7 @@ html[lang="ar"] .quote { font-weight: 600; line-height: 1.4; }
       password: "كلمة المرور", show: "إظهار", hide: "إخفاء", ePass: "استخدم ٨ أحرف على الأقل.", ePassReq: "اكتب كلمة المرور.",
       phone: "رقم الجوال", optional: "اختياري", ePhone: "اكتب رقم جوال بحريني من ٨ أرقام.", suBtn: "إنشاء الحساب",
       legal: 'بإنشاء الحساب، أنت توافق على <a href="/p/terms-of-service">الشروط</a> و<a href="/p/privacy-policy">سياسة الخصوصية</a>.',
-      haveAcc: "عندك حساب؟", login: "تسجيل الدخول", noAcc: "جديد على Paiger؟", startTrial: "ابدأ تجربة مجانية",
+      haveAcc: "عندك حساب؟", login: "تسجيل الدخول", noAcc: "جديد على Trings؟", startTrial: "ابدأ تجربة مجانية",
       liH: "هلا فيك مرة ثانية", liSub: "سجّل دخولك عشان تفتح الكاشير ولوحة التحكم.", forgot: "نسيت كلمة المرور؟", eLogin: "الإيميل وكلمة المرور ما يتطابقون. تأكد منهم وحاول مرة ثانية.",
       fpH: "استعادة كلمة المرور", fpSub: "اكتب إيميلك ونرسل لك رابط تحط فيه كلمة مرور جديدة.", fpBtn: "أرسل الرابط",
       sentH: "شيّك على إيميلك", sentP: "إذا فيه حساب بالإيميل", sentP2: "، بيوصلك رابط لاستعادة كلمة المرور. الرابط صالح لمدة ساعة.", resend: "أرسله مرة ثانية", resent: "تم الإرسال", backLogin: "الرجوع لتسجيل الدخول",
@@ -391,7 +391,7 @@ html[lang="ar"] .quote { font-weight: 600; line-height: 1.4; }
     ["signup", "login", "forgot", "brand"].forEach((x) => ($("v" + x[0].toUpperCase() + x.slice(1)).hidden = x !== v));
     $("shell").classList.toggle("brand-step", v === "brand");
     $("showPitch").hidden = v === "brand"; $("showPreview").hidden = v !== "brand";
-    document.title = "Paiger · " + ({ signup: "Sign up", login: "Log in", forgot: "Reset password", brand: "Your brand" }[v]);
+    document.title = "Trings · " + ({ signup: "Sign up", login: "Log in", forgot: "Reset password", brand: "Your brand" }[v]);
     document.querySelectorAll(".proto button").forEach((b) => b.classList.toggle("on", b.dataset.v === v));
     const first = $("v" + v[0].toUpperCase() + v.slice(1)).querySelector("input"); if (first && innerWidth > 900) first.focus({ preventScroll: true });
   }

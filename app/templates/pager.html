@@ -1,8 +1,9 @@
 {% set brand = restaurant_brand({
-  'name': order.restaurant_name or 'Paiger',
+  'name': order.restaurant_name or 'Trings',
   'brand_color': order.brand_color|default('', true),
   'logo_url': order.logo_url|default('', true)
 }) %}
+{% from "partials/restaurant_logo.html" import logo_slot %}
 {% set lvl = {'waiting': 1, 'ringing': 2, 'onway': 3, 'done': 3}.get(order.status, 1) %}
 {% if lang == 'ar' %}
 {% set tx = {
@@ -56,13 +57,15 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#ffffff">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="بيجر المطعم">
+<meta name="apple-mobile-web-app-title" content="Trings">
 <meta name="apple-itunes-app" content="app-clip-bundle-id=com.dawrak.app.Clip, app-id=6829547522">
 <title>{{ order.order_number }} · {{ brand.name }}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="icon" href="/static/img/brand-logo.png?v=dawrak">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/restaurant-logo.css?v={{ static_version('css/restaurant-logo.css') if static_version is defined else '1' }}">
+<link rel="icon" href="/static/brand/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/static/brand/apple-touch-icon.png">
 <link rel="manifest" href="/manifest.json">
 <style>
 :root {
@@ -83,21 +86,19 @@ a { color: inherit; }
 .page { min-height: 100svh; display: grid; grid-template-rows: auto 1fr auto; padding: max(14px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom)); }
 .top, .head, .widget-header-brand { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .rest, .shop { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.logo { width: 36px; height: 36px; border-radius: 10px; background: var(--brand); color: var(--brand-ink); display: grid; place-items: center; font-weight: 600; font-size: 16px; flex: none; overflow: hidden; }
-.logo img, #pageLogoImg { width: 100%; height: 100%; object-fit: cover; display: block; }
-.logo span#pageLogoImg { width: auto; height: auto; object-fit: unset; }
+.rest .r-logo { flex: none; }
 .rest b, .shop b, .brand-title { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lang { font-size: 14px; color: var(--grey); padding: 8px 4px; text-decoration: none; margin-inline-start: auto; }
 .center { align-self: center; text-align: center; }
 .lbl { font-size: 15px; color: var(--grey); }
-.no, .widget-order-num { font-family: "Fraunces", serif; font-weight: 500; font-size: clamp(120px, 42vw, 200px); line-height: .95; letter-spacing: -.03em; direction: ltr; margin-top: 4px; }
+.no, .widget-order-num { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-weight: 500; font-size: clamp(120px, 42vw, 200px); line-height: .95; letter-spacing: -.03em; direction: ltr; margin-top: 4px; }
 .timer { position: relative; width: 168px; height: 168px; margin: 34px auto 0; }
 .timer svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .timer circle { fill: none; stroke-width: 6; }
 .timer .bg { stroke: var(--paper-2); }
 .timer .fg { stroke: var(--ink); stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
 .timer .t { position: absolute; inset: 0; display: grid; place-content: center; }
-.timer .t b { font-family: "Fraunces", serif; font-weight: 500; font-size: 44px; line-height: 1; direction: ltr; font-variant-numeric: tabular-nums; }
+.timer .t b { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-weight: 500; font-size: 44px; line-height: 1; direction: ltr; font-variant-numeric: tabular-nums; }
 .timer .t span { font-size: 13px; color: var(--grey); margin-top: 6px; }
 .done-msg, #ws { font-size: 26px; font-weight: 600; margin-top: 26px; }
 #ws, #wu, .ready-title, .brand-sub, .who, .step-labels, .foot-old { display: none; }
@@ -150,9 +151,7 @@ body[data-status="onway"] #ws { font-size: 22px; font-weight: 500; color: rgba(2
   <main class="page">
     <header class="top head widget-header-brand">
       <div class="rest shop">
-        <div class="logo" aria-hidden="true">
-          {% if brand.logo_url %}<img id="pageLogoImg" src="{{ brand.logo_url }}" alt="">{% else %}<span id="pageLogoImg">{{ brand.initial }}</span>{% endif %}
-        </div>
+        {{ logo_slot(brand, '36', 'pageLogo') }}
         <b class="brand-title">{{ brand.name }}</b>
       </div>
       <div class="live-time-chip" id="wt">--:--</div>
@@ -229,7 +228,6 @@ var permissionAcceptBtn = document.getElementById("permissionAcceptBtn");
 var wsEl = document.getElementById("ws");
 var wuEl = document.getElementById("wu");
 var stpChildren = document.getElementById("stp").children;
-var pageLogoImg = document.getElementById("pageLogoImg");
 var pushBanner = document.getElementById("pushBanner");
 var bannerActionBtn = document.getElementById("bannerActionBtn");
 var swReg = null;
@@ -425,8 +423,8 @@ async function showStickyOrderNotification(status){
 
     var notifOpts = {
       body: body,
-      icon: "/static/img/brand-logo.png?v=dawrak",
-      badge: "/static/img/brand-logo.png?v=dawrak",
+      icon: "/static/brand/icon-192.png",
+      badge: "/static/brand/icon-192.png",
       vibrate: isRing ? [600, 150, 600, 150, 900, 200, 600, 150, 900] : undefined,
       tag: "dawrak-order",
       renotify: isRing,
@@ -839,5 +837,6 @@ updateUI();
   setInterval(paint, 1000);
 })();
 </script>
+<script src="/static/js/restaurant-logo.js?v={{ static_version('js/restaurant-logo.js') if static_version is defined else '1' }}" defer></script>
 </body>
 </html>

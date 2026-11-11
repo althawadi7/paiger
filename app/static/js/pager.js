@@ -159,7 +159,7 @@ class PagerClient {
           artist: "مطعم البرجر الذهبي",
           album: "توجه إلى كاونتر الاستلام لأخذ وجبتك",
           artwork: [
-            { src: "/static/img/icon-512.png", sizes: "512x512", type: "image/png" }
+            { src: "/static/brand/icon-512.png", sizes: "512x512", type: "image/png" }
           ]
         });
       } else {
@@ -168,7 +168,7 @@ class PagerClient {
           artist: "مطعم البرجر الذهبي",
           album: "سننبهك فور جهوزية الطلب حتى لو هاتفك مقفل",
           artwork: [
-            { src: "/static/img/icon-512.png", sizes: "512x512", type: "image/png" }
+            { src: "/static/brand/icon-512.png", sizes: "512x512", type: "image/png" }
           ]
         });
       }
@@ -220,7 +220,7 @@ class PagerClient {
       try {
         new Notification(` طلبك #${this.order.order_number} جاهز للاستلام`, {
           body: "يرجى التوجه إلى كاونتر الاستلام لاستلام وجبتك",
-          icon: "/static/img/icon-512.png",
+          icon: "/static/brand/icon-512.png",
           requireInteraction: true
         });
       } catch (e) {}

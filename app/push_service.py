@@ -132,8 +132,8 @@ async def notify_order_push(order: dict):
         payload = {
             "title": title,
             "body": body,
-            "icon": "/static/img/brand-logo.png?v=dawrak",
-            "badge": "/static/img/brand-logo.png?v=dawrak",
+            "icon": "/static/brand/icon-192.png",
+            "badge": "/static/brand/icon-192.png",
             "url": f"/pager/{token}",
             "token": token,
             "order_id": order.get("id"),

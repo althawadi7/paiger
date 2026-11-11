@@ -6,9 +6,9 @@
 <meta name="x-apple-disable-message-reformatting">
 <meta name="color-scheme" content="light">
 <meta name="supported-color-schemes" content="light">
-<title>Paiger billing emails</title>
+<title>Trings billing emails</title>
 <!--
-  PAIGER · Billing emails (English only). ONE layout, 7 messages.
+  TINGS · Billing emails (English only). ONE layout, 7 messages.
   Production: emails/billing_base.html (this table layout) + one small child per message
   filling: preheader, eyebrow, eyebrow_tone (ink|ready|warn|error), headline, intro,
   rows (label/value pairs), button_label, button_url, note, attachment_name (optional).
@@ -17,7 +17,7 @@
 -->
 <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
 <style>
-  @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
+  @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap");
   body { margin: 0; padding: 0; }
   a { text-decoration: none; }
   @media (max-width: 620px) {
@@ -36,7 +36,7 @@
       <table role="presentation" class="wrap" width="560" cellpadding="0" cellspacing="0" border="0" style="width:560px;max-width:560px;">
 
         <!-- wordmark -->
-        <tr><td style="padding:0 4px 18px;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:22px;font-weight:600;color:#111111;">Paiger</td></tr>
+        <tr><td style="padding:0 4px 18px;font-family:'Outfit','IBM Plex Sans',Helvetica,Arial,sans-serif;font-size:22px;font-weight:600;color:#111111;">Trings</td></tr>
 
         <!-- card -->
         <tr><td style="background:#ffffff;border-radius:20px;border:1px solid #e6e6e8;">
@@ -46,7 +46,7 @@
               <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
                 <td id="eyebrow" style="font-family:'IBM Plex Sans',Arial,sans-serif;font-size:12.5px;font-weight:600;padding:4px 11px;border-radius:999px;background:#f6f6f7;color:#5f6368;">{{ eyebrow }}</td>
               </tr></table>
-              <h1 class="h1" id="headline" style="margin:16px 0 0;font-family:'Fraunces',Georgia,'Times New Roman',serif;font-size:30px;line-height:36px;font-weight:500;color:#111111;letter-spacing:-0.01em;">{{ headline }}</h1>
+              <h1 class="h1" id="headline" style="margin:16px 0 0;font-family:'Outfit','IBM Plex Sans',Helvetica,Arial,sans-serif;font-size:30px;line-height:36px;font-weight:500;color:#111111;letter-spacing:-0.01em;">{{ headline }}</h1>
               <p id="intro" style="margin:12px 0 0;font-family:'IBM Plex Sans',Arial,sans-serif;font-size:15.5px;line-height:24px;color:#3c4043;">{{ intro }}</p>
             </td></tr>
 
@@ -84,9 +84,9 @@
 
         <!-- footer -->
         <tr><td style="padding:22px 4px 0;font-family:'IBM Plex Sans',Arial,sans-serif;font-size:12px;line-height:19px;color:#8e8e93;">
-          You’re receiving this because you have a Paiger account for <span style="color:#5f6368;">Karak House</span>.<br>
+          You’re receiving this because you have a Trings account for <span style="color:#5f6368;">Karak House</span>.<br>
           Questions? Reply to this email or write to <a href="mailto:{{ support_email }}" style="color:#5f6368;text-decoration:underline;">support@paiger.app</a><br>
-          Paiger by Code Crafter · Manama, Bahrain
+          Trings by Code Crafter · Manama, Bahrain
         </td></tr>
       </table>
     </td></tr>
@@ -99,7 +99,7 @@
     const TONE = { ink: ["#111111", "#ffffff"], ready: ["#e7f8ee", "#15803d"], warn: ["#fdf2e3", "#b45309"], error: ["#fdecea", "#b42318"], grey: ["#f6f6f7", "#5f6368"] };
     const M = {
       trial: { tab: "Trial ending", tone: "warn", eyebrow: "Trial ends tomorrow", pre: "Pick a plan to keep paging without a break.",
-        h: "Your free trial ends tomorrow", i: "Karak House has paged 64 orders on Paiger so far. Pick a plan before Monday so your cashier keeps working without a break. No card is needed until you choose.",
+        h: "Your free trial ends tomorrow", i: "Karak House has paged 64 orders on Trings so far. Pick a plan before Monday so your cashier keeps working without a break. No card is needed until you choose.",
         rows: [["Trial ends", "Mon 9 Nov 2026"], ["Orders paged", "64"], ["Plans from", "BHD 0.100 per order"]], btn: "Choose a plan", att: "",
         note: "If you don’t pick a plan, the cashier pauses when the trial ends. Your settings and QR stand stay saved, so you can come back any time." },
       renew: { tab: "Renewal soon", tone: "grey", eyebrow: "Renews in 3 days", pre: "We’ll charge your saved card on 6 December.",
@@ -108,15 +108,15 @@
         note: "Want to switch to yearly and save BHD 30, or change your card? You can do it from your dashboard before the renewal date." },
       invoice: { tab: "New invoice", tone: "ink", eyebrow: "Invoice INV-2026-0042", pre: "BHD 15.000 due on 9 November.",
         h: "Your invoice is ready", i: "Here’s your invoice for the Monthly plan. You can pay it online in a minute by card or BenefitPay.",
-        rows: [["Invoice", "INV-2026-0042"], ["Amount due", "BHD 15.000"], ["Due date", "Mon 9 Nov 2026"]], btn: "Pay BHD 15.000", att: "Paiger-Invoice-INV-2026-0042.pdf",
+        rows: [["Invoice", "INV-2026-0042"], ["Amount due", "BHD 15.000"], ["Due date", "Mon 9 Nov 2026"]], btn: "Pay BHD 15.000", att: "Trings-Invoice-INV-2026-0042.pdf",
         note: "Paid already by bank transfer? Reply with the transfer reference and we’ll mark it as paid." },
       reminder: { tab: "Payment reminder", tone: "warn", eyebrow: "Due tomorrow", pre: "A quick reminder: BHD 15.000 is due tomorrow.",
         h: "A quick reminder about your invoice", i: "Invoice INV-2026-0042 is due tomorrow. Paying on time keeps your cashier running without a pause.",
-        rows: [["Invoice", "INV-2026-0042"], ["Amount due", "BHD 15.000"], ["Due date", "Mon 9 Nov 2026"]], btn: "Pay now", att: "Paiger-Invoice-INV-2026-0042.pdf",
+        rows: [["Invoice", "INV-2026-0042"], ["Amount due", "BHD 15.000"], ["Due date", "Mon 9 Nov 2026"]], btn: "Pay now", att: "Trings-Invoice-INV-2026-0042.pdf",
         note: "If you’ve just paid, you can ignore this email. The receipt is on its way." },
       paid: { tab: "Payment received", tone: "ready", eyebrow: "Paid", pre: "Thank you. Your receipt is attached.",
         h: "Thank you, payment received", i: "We’ve received your payment for Karak House. Your receipt is attached to this email and saved in your dashboard.",
-        rows: [["Receipt", "INV-2026-0042"], ["Amount paid", "BHD 15.000"], ["Paid with", "Visa ending 4242"], ["Active until", "Sat 5 Dec 2026"]], btn: "Open your dashboard", att: "Paiger-Receipt-INV-2026-0042.pdf",
+        rows: [["Receipt", "INV-2026-0042"], ["Amount paid", "BHD 15.000"], ["Paid with", "Visa ending 4242"], ["Active until", "Sat 5 Dec 2026"]], btn: "Open your dashboard", att: "Trings-Receipt-INV-2026-0042.pdf",
         note: "Paying for points? They’re already in your balance and ready for the next order." },
       failed: { tab: "Payment failed", tone: "error", eyebrow: "Payment failed", pre: "Your card was declined. Update it to keep paging.",
         h: "We couldn’t charge your card", i: "Your bank declined the renewal for Karak House. We’ll try again tomorrow, but updating your card now avoids any pause.",

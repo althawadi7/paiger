@@ -1,2 +1,2 @@
-# Paiger App Package
+# Trings App Package
 

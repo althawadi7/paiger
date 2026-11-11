@@ -1,3 +1,4 @@
+{% from "partials/restaurant_logo.html" import logo_slot %}
 <!DOCTYPE html>
 <html lang="ar" dir="rtl" data-theme="light">
 <head>
@@ -8,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@400;600;700;800&family=Sora:wght@700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined">
+  <link rel="stylesheet" href="/static/css/restaurant-logo.css">
   <style>
     :root {
       --bg: #f6f3ed;
@@ -46,16 +48,12 @@
       text-align: center;
     }
     .brand-icon-wrap {
-      width: 68px;
-      height: 68px;
-      border-radius: 20px;
-      background: var(--accent);
-      color: #ffffff;
-      display: inline-flex;
-      align-items: center;
+      display: flex;
       justify-content: center;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.12);
       margin-bottom: 16px;
+    }
+    .brand-icon-wrap .r-logo {
+      box-shadow: 0 10px 24px rgba(0,0,0,0.08);
     }
     .restaurant-name {
       font-size: 22px;
@@ -144,7 +142,7 @@
 
   <div class="track-box">
     <div class="brand-icon-wrap">
-      <span class="material-icons-outlined" style="font-size: 34px;">{{ restaurant.brand_icon|default('coffee') }}</span>
+      {{ logo_slot(brand, '68') }}
     </div>
 
     <h1 class="restaurant-name">{{ restaurant.name }}</h1>
@@ -168,10 +166,11 @@
 
     <div class="footer-note">
       <span class="material-icons-outlined" style="font-size: 14px;">verified_user</span>
-      <span>نظام البيجر اللحظي الذكي • Paiger</span>
+      <span>تنبيهات الطلب اللحظية • Trings</span>
     </div>
   </div>
 
+<script src="/static/js/restaurant-logo.js" defer></script>
 </body>
 </html>
 

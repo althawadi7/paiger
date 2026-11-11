@@ -1,5 +1,5 @@
 Your free trial ends tomorrow
-{{ restaurant_name }} has paged {{ orders_paged }} orders on Paiger so far. Pick a plan before {{ ends_day }} so your cashier keeps working without a break. No card is needed until you choose.
+{{ restaurant_name }} has paged {{ orders_paged }} orders on Trings so far. Pick a plan before {{ ends_day }} so your cashier keeps working without a break. No card is needed until you choose.
 
 Trial ends: {{ ends_label }}
 Orders paged: {{ orders_paged }}
@@ -9,5 +9,5 @@ Choose a plan: {{ button_url }}
 
 If you don’t pick a plan, the cashier pauses when the trial ends. Your settings and QR stand stay saved, so you can come back any time.
 
-Paiger account: {{ restaurant_name }}
+Trings account: {{ restaurant_name }}
 {{ support_email }}

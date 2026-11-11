@@ -10,5 +10,5 @@ Manage subscription: {{ button_url }}
 
 {% if yearly_save %}Want to switch to yearly and save BHD {{ yearly_save }}, or change your card? You can do it from your dashboard before the renewal date.{% else %}You can change your card from your dashboard before the renewal date.{% endif %}
 
-Paiger account: {{ restaurant_name }}
+Trings account: {{ restaurant_name }}
 {{ support_email }}

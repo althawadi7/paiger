@@ -1,8 +1,7 @@
+{% from "partials/restaurant_logo.html" import logo_slot %}
 <aside class="side" id="side">
   <div class="rest">
-    <div class="rlogo">
-      {% if brand.logo_url %}<img src="{{ brand.logo_url }}" alt="">{% else %}{{ brand.initial }}{% endif %}
-    </div>
+    {{ logo_slot(brand, '38') }}
     <div><b>{{ restaurant.name }}</b><span>{{ t('dash.owner') }}</span></div>
   </div>
   <nav class="nav" aria-label="{{ t('dash.nav') }}">

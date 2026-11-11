@@ -268,7 +268,7 @@ def _doc_model(invoice: dict, request: Optional[Request], for_pdf: bool, base: s
 def _pdf_name(invoice: dict) -> str:
     status = invoice.get("status") or ""
     kind = "Receipt" if status == "paid" else "Credit-note" if status == "refunded" else "Invoice"
-    return f"Paiger-{kind}-{invoice.get('number')}.pdf"
+    return f"Trings-{kind}-{invoice.get('number')}.pdf"
 
 
 def invoice_pdf_bytes(invoice: dict) -> bytes:
@@ -361,13 +361,13 @@ def install(app: FastAPI, templates) -> None:
         try:
             host = base.rstrip("/")
             text = (
-                f"{name} is ready on Paiger.\n"
+                f"{name} is ready on Trings.\n"
                 f"Dashboard: {host}/dashboard\n"
                 f"Cashier: {host}/r/{slug}/cashier\n"
                 f"Customer link: {host}/r/{slug}\n"
             )
             html = "".join(f"<p>{line}</p>" for line in text.splitlines() if line)
-            await asyncio.to_thread(mailer.send_email, email, "Welcome to Paiger", html, text)
+            await asyncio.to_thread(mailer.send_email, email, "Welcome to Trings", html, text)
         except Exception:
             _log.exception("Could not prepare the welcome email")
 

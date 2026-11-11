@@ -197,25 +197,26 @@ html, body {
 
 .btn-brand {
   width: 100%;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: #F05A28;
   color: #fff;
   border: none;
   border-radius: 12px;
   padding: 14px;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 15px rgba(240, 90, 40, 0.28);
   transition: all 0.2s;
 }
 
 .btn-brand:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+  background: #D94E22;
+  box-shadow: 0 6px 20px rgba(240, 90, 40, 0.35);
 }
 
 /* Stats summary */

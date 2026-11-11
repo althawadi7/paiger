@@ -1,9 +1,11 @@
 {% extends "base.html" %}
-{% block title %}{{ t('cash.title') }} · {{ restaurant.name }} · Paiger{% endblock %}
+{% from "partials/restaurant_logo.html" import logo_slot %}
+{% block title %}{{ t('cash.title') }} · {{ restaurant.name }} · Trings{% endblock %}
 {% block shell_nav %}{% endblock %}
 {% block shell_footer %}{% endblock %}
 {% block head %}
 <meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="/static/css/restaurant-logo.css?v={{ static_version('css/restaurant-logo.css') if static_version is defined else '1' }}">
 <style>
 :root {
   --ink: #111111; --ink-2: #1c1c1e;
@@ -12,7 +14,7 @@
   --ready: #22c55e; --ready-deep: #15803d; --ready-soft: #e7f8ee;
   --late: #b45309; --late-soft: #fdf2e3;
   --danger: #c2410c;
-  --display: "Fraunces", Georgia, serif;
+  --display: "Outfit", "IBM Plex Sans", -apple-system, sans-serif;
   --sans: "IBM Plex Sans", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", sans-serif;
   --ease: cubic-bezier(.2, .7, .2, 1);
   --r: 18px;
@@ -27,8 +29,6 @@ input, textarea { font: inherit; color: inherit; }
 .num-font { font-family: var(--display); font-variant-numeric: lining-nums tabular-nums; direction: ltr; unicode-bidi: isolate; }
 .bar { height: 64px; display: flex; align-items: center; gap: 18px; padding: 0 20px; background: var(--paper); border-bottom: 1px solid var(--line); }
 .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.brand-logo { width: 38px; height: 38px; border-radius: 11px; background: var(--ink); color: #fff; display: grid; place-items: center; font-family: var(--display); font-weight: 600; font-size: 18px; flex: none; overflow: hidden; }
-.brand-logo img { width: 100%; height: 100%; object-fit: cover; }
 .brand b { font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .live { display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--paper-2); font-size: 13px; color: var(--grey); white-space: nowrap; }
 .live i { width: 8px; height: 8px; border-radius: 50%; background: var(--ready); box-shadow: 0 0 0 3px rgba(34,197,94,.18); }
@@ -192,7 +192,7 @@ html[dir="rtl"] .toast .bar-time { transform-origin: right; }
 {% if restaurant_brand is defined %}
   {% set brand = restaurant_brand(restaurant) %}
 {% else %}
-  {% set brand = {"name": restaurant.name or "Paiger", "logo_url": (restaurant.logo_url or "")|trim or none, "initial": (restaurant.name or "P")[:1], "brand": restaurant.brand_color or "#111111", "brand_ink": "#ffffff"} %}
+  {% set brand = {"name": restaurant.name or "Trings", "logo_url": (restaurant.logo_url or "")|trim or none, "initial": (restaurant.name or "P")[:1], "brand": restaurant.brand_color or "#111111", "brand_ink": "#ffffff"} %}
 {% endif %}
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
@@ -208,7 +208,7 @@ html[dir="rtl"] .toast .bar-time { transform-origin: right; }
 </svg>
   <header class="bar">
     <div class="brand">
-    <div class="brand-logo" style="background: {{ brand.brand }}; color: {{ brand.brand_ink }}" aria-hidden="true">{% if brand.logo_url %}<img src="{{ brand.logo_url }}" alt="">{% else %}{{ brand.initial }}{% endif %}</div>
+    {{ logo_slot(brand, '38') }}
     <b>{{ brand.name }}</b>
       </div>
   <span class="live off" id="live" role="status"><i></i><span>{{ t('cash.offline') }}</span></span>
@@ -286,6 +286,7 @@ html[dir="rtl"] .toast .bar-time { transform-origin: right; }
 <div class="toast" id="toast" hidden role="status"><span id="toastText"></span><button type="button" id="toastUndo">{{ t('cash.undo') }}</button><i class="bar-time"></i></div>
 {% endblock %}
 {% block scripts %}
+<script src="/static/js/restaurant-logo.js?v={{ static_version('js/restaurant-logo.js') if static_version is defined else '1' }}" defer></script>
 <script>
 window.PAIGER_I18N = {{ {
   "typeNumber": t("cash.typeNumber"),

@@ -1,14 +1,15 @@
+@import url("/static/css/restaurant-logo.css");
 /* =====================================================================
-   PAIGER · Restaurant dashboard: Overview, Orders, Subscription, Settings
+   TINGS · Restaurant dashboard: Overview, Orders, Subscription, Settings
    One prototype file; production = one template per section on base.html.
    ===================================================================== */
 :root {
-  --ink: #111111; --ink-2: #1c1c1e; --grey: #5f6368; --grey-2: #8e8e93; --line: #e6e6e8;
+  --brand: #F05A28; --brand-hover: #D94E22; --brand-ink: #fff;
+  --ink: #1C1B1F; --ink-2: #1c1c1e; --grey: #5f6368; --grey-2: #8e8e93; --line: #e6e6e8;
   --paper: #ffffff; --paper-2: #f6f6f7; --paper-3: #ececee;
   --ready: #22c55e; --ready-deep: #15803d; --ready-soft: #e7f8ee;
   --warn: #b45309; --warn-soft: #fdf2e3; --error: #b42318; --error-soft: #fdecea;
-  --brand: #c2410c; --brand-ink: #fff;
-  --display: "Fraunces", Georgia, serif;
+  --display: "Outfit", "IBM Plex Sans", -apple-system, sans-serif;
   --sans: "IBM Plex Sans", "IBM Plex Sans Arabic", -apple-system, "Segoe UI", sans-serif;
   --ease: cubic-bezier(.2, .7, .2, 1);
 }
@@ -22,19 +23,18 @@ a { color: inherit; }
 :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 [hidden] { display: none !important; }
 .num { font-family: var(--display); font-variant-numeric: lining-nums tabular-nums; direction: ltr; unicode-bidi: isolate; }
-html[lang="ar"] .num { font-family: "Fraunces", serif; }
+html[lang="ar"] .num { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; }
 
 /* ---------- shell ---------- */
 .shell { min-height: 100svh; display: grid; grid-template-columns: 248px minmax(0, 1fr); }
 .side { position: sticky; top: 0; height: 100svh; background: var(--paper); border-inline-end: 1px solid var(--line); padding: 18px 14px; display: flex; flex-direction: column; gap: 4px; }
 .rest { display: flex; align-items: center; gap: 10px; padding: 6px 8px 18px; }
-.rlogo { width: 38px; height: 38px; border-radius: 11px; background: var(--brand); color: var(--brand-ink); display: grid; place-items: center; font-family: "Fraunces", serif; font-weight: 600; font-size: 18px; flex: none; overflow: hidden; }
-.rlogo img { width: 100%; height: 100%; object-fit: cover; }
+.side .rest .r-logo { flex: none; }
 .rest b { display: block; font-size: 15px; font-weight: 600; line-height: 1.25; }
 .rest span { font-size: 12.5px; color: var(--grey); }
 .nav a { display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; border-radius: 12px; text-decoration: none; color: var(--grey); font-weight: 500; }
 .nav a:hover { background: var(--paper-2); color: var(--ink); }
-.nav a[aria-current="page"] { background: var(--ink); color: #fff; }
+.nav a[aria-current="page"] { background: var(--brand); color: #fff; }
 .nav svg { width: 20px; height: 20px; flex: none; }
 .nav .badge { margin-inline-start: auto; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); }
 .nav a[aria-current="page"] .badge { background: rgba(255,255,255,.18); color: #fff; }
@@ -154,7 +154,7 @@ table.t { width: 100%; border-collapse: collapse; font-size: 14.5px; }
 .plan .for { font-size: 13.5px; color: var(--grey); min-height: 2.8em; padding-inline-end: 28px; }
 .plan .price { margin-top: 8px; display: flex; align-items: baseline; gap: 6px; direction: ltr; justify-content: flex-start; }
 html[dir="rtl"] .plan .price { justify-content: flex-end; }
-.plan .price b { font-family: "Fraunces", serif; font-size: 36px; font-weight: 500; line-height: 1; }
+.plan .price b { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-size: 36px; font-weight: 500; line-height: 1; }
 .plan .price span { font-size: 13.5px; color: var(--grey); }
 .plan .save { font-size: 13px; font-weight: 600; color: var(--ready-deep); min-height: 1.4em; }
 .plan .feats { list-style: none; margin-top: 8px; display: grid; gap: 4px; font-size: 13px; color: var(--grey); }
@@ -184,13 +184,13 @@ html[dir="rtl"] .plan .price { justify-content: flex-end; }
 .sum { display: grid; gap: 10px; font-size: 14.5px; }
 .sum div { display: flex; justify-content: space-between; gap: 12px; }
 .sum .tot { padding-top: 12px; border-top: 1px solid var(--line); font-size: 16px; font-weight: 600; }
-.sum .tot b { font-family: "Fraunces", serif; font-size: 26px; font-weight: 500; direction: ltr; }
+.sum .tot b { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-size: 26px; font-weight: 500; direction: ltr; }
 .sum .muted { color: var(--grey); font-size: 13.5px; }
 .pay { margin-top: 16px; width: 100%; height: 52px; font-size: 16px; }
 .secure { margin-top: 10px; font-size: 12.5px; color: var(--grey); text-align: center; }
 
 .wallet { padding: 20px; display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center; margin-bottom: 18px; }
-.wallet .bal b { font-family: "Fraunces", serif; font-size: 46px; font-weight: 500; line-height: 1; display: block; direction: ltr; }
+.wallet .bal b { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-size: 46px; font-weight: 500; line-height: 1; display: block; direction: ltr; }
 .wallet .bal span { font-size: 13.5px; color: var(--grey); }
 .meter { height: 8px; border-radius: 8px; background: var(--paper-3); overflow: hidden; }
 .meter i { display: block; height: 100%; border-radius: inherit; background: var(--ink); }
@@ -216,8 +216,7 @@ html[dir="rtl"] .plan .price { justify-content: flex-end; }
 .f .help { margin-top: 6px; font-size: 13px; color: var(--grey); }
 .f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .brand-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
-.big-logo { width: 72px; height: 72px; border-radius: 18px; background: var(--brand); color: var(--brand-ink); display: grid; place-items: center; font-family: "Fraunces", serif; font-weight: 600; font-size: 32px; overflow: hidden; flex: none; }
-.big-logo img { width: 100%; height: 100%; object-fit: cover; }
+.brand-row .r-logo { flex: none; }
 .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
 .swatch { width: 36px; height: 36px; border-radius: 10px; background: var(--c); position: relative; box-shadow: 0 0 0 1px rgba(0,0,0,.08) inset; }
 .swatch[aria-checked="true"]::after { content: ""; position: absolute; inset: -4px; border-radius: 13px; box-shadow: 0 0 0 2px var(--ink); }

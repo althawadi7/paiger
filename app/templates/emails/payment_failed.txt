@@ -10,5 +10,5 @@ Update card: {{ button_url }}
 
 Common reasons are an expired card, low balance or online payments turned off. Your bank can tell you which one.
 
-Paiger account: {{ restaurant_name }}
+Trings account: {{ restaurant_name }}
 {{ support_email }}

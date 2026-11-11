@@ -1,24 +1,24 @@
 {
-  "name": "مطعم البرجر الذهبي - بيجر الطلبات الذكي",
-  "short_name": "بيجر المطعم",
-  "description": "بيجر ذكي لمتابعة وتنبيه جهوزية طلبات المطاعم",
+  "name": "Trings",
+  "short_name": "Trings",
+  "description": "Ring customers when their order is ready — no buzzers, just their phone.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f1220",
-  "theme_color": "#0f1220",
+  "background_color": "#1C1B1F",
+  "theme_color": "#F05A28",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/static/img/brand-logo.png",
+      "src": "/static/brand/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/brand/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
-    },
-    {
-      "src": "/static/img/brand-ready.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
     }
   ]
 }

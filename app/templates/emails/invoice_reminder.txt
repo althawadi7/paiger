@@ -10,5 +10,5 @@ Pay: {{ button_url }}
 
 If you’ve just paid, you can ignore this email. The receipt is on its way.
 
-Paiger account: {{ restaurant_name }}
+Trings account: {{ restaurant_name }}
 {{ support_email }}

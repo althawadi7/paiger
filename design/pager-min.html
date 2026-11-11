@@ -8,9 +8,9 @@
 <!-- KEEP from the morning page in production: the apple-itunes-app / App Clip meta tag and every <script> as-is. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* PAIGER · Customer page, minimal. One number, one countdown, one button. */
+/* TINGS · Customer page, minimal. One number, one countdown, one button. */
 :root {
   --ink: #111111; --grey: #5f6368; --line: #e6e6e8; --paper: #ffffff; --paper-2: #f6f6f7;
   --ready: #15803d; --brand: #111111; --brand-ink: #fff;
@@ -33,7 +33,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 
 .center { align-self: center; text-align: center; }
 .lbl { font-size: 15px; color: var(--grey); }
-.no { font-family: "Fraunces", serif; font-weight: 500; font-size: clamp(120px, 42vw, 200px); line-height: .95; letter-spacing: -.03em; direction: ltr; margin-top: 4px; }
+.no { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-weight: 500; font-size: clamp(120px, 42vw, 200px); line-height: .95; letter-spacing: -.03em; direction: ltr; margin-top: 4px; }
 
 /* countdown ring */
 .ring { position: relative; width: 168px; height: 168px; margin: 34px auto 0; }
@@ -42,7 +42,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .ring .bg { stroke: var(--paper-2); }
 .ring .fg { stroke: var(--ink); stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
 .ring .t { position: absolute; inset: 0; display: grid; place-content: center; }
-.ring .t b { font-family: "Fraunces", serif; font-weight: 500; font-size: 44px; line-height: 1; direction: ltr; font-variant-numeric: tabular-nums; }
+.ring .t b { font-family: "Outfit", "IBM Plex Sans", -apple-system, sans-serif; font-weight: 500; font-size: 44px; line-height: 1; direction: ltr; font-variant-numeric: tabular-nums; }
 .ring .t span { font-size: 13px; color: var(--grey); margin-top: 6px; }
 
 .done-msg { font-size: 26px; font-weight: 600; margin-top: 26px; }
