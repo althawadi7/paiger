@@ -292,6 +292,7 @@ def render_billing_email(kind: str, restaurant: Dict[str, Any], ref: Optional[Di
     ctx["when"] = ref.get("when") or "due"
     ctx["next_try"] = short_date(ref.get("next_try"))
     ctx["pauses_on"] = short_date(ref.get("pauses_on"))
+    ctx["topup"] = bool(ref.get("topup"))
     if ref.get("amount_fils") is not None and not ctx.get("amount"):
         ctx["amount"] = _money(ref.get("amount_fils"))
     if ref.get("paid_with"):
@@ -528,6 +529,7 @@ def send_payment_failed(
     card_brand: str = "",
     next_try: Any = None,
     pauses_on: Any = None,
+    topup: bool = False,
 ) -> Dict[str, str]:
     if amount_fils is None:
         code = restaurant.get("plan_code") or "monthly"
@@ -539,6 +541,7 @@ def send_payment_failed(
         "card_brand": card_brand,
         "next_try": next_try,
         "pauses_on": pauses_on,
+        "topup": topup,
         "plan_code": restaurant.get("plan_code") or "",
     })
 
@@ -659,11 +662,15 @@ def run_daily() -> List[Dict[str, str]]:
     sent.extend(_daily_trials())
     sent.extend(_daily_reminders())
     sent.extend(_daily_renewals())
+    from . import payments as pay
     try:
-        from . import payments as pay
         pay.run_auto_renewals()
     except Exception:
         logger.exception("auto renewal job failed")
+    try:
+        pay.run_auto_topups()
+    except Exception:
+        logger.exception("auto top-up job failed")
     return [row for row in sent if row.get("error") != "already sent"]
 
 

@@ -17,8 +17,11 @@
   var plans = boot.plans || [];
   var messages = boot.messages || {};
   var selectedCode = boot.must_pick ? "" : boot.selected || "";
-  var loadedCode = "";
+  var packs = boot.packs || [];
+  var selectedPack = boot.pack || null;
+  var loadedKey = "";
   var intents = {};
+  var saveMode = "";
 
   var summaryPlan = document.getElementById("summaryPlanName");
   var summaryNote = document.getElementById("summaryNote");
@@ -27,7 +30,11 @@
   var scheduleBtn = document.getElementById("schedulePlanBtn");
   var saveCard = document.getElementById("saveCardSub");
   var saveCardRow = document.getElementById("saveCardRow");
+  var saveCardText = document.getElementById("saveCardText");
   var payAhead = document.getElementById("payAheadBtn");
+  var buyPoints = document.getElementById("buyPointsBtn");
+  var packPicker = document.getElementById("packPicker");
+  var packItems = packPicker ? packPicker.querySelectorAll(".pack[role='radio']") : [];
   var cancelChange = document.getElementById("cancelPlanChange");
   var currentCode = boot.current || "";
 
@@ -38,31 +45,69 @@
     return null;
   }
 
+  function packById(id) {
+    for (var i = 0; i < packs.length; i++) {
+      if (String(packs[i].id) === String(id)) return packs[i];
+    }
+    return null;
+  }
+
   function isSchedule(plan) {
     return !!plan && plan.mode === "schedule";
+  }
+
+  function isPacks(plan) {
+    return !!plan && plan.mode === "packs";
+  }
+
+  function checkoutKey() {
+    var plan = planByCode(selectedCode);
+    return isPacks(plan) ? selectedCode + ":" + (selectedPack || "") : selectedCode;
+  }
+
+  function syncSaveRow(plan) {
+    var mode = isPacks(plan) ? "topup" : "renew";
+    if (mode === saveMode) return;
+    saveMode = mode;
+    if (saveCardText) saveCardText.textContent = mode === "topup" ? messages.save_topup : messages.save_renew;
+    if (saveCard) saveCard.checked = mode === "topup" ? !!boot.auto_topup : true;
   }
 
   function updateSummary() {
     var plan = planByCode(selectedCode);
     var schedule = isSchedule(plan);
-    if (summaryPlan) summaryPlan.textContent = plan ? plan.summary_name || plan.name : messages.empty_plan || "—";
+    var pack = isPacks(plan) ? packById(selectedPack) : null;
+    var name = plan ? plan.summary_name || plan.name : messages.empty_plan || "—";
+    if (pack) {
+      name = (messages.pack_summary || "{plan} · {n}")
+        .replace("{plan}", plan.name)
+        .replace("{n}", Number(pack.points).toLocaleString("en-US"));
+    }
+    var due = "—";
+    if (plan && isPacks(plan)) due = pack ? "BHD " + pack.price_label : "—";
+    else if (plan) due = "BHD " + (schedule ? "0.000" : plan.price_label);
+    if (summaryPlan) summaryPlan.textContent = name;
     if (summaryNote) {
       summaryNote.textContent = (plan && plan.note) || "";
       summaryNote.hidden = !(plan && plan.note);
     }
-    if (summaryDue) summaryDue.textContent = plan ? "BHD " + (schedule ? "0.000" : plan.price_label) : "—";
+    if (summaryDue) summaryDue.textContent = due;
     if (payBtn) payBtn.hidden = schedule;
     if (saveCardRow) saveCardRow.hidden = schedule;
     if (scheduleBtn) scheduleBtn.hidden = !schedule;
+    if (packPicker) packPicker.hidden = !isPacks(plan);
+    syncSaveRow(plan);
   }
 
-  function createIntent(code) {
-    return TringsMF.postJson("/api/billing/checkout/intent", { purpose: "subscribe", plan_code: code }).then(
-      function (body) {
-        intents[code] = body.intent.intent_id;
-        return intents[code];
-      }
-    );
+  function createIntent(key) {
+    var plan = planByCode(selectedCode);
+    var body = isPacks(plan)
+      ? { purpose: "topup", pack_id: selectedPack, plan_code: selectedCode }
+      : { purpose: "subscribe", plan_code: selectedCode };
+    return TringsMF.postJson("/api/billing/checkout/intent", body).then(function (res) {
+      intents[key] = res.intent.intent_id;
+      return intents[key];
+    });
   }
 
   function openSession(code, intentId) {
@@ -74,17 +119,20 @@
 
   function getSession() {
     var code = selectedCode;
-    if (!planByCode(code)) return Promise.reject(new Error("No plan selected"));
-    var known = intents[code];
-    var first = known ? openSession(code, known) : createIntent(code).then(function (id) {
+    var plan = planByCode(code);
+    if (!plan) return Promise.reject(new Error("No plan selected"));
+    if (isPacks(plan) && !packById(selectedPack)) return Promise.reject(new Error("No pack selected"));
+    var key = checkoutKey();
+    var known = intents[key];
+    var first = known ? openSession(code, known) : createIntent(key).then(function (id) {
       return openSession(code, id);
     });
     return first
       .catch(function (err) {
         if (known && err && err.status === 400) {
           console.warn(TAG, "intent no longer usable, creating a new one", err.detail);
-          delete intents[code];
-          return createIntent(code).then(function (id) {
+          delete intents[key];
+          return createIntent(key).then(function (id) {
             return openSession(code, id);
           });
         }
@@ -117,6 +165,7 @@
     },
     canPay: function () {
       var plan = planByCode(selectedCode);
+      if (isPacks(plan)) return !!packById(selectedPack);
       return !!plan && !isSchedule(plan);
     },
     getSession: getSession,
@@ -149,15 +198,46 @@
     updateSummary();
     console.info(TAG, "plan-click", code, plan.mode);
     if (isSchedule(plan)) {
-      loadedCode = "";
+      loadedKey = "";
       checkout.idle(messages.no_charge);
       return;
     }
-    if (code !== loadedCode) {
-      loadedCode = code;
+    var key = checkoutKey();
+    if (key !== loadedKey) {
+      loadedKey = key;
       checkout.start();
     }
   }
+
+  function markPacks() {
+    Array.prototype.forEach.call(packItems, function (node) {
+      var on = String(node.getAttribute("data-pack")) === String(selectedPack);
+      node.setAttribute("aria-checked", on ? "true" : "false");
+      node.tabIndex = on ? 0 : -1;
+    });
+  }
+
+  function pickPack(node) {
+    selectedPack = Number(node.getAttribute("data-pack"));
+    markPacks();
+    if (isPacks(planByCode(selectedCode))) choose(selectedCode);
+  }
+
+  if (!packById(selectedPack) && packs.length) selectedPack = packs[0].id;
+  markPacks();
+  Array.prototype.forEach.call(packItems, function (node, idx) {
+    node.addEventListener("click", function () {
+      pickPack(node);
+    });
+    node.addEventListener("keydown", function (ev) {
+      var step = ev.key === "ArrowRight" || ev.key === "ArrowDown" ? 1 : ev.key === "ArrowLeft" || ev.key === "ArrowUp" ? -1 : 0;
+      if (!step) return;
+      ev.preventDefault();
+      var next = packItems[(idx + step + packItems.length) % packItems.length];
+      next.focus();
+      pickPack(next);
+    });
+  });
 
   var group = document.querySelector(".plans[role='radiogroup']");
   var items = group ? group.querySelectorAll(".plan[role='radio']") : [];
@@ -175,21 +255,28 @@
     });
   }
 
+  function pressCardAction(on) {
+    if (payAhead) payAhead.setAttribute("aria-pressed", on === payAhead ? "true" : "false");
+    if (buyPoints) buyPoints.setAttribute("aria-pressed", on === buyPoints ? "true" : "false");
+  }
+
   function pick(el) {
     if (locked(el)) return;
     markItems(el);
-    if (payAhead) payAhead.setAttribute("aria-pressed", "false");
+    pressCardAction(null);
     choose(el.getAttribute("data-code") || "");
   }
 
-  function pickPayAhead() {
-    if (!payAhead || !currentCode) return;
+  function pickCurrent() {
+    var button = currentCode === "points" ? buyPoints : payAhead;
+    if (!button || !currentCode) return;
     markItems(null);
-    payAhead.setAttribute("aria-pressed", "true");
+    pressCardAction(button);
     choose(currentCode);
   }
 
-  if (payAhead) payAhead.addEventListener("click", pickPayAhead);
+  if (payAhead) payAhead.addEventListener("click", pickCurrent);
+  if (buyPoints) buyPoints.addEventListener("click", pickCurrent);
 
   if (scheduleBtn) {
     scheduleBtn.addEventListener("click", function () {
@@ -246,7 +333,7 @@
   if (saveCard) {
     saveCard.addEventListener("change", function () {
       var plan = planByCode(selectedCode);
-      if (plan && !isSchedule(plan)) checkout.start();
+      if (plan && !isSchedule(plan) && checkoutKey() === loadedKey) checkout.start();
     });
   }
 
@@ -255,7 +342,7 @@
   Array.prototype.forEach.call(items, function (el) {
     if (selectedCode && (el.getAttribute("data-code") || "") === selectedCode) initial = el;
   });
-  if (selectedCode && selectedCode === currentCode && payAhead) pickPayAhead();
+  if (selectedCode && selectedCode === currentCode && (payAhead || buyPoints)) pickCurrent();
   else if (initial && !locked(initial)) pick(initial);
   else {
     selectedCode = "";

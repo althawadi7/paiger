@@ -884,6 +884,7 @@ def create_invoice(
     admin_id: Optional[int] = None,
     pack_id: Optional[int] = None,
     points: Optional[int] = None,
+    notify: bool = True,
 ) -> str:
     total = sum(int(line.get("amount_fils") or 0) for line in lines)
     token = secrets.token_urlsafe(32)
@@ -907,7 +908,8 @@ def create_invoice(
             conn.commit()
     finally:
         conn.close()
-    _queue_invoice_email(number)
+    if notify:
+        _queue_invoice_email(number)
     return number
 
 
@@ -1135,6 +1137,14 @@ def apply_paid_invoice(
             row["id"],
         ),
     )
+    plan_code = None
+    try:
+        for line in json.loads(row.get("lines") or "[]"):
+            if line.get("plan_code"):
+                plan_code = str(line["plan_code"]).strip()
+                break
+    except json.JSONDecodeError:
+        plan_code = None
     if row.get("kind") == "topup":
         cur.execute(
             "SELECT id FROM point_ledger WHERE ref_invoice_id=%s AND kind='topup' LIMIT 1",
@@ -1144,14 +1154,9 @@ def apply_paid_invoice(
             points = int(row.get("points") or 0)
             if points:
                 _ledger(cur, int(row["restaurant_id"]), points, row.get("description") or "Top up", "topup", row["id"], admin_id)
-    plan_code = None
-    try:
-        for line in json.loads(row.get("lines") or "[]"):
-            if line.get("plan_code"):
-                plan_code = str(line["plan_code"]).strip()
-                break
-    except json.JSONDecodeError:
-        plan_code = None
+        cur.execute("UPDATE restaurants SET auto_topup_failed_at=NULL WHERE id=%s", (row["restaurant_id"],))
+        if plan_code == "points":
+            _switch_to_points(cur, int(row["restaurant_id"]))
     period_end = row.get("period_end")
     if row.get("kind") in ("subscription", "renewal", "manual") and period_end:
         sets = [
@@ -1168,6 +1173,32 @@ def apply_paid_invoice(
             tuple(args),
         )
     return {"number": number, "restaurant_id": int(row["restaurant_id"]), "invoice_id": int(row["id"])}
+
+
+def _switch_to_points(cur, restaurant_id: int) -> None:
+    """Pay-per-order after a pack purchase: now, or at the end of a paid monthly/yearly period."""
+    cur.execute("SELECT * FROM restaurants WHERE id=%s FOR UPDATE", (restaurant_id,))
+    rest = cur.fetchone()
+    if not rest:
+        return
+    current = (rest.get("plan_code") or "").strip()
+    state = db.effective_status(rest)
+    until = as_date(rest.get("manual_plan_until"))
+    if current in ("monthly", "yearly") and state == "active" and until and until > owner_board.bahrain_now().date():
+        cur.execute(
+            "UPDATE restaurants SET scheduled_plan_code='points', scheduled_plan_at=%s WHERE id=%s",
+            (until, restaurant_id),
+        )
+    elif current != "points" or state != "active":
+        cur.execute(
+            """
+            UPDATE restaurants
+            SET plan_code='points', subscription_status='active', trial_ends_at=NULL, renewal_retry_count=0,
+                scheduled_plan_code=NULL, scheduled_plan_at=NULL
+            WHERE id=%s
+            """,
+            (restaurant_id,),
+        )
 
 
 def owner_documents(restaurant_id: int) -> List[Dict[str, Any]]:

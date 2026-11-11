@@ -25,7 +25,7 @@
             <input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn btn-quiet btn-sm" type="submit">{{ t('admin.delete') }}</button>
           </form>
           {% else %}
-          <span class="tip" title="{{ t('admin.inUse') }}"><button class="btn btn-quiet btn-sm" type="button" disabled>{{ t('admin.delete') }}</button></span>
+          <span class="del-lock" title="{{ t('admin.inUse') }}"><button class="btn btn-quiet btn-sm" type="button" disabled aria-label="{{ t('admin.delete') }} · {{ t('admin.inUse') }}">{{ t('admin.delete') }}</button></span>
           {% endif %}
         </span>
       </div>
@@ -33,9 +33,9 @@
     {% endfor %}
   </div>
   <h2 class="h3">{{ t('admin.packsTitle') }} <button class="btn btn-line btn-sm" type="button" id="addPack">{{ t('admin.addPack') }}</button></h2>
-  <div class="card">
+  <div class="card packs-card">
     <div class="table-scroll">
-      <table class="t">
+      <table class="t t-fit">
         <thead><tr><th>{{ t('admin.cPoints') }}</th><th>{{ t('admin.cPrice') }}</th><th>{{ t('admin.cPerPoint') }}</th><th>{{ t('admin.cSold') }}</th><th>{{ t('admin.cVisible') }}</th><th></th></tr></thead>
         <tbody>
           {% for pack in packs %}
@@ -57,7 +57,7 @@
             <td>
               <button class="btn btn-quiet btn-sm edit-pack" type="button" data-pack='{{ {"id": pack.id, "points": pack.points, "price": pack.price_label, "active": pack.active}|tojson }}'>{{ t('admin.edit') }}</button>
               {% if pack.sold == 0 %}
-              <form method="post" action="/admin/packs/{{ pack.id }}/delete" style="display:inline" data-ask="pack" data-name="{{ pack.points }}">
+              <form method="post" action="/admin/packs/{{ pack.id }}/delete" data-ask="pack" data-name="{{ pack.points }}">
                 <input type="hidden" name="csrf" value="{{ csrf }}"><button class="btn btn-quiet btn-sm" type="submit">{{ t('admin.delete') }}</button>
               </form>
               {% endif %}
@@ -84,7 +84,7 @@
 </section>
 <div class="modal" id="planModal" hidden role="dialog" aria-modal="true" aria-labelledby="pmTitle">
   <div class="backdrop" data-close></div>
-  <form class="box" method="post" action="/admin/plans/save" data-price="{{ t('admin.err.price') }}" data-format="{{ t('admin.err.codeFormat') }}" data-taken="{{ t('admin.err.codeTaken') }}" data-deleted="{{ t('admin.err.codeDeleted') }}" data-invalid="{{ t('admin.err.invalid') }}">
+  <form class="box wide" method="post" action="/admin/plans/save" data-price="{{ t('admin.err.price') }}" data-format="{{ t('admin.err.codeFormat') }}" data-taken="{{ t('admin.err.codeTaken') }}" data-deleted="{{ t('admin.err.codeDeleted') }}" data-invalid="{{ t('admin.err.invalid') }}">
     <input type="hidden" name="csrf" value="{{ csrf }}">
     <input type="hidden" name="active" id="pmActive" value="1">
     <input type="hidden" name="editing" id="pmEditing" value="">

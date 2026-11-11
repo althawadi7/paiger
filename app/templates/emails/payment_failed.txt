@@ -1,11 +1,11 @@
 We couldn’t charge your card
-Your bank declined the renewal for {{ restaurant_name }}. We’ll try again tomorrow, but updating your card now avoids any pause.
+{% if topup %}Your bank declined the automatic points top-up for {{ restaurant_name }}. We won’t try again until tomorrow. Update your card or buy points from your dashboard so the cashier keeps paging.{% else %}Your bank declined the renewal for {{ restaurant_name }}. We’ll try again tomorrow, but updating your card now avoids any pause.{% endif %}
 
 Amount: BHD {{ amount }}
 Card: {{ card_label }}
 Next try: {{ next_try }}
-Cashier pauses on: {{ pauses_on }}
-
+{% if not topup %}Cashier pauses on: {{ pauses_on }}
+{% endif %}
 Update card: {{ button_url }}
 
 Common reasons are an expired card, low balance or online payments turned off. Your bank can tell you which one.

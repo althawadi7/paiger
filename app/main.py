@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from urllib.parse import quote
 from typing import Any, Dict, List, Optional, Tuple
-from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect, HTTPException, Request, Form, Depends, status
+from fastapi import BackgroundTasks, FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect, HTTPException, Request, Form, Depends, status
 from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse, FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -1167,7 +1167,23 @@ def _present_order(row: Dict[str, Any], prep_limit: int) -> Dict[str, Any]:
     }
 
 
-def _subscription_view(rest: Dict[str, Any], requested_plan: str = "") -> Dict[str, Any]:
+def _pack_options(packs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """Visible point packs for the picker; the cheapest per point gets "Best value" when prices differ."""
+    rates = [int(p.get("price_fils") or 0) / max(int(p.get("points") or 0), 1) for p in packs]
+    best = rates.index(min(rates)) if rates and min(rates) < max(rates) else -1
+    return [
+        {
+            "id": int(pack["id"]),
+            "points": int(pack.get("points") or 0),
+            "price_label": owner_board.fils_label(pack.get("price_fils")),
+            "per_point_label": owner_board.fils_label(round(rates[idx])),
+            "best": idx == best,
+        }
+        for idx, pack in enumerate(packs)
+    ]
+
+
+def _subscription_view(rest: Dict[str, Any], requested_plan: str = "", requested_pack: str = "") -> Dict[str, Any]:
     state = db.effective_status(rest)
     code = (rest.get("plan_code") or "monthly").strip()
     if code not in ("monthly", "yearly", "points"):
@@ -1200,7 +1216,8 @@ def _subscription_view(rest: Dict[str, Any], requested_plan: str = "") -> Dict[s
     if state in ("trialing", "expired"):
         facts.append({"label": i18n.t("dash.trialEnds"), "value": ends_label})
     elif code == "points":
-        facts.append({"label": i18n.t("dash.amount"), "value": "BHD " + owner_board.fils_label(current.get("price_fils"))})
+        facts.append({"label": i18n.t("dash.pointsBalance"), "value": f"{int(billing.wallet(int(rest['id'])).get('balance') or 0):,}"})
+        facts.append({"label": i18n.t("dash.perOrder"), "value": "BHD " + owner_board.fils_label(current.get("price_fils"))})
     else:
         facts.append({"label": i18n.t("dash.amount"), "value": "BHD " + owner_board.fils_label(current.get("price_fils"))})
         if change and change["code"] not in ("monthly", "yearly"):
@@ -1226,27 +1243,33 @@ def _subscription_view(rest: Dict[str, Any], requested_plan: str = "") -> Dict[s
     preselected_checkout = ""
     checkout_summary_name = ""
     checkout_summary_price = ""
-    requested = next((plan for plan in catalog if plan.get("code") == requested_plan), None)
-    if requested:
+    pack_options = _pack_options(owner_board.point_packs())
+    smallest = min(pack_options, key=lambda row: row["points"]) if pack_options else None
+    chosen_pack = next((row for row in pack_options if str(row["id"]) == requested_pack), smallest)
+    checkout_plans = list(catalog)
+    if code == "points" and state == "active" and "points" not in {plan.get("code") for plan in catalog} and current:
+        current["price_label"] = owner_board.fils_label(current.get("price_fils"))
+        checkout_plans.append(current)
+    requested = next((plan for plan in checkout_plans if plan.get("code") == requested_plan), None)
+    if requested and (requested_plan != "points" or chosen_pack):
         must_pick_plan = False
         preselected_checkout = requested_plan
         checkout_summary_name = requested.get(name_key) or requested_plan
-        checkout_summary_price = owner_board.fils_label(requested.get("price_fils"))
-    packs = owner_board.point_packs()
-    for pack in packs:
-        pack["price_label"] = owner_board.fils_label(pack.get("price_fils"))
+        checkout_summary_price = chosen_pack["price_label"] if requested_plan == "points" else owner_board.fils_label(requested.get("price_fils"))
     invoices = billing.owner_documents(int(rest["id"]))
-    wallet = billing.wallet(int(rest["id"])) if code == "points" else {"balance": 0}
     prefs = pay.billing_preferences(int(rest["id"]))
     history = pay.payment_history(int(rest["id"]))
     mf_cfg = mf.get_payment_config()
     paid_end_label = billing.date_label(paid_end)
     plan_checkout = []
-    for plan in catalog:
+    for plan in checkout_plans:
         mode = pay.plan_change_mode(rest, str(plan.get("code") or ""))
         name = (plan.get("name_ar") if lang_key == "ar" else plan.get("name_en")) or plan.get("code")
         summary_name = name
-        if mode == "extend":
+        if plan.get("code") == "points":
+            mode = "packs"
+            note = i18n.t("dash.pointsSwitchOn").replace("{date}", paid_end_label) if paid_end and code != "points" else ""
+        elif mode == "extend":
             ahead_key = "dash.sumAheadYear" if plan.get("code") == "yearly" else "dash.sumAheadMonth"
             summary_name = i18n.t(ahead_key).replace("{plan}", str(name))
             note = i18n.t("dash.extendsTo").replace("{date}", billing.date_label(pay.plan_period_end(plan, paid_end)))
@@ -1268,6 +1291,10 @@ def _subscription_view(rest: Dict[str, Any], requested_plan: str = "") -> Dict[s
     extend_label = ""
     if periodic and paid_end:
         extend_label = i18n.t("dash.payAheadYear") if code == "yearly" else i18n.t("dash.payAheadMonth")
+    can_buy_points = code == "points" and state == "active" and bool(pack_options)
+    show_topup_prefs = bool(pack_options) and (
+        code == "points" or (status["scheduled"] or {}).get("code") == "points" or prefs["auto_topup_enabled"]
+    )
     return {
         "plan_until_label": status["until_label"] if periodic else "",
         "plan_ends_soon": ends_soon,
@@ -1275,7 +1302,11 @@ def _subscription_view(rest: Dict[str, Any], requested_plan: str = "") -> Dict[s
         "extend_label": extend_label,
         "current_locked": state == "active",
         "plans": catalog,
-        "packs": packs,
+        "packs": pack_options,
+        "buy_points": can_buy_points,
+        "show_topup_prefs": show_topup_prefs,
+        "auto_topup_pack_id": prefs["auto_topup_pack_id"] or (smallest or {}).get("id"),
+        "auto_topup_failed": prefs["auto_topup_failed"] and prefs["auto_topup_enabled"],
         "invoices": invoices,
         "plan_title": title,
         "plan_tag": tag,
@@ -1283,13 +1314,11 @@ def _subscription_view(rest: Dict[str, Any], requested_plan: str = "") -> Dict[s
         "plan_facts": facts,
         "plan_code": code,
         "sub_state": state,
-        "point_price": owner_board.fils_label((by_code.get("points") or {}).get("price_fils")),
         "must_pick_plan": must_pick_plan,
         "preselected_checkout": preselected_checkout,
         "checkout_summary_name": checkout_summary_name,
         "checkout_summary_price": checkout_summary_price,
         "plan_checkout": plan_checkout,
-        "points_balance": int(wallet["balance"]),
         "saved_cards": cards,
         "billing_prefs": prefs,
         "payment_history": history,
@@ -1302,8 +1331,14 @@ def _subscription_view(rest: Dict[str, Any], requested_plan: str = "") -> Dict[s
             "selected": preselected_checkout,
             "must_pick": must_pick_plan,
             "current": code if state == "active" else "",
+            "packs": pack_options,
+            "pack": (chosen_pack or {}).get("id"),
+            "auto_topup": prefs["auto_topup_enabled"],
             "messages": {
                 "empty_plan": "—",
+                "pack_summary": i18n.t("dash.packSummary"),
+                "save_renew": i18n.t("dash.saveCard"),
+                "save_topup": i18n.t("dash.autoTopupLow"),
                 "pick_plan": i18n.t("dash.paymentPickPlan") if state != "active" else i18n.t("dash.chooseToContinue"),
                 "no_charge": i18n.t("dash.noChargeNow"),
                 "schedule_failed": i18n.t("dash.scheduleFailed"),
@@ -1350,7 +1385,7 @@ def _render_dashboard(request: Request, rest: Dict[str, Any], section: str, **ex
         "page": 1,
         "pages": 1,
     }
-    ctx.update(_subscription_view(rest, request.query_params.get("plan") or ""))
+    ctx.update(_subscription_view(rest, request.query_params.get("plan") or "", request.query_params.get("pack") or ""))
     ctx.update(extra)
     minutes = int((ctx.get("form") or {}).get("prep_minutes") or 6)
     choices = [3, 5, 6, 8, 10, 15]
@@ -2381,7 +2416,7 @@ async def list_orders(request: Request, restaurant_id: Optional[int] = None, boa
 
 
 @app.post("/api/orders")
-async def create_new_order(order_data: CreateOrderRequest, request: Request):
+async def create_new_order(order_data: CreateOrderRequest, request: Request, background_tasks: BackgroundTasks):
     actor = _order_actor(request)
     restaurant_id, device_id = _restaurant_for_cashier_write(request, actor, order_data.restaurant_id)
     if device_id and cashier_gate.recent_device_orders(device_id) >= 30:
@@ -2403,6 +2438,7 @@ async def create_new_order(order_data: CreateOrderRequest, request: Request):
         cashier_device_id=device_id,
     )
     billing.charge_order_point(restaurant_id)
+    background_tasks.add_task(pay.auto_topup_after_order, restaurant_id)
     await manager.notify_cashiers({"event": "order_created", "order": order})
     return order
 
@@ -2687,6 +2723,7 @@ class ChargeCardDto(BaseModel):
 class BillingPrefsDto(BaseModel):
     auto_renew: Optional[bool] = None
     auto_topup: Optional[bool] = None
+    auto_topup_pack_id: Optional[int] = None
 
 
 def _require_owner_payment(request: Request) -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -2876,7 +2913,15 @@ async def api_pay_link_process(req: PayLinkProcessDto, request: Request):
 @app.post("/api/billing/preferences")
 async def api_billing_preferences(req: BillingPrefsDto, request: Request):
     _, rest = _require_owner_payment(request)
-    pay.update_preferences(int(rest["id"]), auto_renew=req.auto_renew, auto_topup=req.auto_topup)
+    try:
+        pay.update_preferences(
+            int(rest["id"]),
+            auto_renew=req.auto_renew,
+            auto_topup=req.auto_topup,
+            auto_topup_pack_id=req.auto_topup_pack_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     return {"ok": True, "prefs": pay.billing_preferences(int(rest["id"]))}
 
 

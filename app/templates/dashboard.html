@@ -36,6 +36,12 @@
       <a href="/dashboard/subscription">{{ t('dash.choosePlan') }}</a>
     </div>
     {% endif %}
+    {% if auto_topup_failed %}
+    <div class="trial expired" role="alert">
+      <div class="t-txt"><b>{{ t('dash.topupFailTitle') }}</b><span>{{ t('dash.topupFailSub') }}</span></div>
+      <a href="/dashboard/subscription?plan=points">{{ t('dash.buyPoints') }}</a>
+    </div>
+    {% endif %}
 
     {% if section == 'overview' %}
     <section>
@@ -128,15 +134,12 @@
         <div class="card-action">
           <button type="button" class="btn btn-line" id="payAheadBtn" data-code="{{ plan_code }}" aria-pressed="false">{{ extend_label }}</button>
         </div>
+        {% elif buy_points %}
+        <div class="card-action">
+          <button type="button" class="btn btn-line" id="buyPointsBtn" aria-pressed="false" aria-controls="packPicker">{{ t('dash.buyPoints') }}</button>
+        </div>
         {% endif %}
       </div>
-      {% if plan_code == 'points' and sub_state == 'active' %}
-      <div class="card wallet">
-        <div class="bal"><b>{{ points_balance }}</b><span>{{ t('dash.pointsLeft') }}</span></div>
-        <div><div class="meter"><i style="width:0%"></i></div><div class="meta"><span>{{ t('dash.pointRate').replace('{price}', point_price) }}</span></div></div>
-        <button class="btn btn-ink" type="button" id="topUpBtn" data-pack="">{{ t('dash.topUp') }}</button>
-      </div>
-      {% endif %}
       <h2 class="h3">{{ t('dash.pickPlan') if sub_state != 'active' else t('dash.changePlan') }}</h2>
       <div class="plans" role="radiogroup" aria-label="{{ t('dash.pickPlan') if sub_state != 'active' else t('dash.changePlan') }}">
         {% for plan in plans %}
@@ -152,6 +155,22 @@
         </button>
         {% endfor %}
       </div>
+      {% if packs %}
+      <div class="pack-picker" id="packPicker" hidden>
+        <h3 class="h4">{{ t('dash.choosePack') }}</h3>
+        <div class="packs" role="radiogroup" aria-label="{{ t('dash.choosePack') }}">
+          {% for pack in packs %}
+          <button type="button" class="pack" role="radio" data-pack="{{ pack.id }}" aria-checked="false" tabindex="-1">
+            {% if pack.best %}<span class="plan-badge">{{ t('dash.bestValue') }}</span>{% endif %}
+            <b class="num">{{ '{:,}'.format(pack.points) }}</b>
+            <span class="pts">{{ t('dash.pointsUnit') }}</span>
+            <span class="pp">BHD {{ pack.price_label }}</span>
+            <span class="per">{{ t('dash.perPoint').replace('{price}', pack.per_point_label) }}</span>
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
       <script type="application/json" id="checkout-bootstrap">{{ checkout_bootstrap|tojson }}</script>
       <div id="subCheckout" class="checkout">
         <div class="card box pay-form">
@@ -164,23 +183,17 @@
           <div class="sum"><div><span>{{ t('dash.plan') }}</span><span id="summaryPlanName">{% if checkout_summary_name %}{{ checkout_summary_name }}{% else %}—{% endif %}</span></div><p class="muted" id="summaryNote" hidden></p><div class="tot"><span>{{ t('dash.due') }}</span><b id="summaryDueAmount">{% if checkout_summary_price %}BHD {{ checkout_summary_price }}{% else %}—{% endif %}</b></div></div>
           <button class="btn btn-primary pay" type="button" id="subscribePay" disabled>{{ t('dash.pay') }}</button>
           <button class="btn btn-ink pay" type="button" id="schedulePlanBtn" hidden>{{ t('dash.scheduleChange') }}</button>
-          <label class="save-card" id="saveCardRow"><input type="checkbox" id="saveCardSub" checked> {{ t('dash.saveCard') }}</label>
+          <label class="save-card" id="saveCardRow"><input type="checkbox" id="saveCardSub" checked> <span id="saveCardText">{{ t('dash.saveCard') }}</span></label>
           <p class="secure">{{ t('dash.secure') }}</p>
         </div>
       </div>
-      {% if plan_code == 'points' %}
-      <script type="application/json" id="dash-packs-data">{{ packs|tojson }}</script>
-      <h2 class="h3">{{ t('dash.packs') }}</h2>
-      <div class="packs">
-        {% for pack in packs %}<div class="pack"><b class="num">{{ pack.points }}</b><span>BHD {{ pack.price_label }}</span></div>{% endfor %}
-      </div>
-      {% endif %}
       <h2 class="h3">{{ t('dash.cards') }}</h2>
       <div class="card" style="padding:14px">
         <div id="cardList">{% for card in saved_cards %}<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee"><span>{{ card.brand }} ·••• {{ card.last4 }}{% if card.is_default %} ★{% endif %}</span><button type="button" class="btn btn-quiet btn-sm" data-rm-card="{{ card.id }}">{{ t('dash.remove') }}</button></div>{% else %}<p class="sub">{{ t('dash.noCards') }}</p>{% endfor %}</div>
         <div style="margin-top:12px;display:flex;gap:16px;flex-wrap:wrap;font-size:14px">
           <label><input type="checkbox" id="prefRenew" {% if billing_prefs.auto_renew_enabled %}checked{% endif %}> {{ t('dash.autoRenew') }}</label>
-          {% if plan_code == 'points' %}<label><input type="checkbox" id="prefTopup" {% if billing_prefs.auto_topup_enabled %}checked{% endif %}> {{ t('dash.autoTopup') }}</label>{% endif %}
+          {% if show_topup_prefs %}<label><input type="checkbox" id="prefTopup" {% if billing_prefs.auto_topup_enabled %}checked{% endif %}> {{ t('dash.autoTopupLow') }}</label>
+          <label class="topup-pack">{{ t('dash.autoTopupPack') }} <select id="prefTopupPack" class="in"{% if not billing_prefs.auto_topup_enabled %} disabled{% endif %}>{% for pack in packs %}<option value="{{ pack.id }}"{% if pack.id == auto_topup_pack_id %} selected{% endif %}>{{ '{:,}'.format(pack.points) }} · BHD {{ pack.price_label }}</option>{% endfor %}</select></label>{% endif %}
         </div>
       </div>
       <h2 class="h3">{{ t('dash.invoices') }}</h2>
@@ -394,32 +407,18 @@
       fetch("/api/merchant/logo", { method: "DELETE", credentials: "same-origin" }).then(function (r) { if (r.ok) location.reload(); });
     });
   }
-  function startCheckout(payload) {
-    return fetch("/api/billing/checkout/intent", {
-      method: "POST", credentials: "same-origin",
-      headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify(payload)
-    }).then(function (r) { return r.json().then(function (b) { if (!r.ok) throw new Error(b.detail || "Failed"); return b.intent; }); })
-      .then(function (intent) { window.location.href = "/dashboard/checkout?intent=" + encodeURIComponent(intent.intent_id); });
-  }
-  var packs = [];
-  var packsNode = document.getElementById("dash-packs-data");
-  if (packsNode) {
-    try { packs = JSON.parse(packsNode.textContent || "[]"); } catch (e) { packs = []; }
-  }
-  document.querySelectorAll(".pack").forEach(function (pack, idx) {
-    pack.addEventListener("click", function () {
-      if (!packs[idx]) return;
-      startCheckout({ purpose: "topup", pack_id: packs[idx].id }).catch(function (e) { alert(e.message); });
-    });
-  });
   function postPrefs(body) {
     return fetch("/api/billing/preferences", { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   }
   var pr = document.getElementById("prefRenew");
   var pt = document.getElementById("prefTopup");
   if (pr) pr.addEventListener("change", function () { postPrefs({ auto_renew: pr.checked }); });
-  if (pt) pt.addEventListener("change", function () { postPrefs({ auto_topup: pt.checked }); });
+  var ptPack = document.getElementById("prefTopupPack");
+  if (pt) pt.addEventListener("change", function () {
+    if (ptPack) ptPack.disabled = !pt.checked;
+    postPrefs(pt.checked && ptPack ? { auto_topup: true, auto_topup_pack_id: Number(ptPack.value) } : { auto_topup: pt.checked });
+  });
+  if (ptPack) ptPack.addEventListener("change", function () { postPrefs({ auto_topup_pack_id: Number(ptPack.value) }); });
   document.querySelectorAll("[data-rm-card]").forEach(function (btn) {
     btn.addEventListener("click", function () {
       var id = btn.getAttribute("data-rm-card");

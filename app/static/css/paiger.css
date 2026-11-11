@@ -58,7 +58,7 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 .btn:active { transform: translateY(1px) scale(.99); }
 .btn-primary { background: var(--brand); color: var(--on-ink); font-weight: 600; }
 .btn-primary:hover { background: var(--brand-hover); }
-.btn-primary:disabled { background: color-mix(in srgb, var(--brand) 42%, var(--paper-2)); cursor: not-allowed; }
+#payBtn:disabled { background: color-mix(in srgb, var(--brand) 42%, var(--paper-2)); cursor: not-allowed; }
 .btn-outline { color: var(--ink); box-shadow: 0 0 0 1.5px var(--line) inset; }
 .btn-outline:hover { box-shadow: 0 0 0 1.5px var(--brand) inset; color: var(--brand); }
 .btn-white { background: #fff; color: var(--ink); }

@@ -6,6 +6,7 @@ import logging
 import os
 import re
 import secrets
+import threading
 from base64 import urlsafe_b64encode
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
@@ -137,8 +138,11 @@ def _restaurant_row(restaurant_id: int) -> Dict[str, Any]:
     return row
 
 
-def _pending_subscribe_intent(restaurant_id: int, plan_code: str, price_fils: int) -> Optional[Dict[str, Any]]:
-    """Reuse an open checkout for the same plan so reopening the page doesn't issue another invoice."""
+def _pending_intent(
+    restaurant_id: int, purpose: str, plan_code: str, price_fils: int, pack_id: Optional[int] = None
+) -> Optional[Dict[str, Any]]:
+    """Reuse an open checkout for the same plan/pack so reopening the page doesn't issue another invoice."""
+    kind = "topup" if purpose == "topup" else "subscription"
     conn = db.get_db_connection()
     try:
         with conn.cursor() as cur:
@@ -147,12 +151,12 @@ def _pending_subscribe_intent(restaurant_id: int, plan_code: str, price_fils: in
                 SELECT ci.id, ci.invoice_number, ci.amount_fils, ci.expires_at
                 FROM checkout_intents ci
                 JOIN invoices i ON i.number = ci.invoice_number
-                WHERE ci.restaurant_id=%s AND ci.purpose='subscribe' AND ci.ref_plan_code=%s
+                WHERE ci.restaurant_id=%s AND ci.purpose=%s AND ci.ref_plan_code=%s AND ci.ref_pack_id <=> %s
                   AND ci.status='pending' AND ci.expires_at > %s AND ci.amount_fils=%s
-                  AND i.status='unpaid' AND i.kind='subscription'
+                  AND i.status='unpaid' AND i.kind=%s
                 ORDER BY ci.created_at DESC LIMIT 1
                 """,
-                (restaurant_id, plan_code, datetime.now(), price_fils),
+                (restaurant_id, purpose, plan_code, pack_id, datetime.now(), price_fils, kind),
             )
             row = cur.fetchone()
     finally:
@@ -165,9 +169,25 @@ def _pending_subscribe_intent(restaurant_id: int, plan_code: str, price_fils: in
         "invoice_number": row["invoice_number"],
         "amount_fils": int(row["amount_fils"]),
         "amount_bhd": billing.fils_fixed(row["amount_fils"]),
-        "purpose": "subscribe",
+        "purpose": purpose,
         "expires_at": expires.isoformat(),
     }
+
+
+def _active_pack(pack_id: Any) -> Optional[Dict[str, Any]]:
+    try:
+        pid = int(pack_id or 0)
+    except (TypeError, ValueError):
+        return None
+    if pid <= 0:
+        return None
+    conn = db.get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT * FROM point_packs WHERE id=%s AND deleted_at IS NULL AND active=1", (pid,))
+            return cur.fetchone()
+    finally:
+        conn.close()
 
 
 def create_checkout_intent(
@@ -178,8 +198,12 @@ def create_checkout_intent(
     pack_id: Optional[int] = None,
     invoice_number: Optional[str] = None,
     kind_override: Optional[str] = None,
+    notify: bool = True,
 ) -> Dict[str, Any]:
-    """Server-side amount only; creates unpaid invoice when needed."""
+    """Server-side amount only; creates unpaid invoice when needed.
+
+    A top-up with plan_code="points" also moves the restaurant to pay-per-order once paid.
+    """
     purpose = (purpose or "").strip().lower()
     if purpose not in ("subscribe", "topup", "invoice"):
         raise ValueError("purpose")
@@ -191,7 +215,7 @@ def create_checkout_intent(
     if purpose == "subscribe":
         code = (plan_code or "").strip()
         plan = plans.get(code)
-        if not plan or not plan.get("active") or plan.get("deleted_at"):
+        if code == "points" or not plan or not plan.get("active") or plan.get("deleted_at"):
             raise ValueError("plan")
         price = int(plan.get("price_fils") or 0)
         if price <= 0:
@@ -201,7 +225,7 @@ def create_checkout_intent(
             current = (rest.get("plan_code") or "").strip()
             if start and billing.PLAN_RANK.get(code, 0) < billing.PLAN_RANK.get(current, 0):
                 raise ValueError("schedule")
-            reusable = _pending_subscribe_intent(restaurant_id, code, price)
+            reusable = _pending_intent(restaurant_id, "subscribe", code, price)
             if reusable:
                 return reusable
         period_end = plan_period_end(plan, start)
@@ -224,35 +248,40 @@ def create_checkout_intent(
         ref_plan = code
         ref_pack = None
     elif purpose == "topup":
-        if (rest.get("plan_code") or "") != "points":
+        switching = (plan_code or "").strip() == "points"
+        if switching:
+            points_plan = plans.get("points")
+            if not points_plan or not points_plan.get("active") or points_plan.get("deleted_at"):
+                raise ValueError("plan")
+        elif (rest.get("plan_code") or "") != "points":
             raise ValueError("plan")
-        pack = None
-        conn = db.get_db_connection()
-        try:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "SELECT * FROM point_packs WHERE id=%s AND deleted_at IS NULL AND active=1",
-                    (int(pack_id or 0),),
-                )
-                pack = cur.fetchone()
-        finally:
-            conn.close()
+        pack = _active_pack(pack_id)
         if not pack:
             raise ValueError("pack")
         price = int(pack.get("price_fils") or 0)
         pts = int(pack.get("points") or 0)
+        if price <= 0 or pts <= 0:
+            raise ValueError("pack")
+        ref_plan = "points" if switching else None
+        ref_pack = int(pack["id"])
+        if switching:
+            reusable = _pending_intent(restaurant_id, "topup", "points", price, ref_pack)
+            if reusable:
+                return reusable
+        line: Dict[str, Any] = {"description": f"{pts} points", "detail": "", "qty": 1, "amount_fils": price}
+        if switching:
+            line["plan_code"] = "points"
         number = billing.create_invoice(
             restaurant_id,
             kind="topup",
             description=f"Trings points · {pts}",
-            lines=[{"description": f"{pts} points", "detail": "", "qty": 1, "amount_fils": price}],
+            lines=[line],
             due_at=datetime.now() + timedelta(days=1),
-            pack_id=int(pack["id"]),
+            pack_id=ref_pack,
             points=pts,
+            notify=notify,
         )
         amount_fils = price
-        ref_plan = None
-        ref_pack = int(pack["id"])
     else:
         number = (invoice_number or "").strip()
         invoice = billing.get_invoice(number)
@@ -462,10 +491,11 @@ def _card_meta(data: Dict[str, Any]) -> Tuple[str, str, str, str, str]:
     )
 
 
-def _save_card_if_needed(restaurant_id: int, data: Dict[str, Any], save_requested: bool) -> None:
+def _save_card_if_needed(restaurant_id: int, data: Dict[str, Any], save_requested: bool) -> bool:
+    """True when the paying card is stored (now or already) and can be charged later."""
     brand, last4, token, exp_month, exp_year = _card_meta(data)
     if not save_requested or not token:
-        return
+        return False
     conn = db.get_db_connection()
     try:
         with conn.cursor() as cur:
@@ -474,7 +504,7 @@ def _save_card_if_needed(restaurant_id: int, data: Dict[str, Any], save_requeste
             for row in rows:
                 try:
                     if _dec(row.get("token_enc") or "") == token:
-                        return
+                        return True
                 except Exception:
                     continue
             cur.execute(
@@ -496,6 +526,7 @@ def _save_card_if_needed(restaurant_id: int, data: Dict[str, Any], save_requeste
             conn.commit()
     finally:
         conn.close()
+    return True
 
 
 async def settle_payment(
@@ -628,7 +659,10 @@ async def settle_payment(
             conn.commit()
     finally:
         conn.close()
-    _save_card_if_needed(restaurant_id, status_data, save_requested)
+    card_ready = _save_card_if_needed(restaurant_id, status_data, save_requested)
+    if card_ready and (intent.get("purpose") or "") == "topup":
+        chosen = _active_pack(intent.get("ref_pack_id"))
+        update_preferences(restaurant_id, auto_topup=True, auto_topup_pack_id=int(chosen["id"]) if chosen else None)
     billing_mail.on_invoice_paid(invoice_number)
     return {"status": "paid", "invoice_number": invoice_number}
 
@@ -730,6 +764,8 @@ def result_view(intent_id: str, viewer_restaurant_id: Optional[int]) -> Dict[str
     purpose = intent.get("purpose") or ""
     if purpose == "subscribe" and intent.get("ref_plan_code"):
         view["retry_url"] = "/dashboard/subscription?plan=" + quote(str(intent["ref_plan_code"]))
+    elif purpose == "topup" and intent.get("ref_pack_id"):
+        view["retry_url"] = f"/dashboard/subscription?plan=points&pack={int(intent['ref_pack_id'])}"
     elif purpose == "invoice" and number:
         token = invoice.get("pay_token") or ""
         view["retry_url"] = f"/pay/{quote(number)}" + (f"?t={quote(token)}" if token else "")
@@ -871,18 +907,33 @@ def billing_preferences(restaurant_id: int) -> Dict[str, Any]:
     return {
         "auto_renew_enabled": bool(int(rest.get("auto_renew_enabled") if rest.get("auto_renew_enabled") is not None else 1)),
         "auto_topup_enabled": bool(int(rest.get("auto_topup_enabled") or 0)),
+        "auto_topup_pack_id": int(rest.get("auto_topup_pack_id") or 0) or None,
+        "auto_topup_failed": bool(rest.get("auto_topup_failed_at")),
     }
 
 
-def update_preferences(restaurant_id: int, *, auto_renew: Optional[bool] = None, auto_topup: Optional[bool] = None) -> None:
+def update_preferences(
+    restaurant_id: int,
+    *,
+    auto_renew: Optional[bool] = None,
+    auto_topup: Optional[bool] = None,
+    auto_topup_pack_id: Optional[int] = None,
+) -> None:
     sets = []
     args: List[Any] = []
     if auto_renew is not None:
         sets.append("auto_renew_enabled=%s")
         args.append(1 if auto_renew else 0)
+    if auto_topup_pack_id is not None:
+        if not _active_pack(auto_topup_pack_id):
+            raise ValueError("pack")
+        sets.append("auto_topup_pack_id=%s")
+        args.append(int(auto_topup_pack_id))
     if auto_topup is not None:
         sets.append("auto_topup_enabled=%s")
         args.append(1 if auto_topup else 0)
+    if auto_topup is not None or auto_topup_pack_id is not None:
+        sets.append("auto_topup_failed_at=NULL")
     if not sets:
         return
     args.append(restaurant_id)
@@ -958,6 +1009,11 @@ def _default_card(restaurant_id: int) -> Optional[Dict[str, Any]]:
         conn.close()
 
 
+def _server_base_url() -> str:
+    base = (os.getenv("DOMAIN") or "").strip()
+    return f"https://{base}" if base else f"http://127.0.0.1:{(os.getenv('PORT') or '8035').strip()}"
+
+
 def create_renewal_intent(restaurant_id: int) -> Dict[str, Any]:
     rest = _restaurant_row(restaurant_id)
     code = (rest.get("plan_code") or "monthly").strip()
@@ -1009,9 +1065,7 @@ async def run_auto_renewals() -> List[Dict[str, Any]]:
             return {"restaurant_id": rid, "status": "no_card"}
         try:
             intent = create_renewal_intent(rid)
-            base = (os.getenv("DOMAIN") or "").strip()
-            base_url = f"https://{base}" if base else f"http://127.0.0.1:{(os.getenv('PORT') or '8035').strip()}"
-            out = await charge_saved_card(int(card["id"]), rid, intent["intent_id"], rest, base_url)
+            out = await charge_saved_card(int(card["id"]), rid, intent["intent_id"], rest, _server_base_url())
             if out.get("settlement", {}).get("status") == "paid":
                 conn2 = db.get_db_connection()
                 try:
@@ -1054,27 +1108,151 @@ async def run_auto_renewals() -> List[Dict[str, Any]]:
     return results
 
 
-def maybe_auto_topup(restaurant_id: int) -> None:
-    rest = _restaurant_row(restaurant_id)
-    if not int(rest.get("auto_topup_enabled") or 0):
-        return
+def _low_points_at() -> int:
+    try:
+        return int(billing.settings().get("low_points_at") or 100)
+    except ValueError:
+        return 100
+
+
+def _auto_topup_due(rest: Dict[str, Any]) -> bool:
+    if not int(rest.get("auto_topup_enabled") or 0) or rest.get("suspended_at"):
+        return False
     if (rest.get("plan_code") or "") != "points":
-        return
-    wallet = billing.wallet(restaurant_id)
-    if int(wallet.get("balance") or 0) >= int(billing.settings().get("low_points_at") or 100):
-        return
+        return False
+    last = db._parse_dt(rest.get("auto_topup_last_at"))
+    if last and last > datetime.now() - timedelta(hours=24):
+        return False
+    info = billing.wallet(int(rest["id"]))
+    return info.get("mode") == "prepaid" and int(info.get("balance") or 0) < _low_points_at()
+
+
+def _auto_topup_pack(rest: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """The owner's chosen pack; the smallest visible pack if it was removed."""
+    pack = _active_pack(rest.get("auto_topup_pack_id"))
+    if pack:
+        return pack
+    packs = owner_board.point_packs()
+    return min(packs, key=lambda row: int(row.get("points") or 0)) if packs else None
+
+
+def _claim_auto_topup(restaurant_id: int) -> bool:
+    """At most one attempt (paid or failed) per restaurant per 24 h, safe across workers."""
+    now = datetime.now()
     conn = db.get_db_connection()
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT id, price_fils FROM point_packs WHERE deleted_at IS NULL AND active=1 ORDER BY sort, id LIMIT 1"
+                """
+                UPDATE restaurants SET auto_topup_last_at=%s
+                WHERE id=%s AND (auto_topup_last_at IS NULL OR auto_topup_last_at <= %s)
+                """,
+                (now, restaurant_id, now - timedelta(hours=24)),
             )
-            pack = cur.fetchone()
+            claimed = cur.rowcount == 1
+            conn.commit()
     finally:
         conn.close()
-    if not pack or not _default_card(restaurant_id):
+    return claimed
+
+
+def _mark_auto_topup_failed(restaurant_id: int) -> None:
+    conn = db.get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE restaurants SET auto_topup_failed_at=%s WHERE id=%s", (datetime.now(), restaurant_id))
+            conn.commit()
+    finally:
+        conn.close()
+
+
+async def auto_topup(restaurant_id: int) -> Dict[str, Any]:
+    """Charge the saved card for the chosen pack when the balance is below low_points_at."""
+    rest = _restaurant_row(restaurant_id)
+    if not _auto_topup_due(rest):
+        return {"restaurant_id": restaurant_id, "status": "skip"}
+    card = _default_card(restaurant_id)
+    pack = _auto_topup_pack(rest)
+    if not card or not pack:
+        return {"restaurant_id": restaurant_id, "status": "no_card" if not card else "no_pack"}
+    if not _claim_auto_topup(restaurant_id):
+        return {"restaurant_id": restaurant_id, "status": "recent"}
+    amount = int(pack.get("price_fils") or 0)
+    try:
+        intent = create_checkout_intent(restaurant_id, "topup", pack_id=int(pack["id"]), notify=False)
+        out = await charge_saved_card(int(card["id"]), restaurant_id, intent["intent_id"], rest, _server_base_url())
+        if (out.get("settlement") or {}).get("status") in ("paid", "already"):
+            return {"restaurant_id": restaurant_id, "status": "paid"}
+        raise ValueError("declined" if out.get("settlement") else "card needs authentication")
+    except Exception as exc:
+        _log.warning("Auto top-up failed for restaurant %s: %s", restaurant_id, exc)
+        _mark_auto_topup_failed(restaurant_id)
+        today = owner_board.bahrain_now().date()
+        billing_mail.send_payment_failed(
+            rest,
+            f"topup-fail:{restaurant_id}:{today.isoformat()}",
+            amount_fils=amount,
+            card_last4=str(card.get("last4") or ""),
+            card_brand=str(card.get("brand") or ""),
+            next_try=today + timedelta(days=1),
+            topup=True,
+        )
+        return {"restaurant_id": restaurant_id, "status": "failed", "error": str(exc)[:200]}
+
+
+_topup_locks: Dict[int, threading.Lock] = {}
+_topup_locks_guard = threading.Lock()
+
+
+def _topup_lock(restaurant_id: int) -> threading.Lock:
+    with _topup_locks_guard:
+        return _topup_locks.setdefault(restaurant_id, threading.Lock())
+
+
+def auto_topup_after_order(restaurant_id: int) -> None:
+    """Background task after the order response is sent (FastAPI runs it in the threadpool).
+
+    The per-restaurant lock stops two orders in this worker from starting two charges;
+    _claim_auto_topup keeps it to one charge across workers.
+    """
+    lock = _topup_lock(restaurant_id)
+    if not lock.acquire(blocking=False):
         return
-    create_checkout_intent(restaurant_id, "topup", pack_id=int(pack["id"]))
+    try:
+        if not _auto_topup_due(_restaurant_row(restaurant_id)):
+            return
+        import asyncio
+
+        asyncio.run(auto_topup(restaurant_id))
+    except Exception:
+        _log.exception("Auto top-up crashed for restaurant %s", restaurant_id)
+    finally:
+        lock.release()
+
+
+def run_auto_topups() -> List[Dict[str, Any]]:
+    """Daily pass for balances that went low while the last attempt was still inside its 24 h window."""
+    conn = db.get_db_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT id FROM restaurants
+                WHERE auto_topup_enabled=1 AND plan_code='points' AND suspended_at IS NULL
+                """
+            )
+            ids = [int(row["id"]) for row in cur.fetchall()]
+    finally:
+        conn.close()
+    import asyncio
+
+    results: List[Dict[str, Any]] = []
+    for rid in ids:
+        try:
+            results.append(asyncio.run(auto_topup(rid)))
+        except Exception as exc:
+            results.append({"restaurant_id": rid, "status": "error", "error": str(exc)[:200]})
+    return results
 
 
 def verify_pay_link(invoice_number: str, pay_token: str, intent_id: str, *, pending: bool = True) -> Dict[str, Any]:
